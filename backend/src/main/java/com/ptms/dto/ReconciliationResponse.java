@@ -1,0 +1,1 @@
+package com.ptms.dto; import java.util.*; public record ReconciliationResponse(int expectedAvailable,int scannedCount,int missingCount,int unknownCount,List<String> missingBarcodes,List<String> unknownBarcodes){}

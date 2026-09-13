@@ -1,0 +1,16 @@
+spring:
+  application:
+    name: ptms
+  datasource:
+    url: ${SPRING_DATASOURCE_URL:jdbc:mysql://localhost:3306/ptms?useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=UTC}
+    username: ${SPRING_DATASOURCE_USERNAME:ptms}
+    password: ${SPRING_DATASOURCE_PASSWORD:ptms}
+  jpa:
+    open-in-view: false
+    hibernate:
+      ddl-auto: validate
+  flyway:
+    enabled: true
+server:
+  servlet:
+    context-path: /ptms

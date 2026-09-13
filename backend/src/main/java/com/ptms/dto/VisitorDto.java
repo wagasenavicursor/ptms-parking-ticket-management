@@ -1,0 +1,1 @@
+package com.ptms.dto; import jakarta.validation.constraints.NotBlank; public record VisitorDto(Long id,String visitorCode,@NotBlank String name,String nic,String vehicleNumber,String hostDepartment){}

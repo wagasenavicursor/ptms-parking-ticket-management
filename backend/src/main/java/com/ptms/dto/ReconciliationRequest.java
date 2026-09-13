@@ -1,0 +1,1 @@
+package com.ptms.dto; import jakarta.validation.constraints.NotNull; import java.time.LocalDate; import java.util.*; public record ReconciliationRequest(@NotNull LocalDate date,List<String> barcodes){}
