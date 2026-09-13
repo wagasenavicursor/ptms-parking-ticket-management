@@ -42,11 +42,12 @@ jobs:
           base64 --decode /tmp/ptms-source.b64 > /tmp/ptms-source.tar.xz
           tar -xJf /tmp/ptms-source.tar.xz -C .
 
-      - name: Remove bootstrap transport files
+      - name: Remove transport and workflow files from imported archive
         shell: bash
         run: |
           rm -rf bootstrap
           rm -f bootstrap-test.txt
+          rm -f .github/workflows/ci.yml
 
       - name: Commit imported project
         shell: bash
