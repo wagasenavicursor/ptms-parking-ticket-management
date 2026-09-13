@@ -103,5 +103,4 @@ Rebuild the Parking Ticket Management System as a maintainable full-stack applic
 - [x] T-101 Create and use `developer` branch.
 - [x] T-102 Add initial project commit.
 - [x] T-103 Add GitHub Actions workflow.
-- [ ] T-104 Publish repository to GitHub and push `developer` branch.
-  - Requires authorization to the user's GitHub account/connector.
+- [x] T-104 Publish repository to GitHub and push `developer` branch.
