@@ -1,0 +1,1 @@
+package com.ptms.dto;import jakarta.validation.constraints.*;public record SettingsDto(@NotBlank String weekdayStart,@NotBlank String weekdayEnd,@NotBlank String weekendStart,@NotBlank String weekendEnd,@Min(0) int bufferMinutes,@NotBlank String ticketTypes){}
