@@ -1,0 +1,1 @@
+package com.ptms.dto; import jakarta.validation.constraints.NotBlank; import java.time.LocalTime; public record EmployeeDto(Long id,@NotBlank String employeeCode,@NotBlank String name,String vehicleNumber,String team,String department,boolean parkingPass,LocalTime defaultEntryTime){}

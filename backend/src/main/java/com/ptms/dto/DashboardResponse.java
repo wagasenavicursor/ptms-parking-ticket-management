@@ -1,0 +1,1 @@
+package com.ptms.dto; import java.util.*; public record DashboardResponse(long employees,long visitors,long availableTickets,long issuedTickets,long pendingRequests,Map<Integer,Long> availableByType){}

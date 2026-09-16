@@ -1,0 +1,1 @@
+package com.ptms.repository; import com.ptms.domain.Reconciliation; import org.springframework.data.jpa.repository.JpaRepository; public interface ReconciliationRepository extends JpaRepository<Reconciliation,Long>{}

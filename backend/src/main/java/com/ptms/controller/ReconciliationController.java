@@ -1,0 +1,2 @@
+package com.ptms.controller; import com.ptms.dto.*; import com.ptms.service.*; import jakarta.validation.Valid; import org.springframework.web.bind.annotation.*;
+@RestController @RequestMapping("/api/reconciliations") public class ReconciliationController{private final ReconciliationService s;public ReconciliationController(ReconciliationService s){this.s=s;}@PostMapping public ReconciliationResponse reconcile(@Valid @RequestBody ReconciliationRequest q){return s.reconcile(q);}}

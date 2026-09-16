@@ -1,0 +1,1 @@
+package com.ptms.repository; import com.ptms.domain.*; import org.springframework.data.jpa.repository.JpaRepository; import java.util.*; public interface TicketIssueRepository extends JpaRepository<TicketIssue,Long>{List<TicketIssue> findAllByOrderByCreatedAtDesc(); List<TicketIssue> findByStatusOrderByCreatedAtAsc(IssueStatus s);}

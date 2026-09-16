@@ -1,0 +1,4 @@
+package com.ptms.service; import com.ptms.domain.PersonType; import org.springframework.stereotype.Service; import java.time.*;
+@Service public class ParkingDurationService{
+ public int requiredTicketHours(PersonType type,boolean pass,LocalDate date,LocalTime entry,LocalTime exit,int extra){if(!exit.isAfter(entry))throw new IllegalArgumentException("Exit time must be later than entry time");long mins=Duration.between(entry,exit).toMinutes()+extra*60L;if(type==PersonType.EMPLOYEE&&pass){LocalTime ps=LocalTime.of(6,0),pe=(date.getDayOfWeek()==DayOfWeek.SATURDAY||date.getDayOfWeek()==DayOfWeek.SUNDAY)?LocalTime.of(12,30):LocalTime.NOON;LocalTime s=entry.isAfter(ps)?entry:ps,e=exit.isBefore(pe)?exit:pe;if(e.isAfter(s))mins-=Duration.between(s,e).toMinutes();}return (int)Math.ceil(Math.max(0,mins)/60.0);}
+}
