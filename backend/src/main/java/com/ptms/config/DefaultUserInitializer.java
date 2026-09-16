@@ -1,0 +1,1 @@
+package com.ptms.config;import com.ptms.service.AuthService;import org.springframework.boot.CommandLineRunner;import org.springframework.stereotype.Component;@Component public class DefaultUserInitializer implements CommandLineRunner{private final AuthService s;public DefaultUserInitializer(AuthService s){this.s=s;}public void run(String...a){s.ensureAdmin();}}

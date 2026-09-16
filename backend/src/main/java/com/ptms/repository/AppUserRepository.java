@@ -1,0 +1,1 @@
+package com.ptms.repository;import com.ptms.domain.AppUser;import org.springframework.data.jpa.repository.JpaRepository;import java.util.*;public interface AppUserRepository extends JpaRepository<AppUser,Long>{Optional<AppUser> findByUsernameIgnoreCase(String s);Optional<AppUser> findByEmailIgnoreCase(String s);Optional<AppUser> findByResetToken(String s);}
