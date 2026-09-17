@@ -1,1 +1,7 @@
-package com.ptms.domain; public enum IssueStatus { PENDING, COMPLETED }
+package com.ptms.domain;
+
+public enum IssueStatus {
+  PENDING,
+  COMPLETED,
+  CANCELLED
+}

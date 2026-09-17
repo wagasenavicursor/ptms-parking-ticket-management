@@ -1,3 +1,527 @@
-import {Component,OnDestroy,OnInit} from '@angular/core';import {CommonModule} from '@angular/common';import {FormsModule} from '@angular/forms';import {Subscription} from 'rxjs';import {ApiService} from './core/api.service';import {BarcodeScannerService} from './core/barcode-scanner.service';
-type Page='dashboard'|'employees'|'visitors'|'inventory'|'issue'|'register'|'remaining'|'reconcile'|'reports'|'settings';
-@Component({selector:'app-root',standalone:true,imports:[CommonModule,FormsModule],templateUrl:'./app.component.html'})export class AppComponent implements OnInit,OnDestroy{page:Page='dashboard';dashboard:any={};employees:any[]=[];visitors:any[]=[];tickets:any[]=[];issues:any[]=[];remaining:any[]=[];msg='';err='';employee:any=this.newEmployee();visitor:any=this.newVisitor();ticket:any=this.newTicket();hours=1;expiry='';inventoryScans:string[]=[];ticketSearch='';hourFilter='';statusFilter='';ptype='EMPLOYEE';search='';person='';date=new Date().toISOString().slice(0,10);entry='08:00';exit='17:00';extra:any='';reason='';required=0;combos:number[][]=[];combo:number[]=[];issueScans:string[]=[];barcodeMode:'SCAN'|'MANUAL'='SCAN';manualBarcode='';reconScans:string[]=[];recon:any;reportDate=this.date;reportPerson='';settings:any={weekdayStart:'06:00',weekdayEnd:'12:00',weekendStart:'06:00',weekendEnd:'12:30',bufferMinutes:0,ticketTypes:'1,2,4,6,8,12'};sub?:Subscription;constructor(private api:ApiService,private scanner:BarcodeScannerService){}newEmployee(){return{employeeCode:'',name:'',vehicleNumber:'',department:'',team:'',parkingPass:false,defaultEntryTime:'08:00'}}newVisitor(){return{name:'',nic:'',vehicleNumber:'',hostDepartment:''}}newTicket(){return{barcode:'',durationHours:1,status:'AVAILABLE',expiryDate:''}}ngOnInit(){this.sub=this.scanner.scanned$.subscribe(x=>this.route(x));this.refresh();this.loadSettings();}ngOnDestroy(){this.sub?.unsubscribe();this.scanner.disable();}nav(p:Page){this.page=p;this.syncScanner();this.refresh();if(p==='settings')this.loadSettings();window.scrollTo({top:0,behavior:'smooth'});}syncScanner(){const on=this.page==='inventory'||this.page==='reconcile'||(this.page==='issue'&&this.barcodeMode==='SCAN');on?this.scanner.enable():this.scanner.disable();}setBarcodeMode(m:'SCAN'|'MANUAL'){this.barcodeMode=m;this.syncScanner();}refresh(){this.api.dashboard().subscribe({next:x=>this.dashboard=x,error:e=>this.loadFail('Dashboard',e)});this.api.employees().subscribe({next:x=>this.employees=x,error:e=>this.loadFail('Employees',e)});this.api.visitors().subscribe({next:x=>this.visitors=x,error:e=>this.loadFail('Visitors',e)});this.api.tickets().subscribe({next:x=>this.tickets=x,error:e=>this.loadFail('Tickets',e)});this.api.issues().subscribe({next:x=>this.issues=x,error:e=>this.loadFail('Issues',e)});this.api.remaining().subscribe({next:x=>this.remaining=x,error:e=>this.loadFail('Remaining inventory',e)});}route(b:string){if(this.page==='inventory')this.scanInventory(b);if(this.page==='issue'&&this.barcodeMode==='SCAN')this.scanIssue(b);if(this.page==='reconcile')this.scanRecon(b);}saveEmployee(){this.api.saveEmployee(this.employee).subscribe({next:()=>{this.employee=this.newEmployee();this.refresh();this.ok('Employee saved')},error:e=>this.fail(e)});}editEmployee(e:any){this.employee={...e,defaultEntryTime:(e.defaultEntryTime||'08:00').slice(0,5)};window.scrollTo({top:0,behavior:'smooth'});}cancelEmployee(){this.employee=this.newEmployee();}deleteEmployee(e:any){if(confirm(`Delete employee ${e.name}?`))this.api.deleteEmployee(e.id).subscribe({next:()=>{this.refresh();this.ok('Employee deleted')},error:x=>this.fail(x)})}saveVisitor(){this.api.saveVisitor(this.visitor).subscribe({next:()=>{this.visitor=this.newVisitor();this.refresh();this.ok('Visitor saved')},error:e=>this.fail(e)});}editVisitor(v:any){this.visitor={...v};window.scrollTo({top:0,behavior:'smooth'});}cancelVisitor(){this.visitor=this.newVisitor();}deleteVisitor(v:any){if(confirm(`Delete visitor ${v.name}?`))this.api.deleteVisitor(v.id).subscribe({next:()=>{this.refresh();this.ok('Visitor deleted')},error:x=>this.fail(x)})}saveTicket(){const x={...this.ticket,durationHours:Number(this.ticket.durationHours),expiryDate:this.ticket.expiryDate||null};this.api.saveTicket(x).subscribe({next:()=>{this.ticket=this.newTicket();this.refresh();this.ok('Ticket saved')},error:e=>this.fail(e)});}editTicket(t:any){this.ticket={...t,expiryDate:t.expiryDate||''};window.scrollTo({top:0,behavior:'smooth'});}cancelTicket(){this.ticket=this.newTicket();}deleteTicket(t:any){if(confirm(`Delete ticket ${t.barcode}?`))this.api.deleteTicket(t.id).subscribe({next:()=>{this.refresh();this.ok('Ticket deleted')},error:e=>this.fail(e)})}get filteredTickets(){return this.tickets.filter(t=>(!this.ticketSearch||String(t.barcode).toLowerCase().includes(this.ticketSearch.toLowerCase()))&&(!this.hourFilter||String(t.durationHours)===String(this.hourFilter))&&(!this.statusFilter||t.status===this.statusFilter));}scanInventory(b:string){b=b.trim();if(!b)return;this.api.bulk(this.hours,this.expiry,[b]).subscribe({next:()=>{this.inventoryScans.push(b);this.refresh();this.ok(`Added ${b}`)},error:e=>this.fail(e)});}manualInventory(i:HTMLInputElement){this.scanInventory(i.value);i.value='';i.focus();}get people(){let q=this.search.toLowerCase();let s=this.ptype==='EMPLOYEE'?this.employees.map(e=>({id:e.employeeCode,name:e.name,meta:e.vehicleNumber||''})):this.visitors.map(v=>({id:v.visitorCode,name:v.name,meta:[v.nic,v.vehicleNumber].filter(Boolean).join(' ')}));return s.filter((x:any)=>!q||`${x.id} ${x.name} ${x.meta}`.toLowerCase().includes(q));}preview(){this.err='';this.combos=[];this.combo=[];this.required=0;if(!this.person){this.err='Select an employee or visitor first';return}const extraHours=this.extra===''||this.extra==null?null:Number(this.extra);this.api.preview({personType:this.ptype,personReference:this.person,visitDate:this.date,entryTime:this.entry,exitTime:this.exit,extraHours}).subscribe({next:r=>{this.required=r.requiredHours;this.combos=r.combinations||[];this.combo=this.combos[0]||[];this.issueScans=[];if(!this.required)this.ok('No separate parking ticket is required for this period');else if(this.combos.length)this.ok(`${this.required} hour(s) require parking tickets. Select a combination.`)},error:e=>this.fail(e)});}availableFor(h:number){return this.remaining.filter(t=>t.durationHours===h).map(t=>t.barcode);}scanIssue(b:string){b=b.trim();if(!b)return;let t=this.tickets.find(x=>x.barcode.toLowerCase()===b.toLowerCase());if(!t){this.err=`Unknown barcode ${b}`;return}if(t.status!=='AVAILABLE'){this.err='Ticket is not available';return}let need=this.combo.filter(h=>h===t.durationHours).length,have=this.issueScans.map(x=>this.tickets.find(t=>t.barcode===x)?.durationHours).filter(h=>h===t.durationHours).length;if(!need||have>=need){this.err=`${t.durationHours}h ticket not required by selected combination`;return}if(this.issueScans.some(x=>x.toLowerCase()===t.barcode.toLowerCase())){this.err='Barcode already added';return}this.issueScans.push(t.barcode);this.ok(`Validated ${t.barcode}`);}manualIssue(i?:HTMLInputElement){const value=i?i.value:this.manualBarcode;this.scanIssue(value);if(i){i.value='';i.focus()}this.manualBarcode='';}removeIssueBarcode(b:string){this.issueScans=this.issueScans.filter(x=>x!==b);}createIssue(){if(!this.combo.length){this.err='Calculate and select a ticket combination first';return}if(this.issueScans.length!==this.combo.length){this.err='Add all required ticket barcodes first';return}const extraHours=this.extra===''||this.extra==null?null:Number(this.extra);this.api.createIssue({personType:this.ptype,personReference:this.person,visitDate:this.date,entryTime:this.entry,exitTime:this.exit,extraHours,reason:this.reason,selectedCombination:this.combo,barcodes:this.issueScans}).subscribe({next:()=>{this.issueScans=[];this.combos=[];this.combo=[];this.refresh();this.ok('Request added to FIFO queue')},error:e=>this.fail(e)});}complete(i:any){this.api.complete(i.id).subscribe({next:()=>{this.refresh();this.ok('Request completed')},error:e=>this.fail(e)});}deleteIssue(i:any){if(confirm('Delete pending request?'))this.api.deleteIssue(i.id).subscribe({next:()=>{this.refresh();this.ok('Request deleted')},error:e=>this.fail(e)})}scanRecon(b:string){b=b.trim();if(b&&!this.reconScans.some(x=>x.toLowerCase()===b.toLowerCase()))this.reconScans.push(b);}manualRecon(i:HTMLInputElement){this.scanRecon(i.value);i.value='';i.focus();}runRecon(){this.api.reconcile(this.date,this.reconScans).subscribe({next:x=>{this.recon=x;this.ok('Reconciliation saved')},error:e=>this.fail(e)})}clearRecon(){this.reconScans=[];this.recon=null;}loadSettings(){this.api.settings().subscribe({next:x=>this.settings=x,error:e=>this.loadFail('Settings',e)});}saveSettings(){this.api.saveSettings(this.settings).subscribe({next:x=>{this.settings=x;this.ok('Settings saved and calculation rules updated')},error:e=>this.fail(e)});}exportCsv(kind:string){let rows:any[][]=[],name='ptms-report';if(kind==='daily'){rows=[['Request','Person Type','Person','Date','Hours','Reason','Barcodes'],...this.issues.filter(i=>i.status==='COMPLETED'&&(!this.reportDate||i.visitDate===this.reportDate)).map(i=>[i.requestNumber,i.personType,i.personReference,i.visitDate,i.requiredHours,i.reason||'',i.barcodes.join(' | ')])];name='daily-issued'}else if(kind==='inventory'){rows=[['Barcode','Hours','Status','Expiry','Issued To'],...this.tickets.map(t=>[t.barcode,t.durationHours,t.status,t.expiryDate||'',t.issuedToReference||''])];name='inventory-summary'}else if(kind==='remaining'){rows=[['Barcode','Hours','Expiry'],...this.remaining.map(t=>[t.barcode,t.durationHours,t.expiryDate||''])];name='remaining-inventory'}else if(kind==='person'){rows=[['Request','Type','Person','Date','Hours','Reason','Barcodes'],...this.issues.filter(i=>!this.reportPerson||i.personReference===this.reportPerson).map(i=>[i.requestNumber,i.personType,i.personReference,i.visitDate,i.requiredHours,i.reason||'',i.barcodes.join(' | ')])];name='person-history'}else{rows=[['Barcode','Hours','Status','Expiry','Issued At','Issued To'],...this.tickets.map(t=>[t.barcode,t.durationHours,t.status,t.expiryDate||'',t.issuedAt||'',t.issuedToReference||''])];name='barcode-register'}const csv=rows.map(r=>r.map(v=>'"'+String(v??'').replace(/"/g,'""')+'"').join(',')).join('\r\n');const a=document.createElement('a');a.href=URL.createObjectURL(new Blob(['\ufeff'+csv],{type:'text/csv;charset=utf-8'}));a.download=`${name}-${this.reportDate||this.date}.csv`;a.click();URL.revokeObjectURL(a.href);this.ok('Excel-compatible report generated');}bar(v:any):number{const value=Number(v)||0;const values=Object.values(this.dashboard.availableByType||{}).map(x=>Number(x)||0);const max=Math.max(1,...values);return value?Math.max(8,value/max*100):3;}ok(m:string){this.msg=m;this.err='';}loadFail(area:string,e:any){if(!this.err)this.err=`${area}: ${e?.error?.message||e?.message||'Unable to load'}`;}fail(e:any){this.err=e?.error?.message||e?.message||'Unexpected error';this.msg='';}}
+import { Component, Input, OnDestroy, OnInit } from '@angular/core';
+import { CommonModule } from '@angular/common';
+import { FormsModule } from '@angular/forms';
+import { Subscription } from 'rxjs';
+import { ApiService } from './core/api.service';
+import { BarcodeScannerService } from './core/barcode-scanner.service';
+
+type Page = 'dashboard' | 'employees' | 'visitors' | 'inventory' | 'issue' | 'register' | 'remaining' | 'reconcile' | 'reports' | 'settings';
+type UserRole = 'SUPER_USER' | 'ADMIN' | 'SECURITY';
+type NavItem = { p: Page; t: string };
+
+@Component({
+  selector: 'app-root',
+  standalone: true,
+  imports: [CommonModule, FormsModule],
+  templateUrl: './app.component.html'
+})
+export class AppComponent implements OnInit, OnDestroy {
+  @Input() currentUser: any = null;
+
+  page: Page = 'dashboard';
+  dashboard: any = {};
+  employees: any[] = [];
+  visitors: any[] = [];
+  tickets: any[] = [];
+  issues: any[] = [];
+  remaining: any[] = [];
+  msg = '';
+  err = '';
+
+  employee: any = this.newEmployee();
+  visitor: any = this.newVisitor();
+  ticket: any = this.newTicket();
+
+  hours = 1;
+  expiry = '';
+  inventoryScans: string[] = [];
+  ticketSearch = '';
+  hourFilter = '';
+  statusFilter = '';
+
+  ptype = 'EMPLOYEE';
+  search = '';
+  person = '';
+  date = new Date().toISOString().slice(0, 10);
+  entry = '08:00';
+  exit = '17:00';
+  extra: any = '';
+  reason = '';
+  required = 0;
+  combos: number[][] = [];
+  combo: number[] = [];
+  issueScans: string[] = [];
+  barcodeMode: 'SCAN' | 'MANUAL' = 'SCAN';
+  manualBarcode = '';
+
+  registerEdit: any = null;
+
+  reconScans: string[] = [];
+  recon: any;
+
+  reportDate = this.date;
+  reportPerson = '';
+
+  settings: any = {
+    weekdayStart: '06:00',
+    weekdayEnd: '12:00',
+    weekendStart: '06:00',
+    weekendEnd: '12:30',
+    bufferMinutes: 0,
+    ticketTypes: '1,2,4,6,8,12'
+  };
+
+  sub?: Subscription;
+
+  private readonly navItems: NavItem[] = [
+    { p: 'dashboard', t: '▦ Dashboard' },
+    { p: 'employees', t: '♙ Employees' },
+    { p: 'visitors', t: '♧ Visitors' },
+    { p: 'inventory', t: '▤ Ticket Inventory' },
+    { p: 'issue', t: '✈ Issue Tickets' },
+    { p: 'register', t: '▧ Issued Register' },
+    { p: 'remaining', t: '◇ Remaining Inventory' },
+    { p: 'reconcile', t: '⟳ Reconciliation' },
+    { p: 'reports', t: '▣ Reports' },
+    { p: 'settings', t: '⚙ Settings' }
+  ];
+
+  private readonly securityPages = new Set<Page>([
+    'dashboard',
+    'employees',
+    'visitors',
+    'inventory',
+    'issue',
+    'register',
+    'remaining',
+    'reports'
+  ]);
+
+  constructor(private api: ApiService, private scanner: BarcodeScannerService) {}
+
+  get role(): UserRole {
+    return (this.currentUser?.role || 'SECURITY') as UserRole;
+  }
+
+  get visibleNavItems(): NavItem[] {
+    return this.navItems.filter(n => this.canAccess(n.p));
+  }
+
+  get registerIssues(): any[] {
+    return this.issues.filter(i => this.isClosedIssue(i));
+  }
+
+  canAccess(p: Page): boolean {
+    return this.role === 'SECURITY' ? this.securityPages.has(p) : true;
+  }
+
+  canManageEmployees(): boolean {
+    return this.role !== 'SECURITY';
+  }
+
+  canManageVisitors(): boolean {
+    return true;
+  }
+
+  canManageInventory(): boolean {
+    return true;
+  }
+
+  canIssueTickets(): boolean {
+    return true;
+  }
+
+  canGenerateReports(): boolean {
+    return true;
+  }
+
+  canManageSettings(): boolean {
+    return this.role === 'SUPER_USER' || this.role === 'ADMIN';
+  }
+
+  canManageClosedIssues(): boolean {
+    return this.role === 'SUPER_USER' || this.role === 'ADMIN';
+  }
+
+  isClosedIssue(i: any): boolean {
+    return i?.status === 'COMPLETED' || i?.status === 'CANCELLED';
+  }
+
+  newEmployee() {
+    return { employeeCode: '', name: '', vehicleNumber: '', department: '', team: '', parkingPass: false, defaultEntryTime: '08:00' };
+  }
+
+  newVisitor() {
+    return { name: '', nic: '', vehicleNumber: '', hostDepartment: '' };
+  }
+
+  newTicket() {
+    return { barcode: '', durationHours: 1, status: 'AVAILABLE', expiryDate: '' };
+  }
+
+  ngOnInit() {
+    this.sub = this.scanner.scanned$.subscribe(x => this.route(x));
+    this.refresh();
+    if (this.canAccess('settings')) this.loadSettings();
+  }
+
+  ngOnDestroy() {
+    this.sub?.unsubscribe();
+    this.scanner.disable();
+  }
+
+  nav(p: Page) {
+    if (!this.canAccess(p)) {
+      this.page = 'dashboard';
+      this.err = 'Your role does not have access to that function';
+      return;
+    }
+    this.page = p;
+    this.syncScanner();
+    this.refresh();
+    if (p === 'settings') this.loadSettings();
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  }
+
+  syncScanner() {
+    const on = this.page === 'inventory' || this.page === 'reconcile' || (this.page === 'issue' && this.barcodeMode === 'SCAN');
+    on ? this.scanner.enable() : this.scanner.disable();
+  }
+
+  setBarcodeMode(m: 'SCAN' | 'MANUAL') {
+    this.barcodeMode = m;
+    this.syncScanner();
+  }
+
+  refresh() {
+    this.api.dashboard().subscribe({ next: x => this.dashboard = x, error: e => this.loadFail('Dashboard', e) });
+    this.api.employees().subscribe({ next: x => this.employees = x, error: e => this.loadFail('Employees', e) });
+    this.api.visitors().subscribe({ next: x => this.visitors = x, error: e => this.loadFail('Visitors', e) });
+    this.api.tickets().subscribe({ next: x => this.tickets = x, error: e => this.loadFail('Tickets', e) });
+    this.api.issues().subscribe({ next: x => this.issues = x, error: e => this.loadFail('Issues', e) });
+    this.api.remaining().subscribe({ next: x => this.remaining = x, error: e => this.loadFail('Remaining inventory', e) });
+  }
+
+  route(b: string) {
+    if (this.page === 'inventory') this.scanInventory(b);
+    if (this.page === 'issue' && this.barcodeMode === 'SCAN') this.scanIssue(b);
+    if (this.page === 'reconcile') this.scanRecon(b);
+  }
+
+  saveEmployee() {
+    if (!this.canManageEmployees()) { this.err = 'Security users can view employee records only'; return; }
+    this.api.saveEmployee(this.employee).subscribe({
+      next: () => { this.employee = this.newEmployee(); this.refresh(); this.ok('Employee saved'); },
+      error: e => this.fail(e)
+    });
+  }
+
+  editEmployee(e: any) {
+    if (!this.canManageEmployees()) return;
+    this.employee = { ...e, defaultEntryTime: (e.defaultEntryTime || '08:00').slice(0, 5) };
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  }
+
+  cancelEmployee() { this.employee = this.newEmployee(); }
+
+  deleteEmployee(e: any) {
+    if (!this.canManageEmployees()) { this.err = 'Security users can view employee records only'; return; }
+    if (confirm(`Delete employee ${e.name}?`)) this.api.deleteEmployee(e.id).subscribe({
+      next: () => { this.refresh(); this.ok('Employee deleted'); },
+      error: x => this.fail(x)
+    });
+  }
+
+  saveVisitor() {
+    if (!this.canManageVisitors()) return;
+    this.api.saveVisitor(this.visitor).subscribe({
+      next: () => { this.visitor = this.newVisitor(); this.refresh(); this.ok('Visitor saved'); },
+      error: e => this.fail(e)
+    });
+  }
+
+  editVisitor(v: any) {
+    if (!this.canManageVisitors()) return;
+    this.visitor = { ...v };
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  }
+
+  cancelVisitor() { this.visitor = this.newVisitor(); }
+
+  deleteVisitor(v: any) {
+    if (!this.canManageVisitors()) return;
+    if (confirm(`Delete visitor ${v.name}?`)) this.api.deleteVisitor(v.id).subscribe({
+      next: () => { this.refresh(); this.ok('Visitor deleted'); },
+      error: x => this.fail(x)
+    });
+  }
+
+  saveTicket() {
+    if (!this.canManageInventory()) return;
+    const x = { ...this.ticket, durationHours: Number(this.ticket.durationHours), expiryDate: this.ticket.expiryDate || null };
+    this.api.saveTicket(x).subscribe({
+      next: () => { this.ticket = this.newTicket(); this.refresh(); this.ok('Ticket saved'); },
+      error: e => this.fail(e)
+    });
+  }
+
+  editTicket(t: any) {
+    if (!this.canManageInventory()) return;
+    this.ticket = { ...t, expiryDate: t.expiryDate || '' };
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  }
+
+  cancelTicket() { this.ticket = this.newTicket(); }
+
+  deleteTicket(t: any) {
+    if (!this.canManageInventory()) return;
+    if (confirm(`Delete ticket ${t.barcode}?`)) this.api.deleteTicket(t.id).subscribe({
+      next: () => { this.refresh(); this.ok('Ticket deleted'); },
+      error: e => this.fail(e)
+    });
+  }
+
+  get filteredTickets() {
+    return this.tickets.filter(t =>
+      (!this.ticketSearch || String(t.barcode).toLowerCase().includes(this.ticketSearch.toLowerCase())) &&
+      (!this.hourFilter || String(t.durationHours) === String(this.hourFilter)) &&
+      (!this.statusFilter || t.status === this.statusFilter)
+    );
+  }
+
+  scanInventory(b: string) {
+    if (!this.canManageInventory()) return;
+    b = b.trim();
+    if (!b) return;
+    this.api.bulk(this.hours, this.expiry, [b]).subscribe({
+      next: () => { this.inventoryScans.push(b); this.refresh(); this.ok(`Added ${b}`); },
+      error: e => this.fail(e)
+    });
+  }
+
+  manualInventory(i: HTMLInputElement) {
+    this.scanInventory(i.value);
+    i.value = '';
+    i.focus();
+  }
+
+  get people() {
+    const q = this.search.toLowerCase();
+    const s = this.ptype === 'EMPLOYEE'
+      ? this.employees.map(e => ({ id: e.employeeCode, name: e.name, meta: e.vehicleNumber || '' }))
+      : this.visitors.map(v => ({ id: v.visitorCode, name: v.name, meta: [v.nic, v.vehicleNumber].filter(Boolean).join(' ') }));
+    return s.filter((x: any) => !q || `${x.id} ${x.name} ${x.meta}`.toLowerCase().includes(q));
+  }
+
+  preview() {
+    this.err = '';
+    this.combos = [];
+    this.combo = [];
+    this.required = 0;
+    if (!this.person) { this.err = 'Select an employee or visitor first'; return; }
+    const extraHours = this.extra === '' || this.extra == null ? null : Number(this.extra);
+    this.api.preview({ personType: this.ptype, personReference: this.person, visitDate: this.date, entryTime: this.entry, exitTime: this.exit, extraHours }).subscribe({
+      next: r => {
+        this.required = r.requiredHours;
+        this.combos = r.combinations || [];
+        this.combo = this.combos[0] || [];
+        this.issueScans = [];
+        if (!this.required) this.ok('No separate parking ticket is required for this period');
+        else if (this.combos.length) this.ok(`${this.required} hour(s) require parking tickets. Select a combination.`);
+      },
+      error: e => this.fail(e)
+    });
+  }
+
+  availableFor(h: number) {
+    return this.remaining.filter(t => t.durationHours === h).map(t => t.barcode);
+  }
+
+  scanIssue(b: string) {
+    if (!this.canIssueTickets()) return;
+    b = b.trim();
+    if (!b) return;
+    const t = this.tickets.find(x => x.barcode.toLowerCase() === b.toLowerCase());
+    if (!t) { this.err = `Unknown barcode ${b}`; return; }
+    if (t.status !== 'AVAILABLE') { this.err = 'Ticket is not available'; return; }
+    const need = this.combo.filter(h => h === t.durationHours).length;
+    const have = this.issueScans
+      .map(x => this.tickets.find(t => t.barcode === x)?.durationHours)
+      .filter(h => h === t.durationHours).length;
+    if (!need || have >= need) { this.err = `${t.durationHours}h ticket not required by selected combination`; return; }
+    if (this.issueScans.some(x => x.toLowerCase() === t.barcode.toLowerCase())) { this.err = 'Barcode already added'; return; }
+    this.issueScans.push(t.barcode);
+    this.ok(`Validated ${t.barcode}`);
+  }
+
+  manualIssue(i?: HTMLInputElement) {
+    const value = i ? i.value : this.manualBarcode;
+    this.scanIssue(value);
+    if (i) { i.value = ''; i.focus(); }
+    this.manualBarcode = '';
+  }
+
+  removeIssueBarcode(b: string) {
+    this.issueScans = this.issueScans.filter(x => x !== b);
+  }
+
+  createIssue() {
+    if (!this.canIssueTickets()) return;
+    if (!this.combo.length) { this.err = 'Calculate and select a ticket combination first'; return; }
+    if (this.issueScans.length !== this.combo.length) { this.err = 'Add all required ticket barcodes first'; return; }
+    const extraHours = this.extra === '' || this.extra == null ? null : Number(this.extra);
+    this.api.createIssue({
+      personType: this.ptype,
+      personReference: this.person,
+      visitDate: this.date,
+      entryTime: this.entry,
+      exitTime: this.exit,
+      extraHours,
+      reason: this.reason,
+      selectedCombination: this.combo,
+      barcodes: this.issueScans
+    }).subscribe({
+      next: () => { this.issueScans = []; this.combos = []; this.combo = []; this.refresh(); this.ok('Request added to FIFO queue'); },
+      error: e => this.fail(e)
+    });
+  }
+
+  complete(i: any) {
+    if (!this.canIssueTickets()) return;
+    if (confirm(`Complete FIFO request ${i.requestNumber}?`)) this.api.complete(i.id).subscribe({
+      next: () => { this.refresh(); this.ok('Request completed'); },
+      error: e => this.fail(e)
+    });
+  }
+
+  cancelIssue(i: any) {
+    if (!this.canIssueTickets()) return;
+    if (confirm(`Cancel FIFO request ${i.requestNumber}?`)) this.api.cancelIssue(i.id).subscribe({
+      next: () => { this.refresh(); this.ok('Request cancelled'); },
+      error: e => this.fail(e)
+    });
+  }
+
+  deleteIssue(i: any) {
+    const closed = this.isClosedIssue(i);
+    if (closed && !this.canManageClosedIssues()) { this.err = 'Only Super User and Admin can delete issued register records'; return; }
+    const label = closed ? 'issued register FIFO record' : 'pending FIFO request';
+    if (confirm(`Delete ${label} ${i.requestNumber}?`)) this.api.deleteIssue(i.id).subscribe({
+      next: () => { this.refresh(); this.ok('FIFO record deleted'); },
+      error: e => this.fail(e)
+    });
+  }
+
+  startRegisterEdit(i: any) {
+    if (!this.canManageClosedIssues()) { this.err = 'Only Super User and Admin can edit issued register records'; return; }
+    this.registerEdit = {
+      id: i.id,
+      requestNumber: i.requestNumber,
+      status: i.status,
+      visitDate: i.visitDate,
+      entryTime: (i.entryTime || '08:00').slice(0, 5),
+      exitTime: (i.exitTime || '17:00').slice(0, 5),
+      extraHours: i.extraHours || 0,
+      reason: i.reason || ''
+    };
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  }
+
+  saveRegisterEdit() {
+    if (!this.registerEdit || !this.canManageClosedIssues()) return;
+    const payload = {
+      visitDate: this.registerEdit.visitDate,
+      entryTime: this.registerEdit.entryTime,
+      exitTime: this.registerEdit.exitTime,
+      extraHours: Number(this.registerEdit.extraHours || 0),
+      reason: this.registerEdit.reason || ''
+    };
+    this.api.updateIssue(this.registerEdit.id, payload).subscribe({
+      next: () => { this.registerEdit = null; this.refresh(); this.ok('Issued register FIFO record updated'); },
+      error: e => this.fail(e)
+    });
+  }
+
+  clearRegisterEdit() {
+    this.registerEdit = null;
+  }
+
+  scanRecon(b: string) {
+    b = b.trim();
+    if (b && !this.reconScans.some(x => x.toLowerCase() === b.toLowerCase())) this.reconScans.push(b);
+  }
+
+  manualRecon(i: HTMLInputElement) {
+    this.scanRecon(i.value);
+    i.value = '';
+    i.focus();
+  }
+
+  runRecon() {
+    this.api.reconcile(this.date, this.reconScans).subscribe({
+      next: x => { this.recon = x; this.ok('Reconciliation saved'); },
+      error: e => this.fail(e)
+    });
+  }
+
+  clearRecon() { this.reconScans = []; this.recon = null; }
+
+  loadSettings() {
+    if (!this.canAccess('settings')) return;
+    this.api.settings().subscribe({ next: x => this.settings = x, error: e => this.loadFail('Settings', e) });
+  }
+
+  saveSettings() {
+    if (!this.canManageSettings()) { this.err = 'Only Admin and Super User can change settings'; return; }
+    this.api.saveSettings(this.settings).subscribe({
+      next: x => { this.settings = x; this.ok('Settings saved and calculation rules updated'); },
+      error: e => this.fail(e)
+    });
+  }
+
+  exportCsv(kind: string) {
+    if (!this.canGenerateReports()) { this.err = 'Reports are not available for your role'; return; }
+    let rows: any[][] = [], name = 'parkingtiq-report';
+    if (kind === 'daily') {
+      rows = [['Request', 'Person Type', 'Person', 'Date', 'Hours', 'Reason', 'Barcodes'], ...this.issues.filter(i => i.status === 'COMPLETED' && (!this.reportDate || i.visitDate === this.reportDate)).map(i => [i.requestNumber, i.personType, i.personReference, i.visitDate, i.requiredHours, i.reason || '', i.barcodes.join(' | ')])];
+      name = 'daily-issued';
+    } else if (kind === 'inventory') {
+      rows = [['Barcode', 'Hours', 'Status', 'Expiry', 'Issued To'], ...this.tickets.map(t => [t.barcode, t.durationHours, t.status, t.expiryDate || '', t.issuedToReference || ''])];
+      name = 'inventory-summary';
+    } else if (kind === 'remaining') {
+      rows = [['Barcode', 'Hours', 'Expiry'], ...this.remaining.map(t => [t.barcode, t.durationHours, t.expiryDate || ''])];
+      name = 'remaining-inventory';
+    } else if (kind === 'person') {
+      rows = [['Request', 'Type', 'Person', 'Date', 'Hours', 'Reason', 'Barcodes'], ...this.issues.filter(i => !this.reportPerson || i.personReference === this.reportPerson).map(i => [i.requestNumber, i.personType, i.personReference, i.visitDate, i.requiredHours, i.reason || '', i.barcodes.join(' | ')])];
+      name = 'person-history';
+    } else {
+      rows = [['Barcode', 'Hours', 'Status', 'Expiry', 'Issued At', 'Issued To'], ...this.tickets.map(t => [t.barcode, t.durationHours, t.status, t.expiryDate || '', t.issuedAt || '', t.issuedToReference || ''])];
+      name = 'barcode-register';
+    }
+    const csv = rows.map(r => r.map(v => '"' + String(v ?? '').replace(/"/g, '""') + '"').join(',')).join('\r\n');
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(new Blob(['\ufeff' + csv], { type: 'text/csv;charset=utf-8' }));
+    a.download = `${name}-${this.reportDate || this.date}.csv`;
+    a.click();
+    URL.revokeObjectURL(a.href);
+    this.ok('Excel-compatible report generated');
+  }
+
+  bar(v: any): number {
+    const value = Number(v) || 0;
+    const values = Object.values(this.dashboard.availableByType || {}).map(x => Number(x) || 0);
+    const max = Math.max(1, ...values);
+    return value ? Math.max(8, value / max * 100) : 3;
+  }
+
+  ok(m: string) { this.msg = m; this.err = ''; }
+
+  loadFail(area: string, e: any) {
+    if (!this.err) this.err = `${area}: ${e?.error?.message || e?.message || 'Unable to load'}`;
+  }
+
+  fail(e: any) {
+    this.err = e?.error?.message || e?.message || 'Unexpected error';
+    this.msg = '';
+  }
+}
