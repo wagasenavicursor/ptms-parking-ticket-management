@@ -28,7 +28,7 @@
     <div class="login-card">
       <div class="mobile-logo"><img src="/assets/parkingtiq-logo.svg" alt="ParkingTiq"></div>
       <span class="welcome-label">WELCOME BACK</span>
-      <h2>{{forgot ? 'Reset your password' : 'Sign in to ParkingTiq'}}</h2>
+      <h2 *ngIf="forgot">Reset your password</h2><h2 *ngIf="!forgot">Sign in to <span class="parkingtiq-wordmark"><span class="parkingtiq-main">Parking</span><span class="parkingtiq-accent">Tiq</span></span></h2>
       <p>{{forgot ? 'Enter your registered email address and we will prepare password reset instructions.' : 'Enter your account details to continue to the parking management workspace.'}}</p>
       <div class="alert" *ngIf="loginError">{{loginError}}</div>
       <div class="success" *ngIf="message">{{message}}</div>
