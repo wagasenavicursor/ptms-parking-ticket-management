@@ -8,63 +8,101 @@
           <div>
             <span class="home-kicker">ParkingTiq</span>
             <h1>Welcome</h1>
-            <p>Quick access to the parking tasks used most often.</p>
+            <p>Start the most common parking tasks or jump to operational information.</p>
           </div>
         </div>
 
-        <div class="home-card-grid">
-          <button class="home-card primary-home" *ngIf="canAccess('issue')" (click)="nav('issue')">
-            <span class="home-card-icon">✈</span>
-            <span class="home-card-copy">
-              <b>Issue Parking Ticket</b>
-              <small>Create a parking request and validate physical ticket barcodes.</small>
+        <div class="home-card-grid home-card-grid-rich">
+          <button class="home-card primary-home home-card-hero" *ngIf="canAccess('issue')" (click)="nav('issue')">
+            <span class="home-hero-top">
+              <span class="home-card-icon hero-icon">✈</span>
+              <span class="home-hero-badge">{{pendingIssues.length}} pending request{{pendingIssues.length===1 ? '' : 's'}}</span>
             </span>
-            <span class="home-card-meta">{{pendingIssues.length}} pending</span>
+            <span class="home-card-copy hero-copy">
+              <span class="home-card-eyebrow">MOST USED</span>
+              <b>Issue Parking Ticket</b>
+              <small>Calculate required parking time, choose the correct ticket combination, scan or select physical barcodes, and add the request to the live FIFO guard queue.</small>
+            </span>
+            <span class="home-hero-steps">
+              <span><i>1</i> Select employee / visitor</span>
+              <span><i>2</i> Calculate ticket requirement</span>
+              <span><i>3</i> Validate physical tickets</span>
+            </span>
+            <span class="home-hero-footer">
+              <span><strong>{{dashboard.availableTickets||0}}</strong><small>tickets available</small></span>
+              <span><strong>{{pendingIssues.length}}</strong><small>waiting in queue</small></span>
+              <span class="home-open-action">Open Issue Tickets →</span>
+            </span>
           </button>
 
-          <button class="home-card" *ngIf="canAccess('dashboard')" (click)="nav('dashboard')">
+          <button class="home-card home-card-wide" *ngIf="canAccess('dashboard')" (click)="nav('dashboard')">
             <span class="home-card-icon">▦</span>
             <span class="home-card-copy">
+              <span class="home-card-eyebrow">OPERATIONS</span>
               <b>Dashboard</b>
-              <small>See ticket, queue and operational status at a glance.</small>
+              <small>See queue status, ticket availability and operational totals in one place.</small>
             </span>
-            <span class="home-card-meta">Overview</span>
+            <span class="home-mini-stats">
+              <span><strong>{{pendingIssues.length}}</strong><small>Pending</small></span>
+              <span><strong>{{completedIssues.length}}</strong><small>Completed</small></span>
+              <span><strong>{{dashboard.availableTickets||0}}</strong><small>Available</small></span>
+            </span>
           </button>
 
-          <button class="home-card" *ngIf="canAccess('inventory')" (click)="nav('inventory')">
+          <button class="home-card home-card-medium inventory-home-card" *ngIf="canAccess('inventory')" (click)="nav('inventory')">
             <span class="home-card-icon">▤</span>
             <span class="home-card-copy">
+              <span class="home-card-eyebrow">TICKETS</span>
               <b>Ticket Inventory</b>
-              <small>Add, scan and manage physical parking tickets.</small>
+              <small>Add, scan and maintain physical parking tickets and expiry information.</small>
             </span>
-            <span class="home-card-meta">{{dashboard.availableTickets||0}} available</span>
+            <span class="home-card-meta"><strong>{{dashboard.availableTickets||0}}</strong> available physical tickets</span>
           </button>
 
-          <button class="home-card" *ngIf="canAccess('register')" (click)="nav('register')">
+          <button class="home-card home-card-medium" *ngIf="canAccess('register')" (click)="nav('register')">
             <span class="home-card-icon">▧</span>
             <span class="home-card-copy">
+              <span class="home-card-eyebrow">HISTORY</span>
               <b>Issued Register</b>
-              <small>Review completed and cancelled parking requests.</small>
+              <small>Review completed and cancelled FIFO requests, issued barcodes and previous activity.</small>
             </span>
-            <span class="home-card-meta">{{registerIssues.length}} records</span>
+            <span class="home-card-meta"><strong>{{registerIssues.length}}</strong> register records</span>
           </button>
 
-          <button class="home-card" *ngIf="canAccess('employees')" (click)="nav('employees')">
-            <span class="home-card-icon">♙</span>
+          <button class="home-card home-card-small" *ngIf="canAccess('employees')" (click)="nav('employees')">
+            <span class="home-card-icon compact-icon">♙</span>
             <span class="home-card-copy">
               <b>Employees</b>
-              <small>Find employee parking and vehicle information.</small>
+              <small>Parking pass, department, team and vehicle details.</small>
             </span>
             <span class="home-card-meta">{{employees.length}} employees</span>
           </button>
 
-          <button class="home-card" *ngIf="canAccess('visitors')" (click)="nav('visitors')">
-            <span class="home-card-icon">♧</span>
+          <button class="home-card home-card-small" *ngIf="canAccess('visitors')" (click)="nav('visitors')">
+            <span class="home-card-icon compact-icon">♧</span>
             <span class="home-card-copy">
               <b>Visitors</b>
-              <small>Manage visitor and host department information.</small>
+              <small>Visitor, vehicle and host department information.</small>
             </span>
             <span class="home-card-meta">{{visitors.length}} visitors</span>
+          </button>
+
+          <button class="home-card home-card-small" *ngIf="canAccess('remaining')" (click)="nav('remaining')">
+            <span class="home-card-icon compact-icon">◇</span>
+            <span class="home-card-copy">
+              <b>Remaining Inventory</b>
+              <small>Quickly check physical tickets still available to issue.</small>
+            </span>
+            <span class="home-card-meta">{{remaining.length}} available</span>
+          </button>
+
+          <button class="home-card home-card-small" *ngIf="canAccess('reports')" (click)="nav('reports')">
+            <span class="home-card-icon compact-icon">▣</span>
+            <span class="home-card-copy">
+              <b>Reports</b>
+              <small>Export ticket, inventory and person-history reports.</small>
+            </span>
+            <span class="home-card-meta">Reports & exports</span>
           </button>
         </div>
       </section>
