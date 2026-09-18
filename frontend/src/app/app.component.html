@@ -3,7 +3,65 @@
   <main class="main">
     <div *ngIf="msg" class="msg">{{msg}}</div><div *ngIf="err" class="msg err">{{err}}</div>
     <ng-container [ngSwitch]="page">
-      <section *ngSwitchCase="'dashboard'"><div class="pagehead"><div><h1>Dashboard</h1><div class="muted">ParkingTiq overview</div></div><button class="btn" *ngIf="canAccess('issue')" (click)="nav('issue')">＋ Issue Parking Ticket</button></div><div class="grid cards"><button class="card dashlink" (click)="nav('inventory')"><span class="muted">Total Tickets</span><div class="metric">{{tickets.length}}</div><small>Ticket Inventory →</small></button><button class="card dashlink" (click)="nav('remaining')"><span class="muted">Available</span><div class="metric">{{dashboard.availableTickets||0}}</div><small>Remaining Inventory →</small></button><button class="card dashlink" (click)="nav('register')"><span class="muted">Issued</span><div class="metric">{{dashboard.issuedTickets||0}}</div><small>Issued Register →</small></button><button class="card dashlink" (click)="nav('issue')"><span class="muted">Pending</span><div class="metric">{{dashboard.pendingRequests||0}}</div><small>FIFO Queue →</small></button></div><div class="card"><h3>Available Inventory by Ticket Type</h3><div class="chart"><div class="barwrap" *ngFor="let kv of dashboard.availableByType | keyvalue"><div class="bar" [style.height.%]="bar(kv.value)"><b>{{kv.value}}</b><span>{{kv.key}}h</span></div></div></div></div></section>
+      <section *ngSwitchCase="'dashboard'" class="dashboard-page">
+        <div class="pagehead dashboard-head">
+          <div><h1>Dashboard</h1><div class="muted">ParkingTiq operational overview and quick navigation</div></div>
+          <div class="dashboard-head-actions"><button class="btn secondary" (click)="refresh()">↻ Refresh</button><button class="btn" *ngIf="canAccess('issue')" (click)="nav('issue')">＋ Issue Parking Ticket</button></div>
+        </div>
+
+        <div class="grid cards dashboard-kpis">
+          <button class="card dashlink" (click)="nav('inventory')"><span class="dash-icon">▤</span><span class="muted">Total Tickets</span><div class="metric">{{tickets.length}}</div><small>Open Ticket Inventory →</small></button>
+          <button class="card dashlink" (click)="nav('remaining')"><span class="dash-icon">◇</span><span class="muted">Available Tickets</span><div class="metric">{{dashboard.availableTickets||0}}</div><small>View Remaining Inventory →</small></button>
+          <button class="card dashlink" (click)="nav('register')"><span class="dash-icon">▧</span><span class="muted">Issued Tickets</span><div class="metric">{{dashboard.issuedTickets||0}}</div><small>Open Issued Register →</small></button>
+          <button class="card dashlink attention" (click)="nav('issue')"><span class="dash-icon">✈</span><span class="muted">Pending Requests</span><div class="metric">{{dashboard.pendingRequests||0}}</div><small>Open FIFO Queue →</small></button>
+        </div>
+
+        <div class="dashboard-section-title"><div><h3>Quick Access</h3><span class="muted">Go directly to the most-used ParkingTiq functions</span></div></div>
+        <div class="dashboard-shortcuts">
+          <button class="shortcut-card" *ngIf="canAccess('employees')" (click)="nav('employees')"><span class="shortcut-icon">♙</span><span><b>Employees</b><small>{{employees.length}} records</small></span><i>→</i></button>
+          <button class="shortcut-card" *ngIf="canAccess('visitors')" (click)="nav('visitors')"><span class="shortcut-icon">♧</span><span><b>Visitors</b><small>{{visitors.length}} records</small></span><i>→</i></button>
+          <button class="shortcut-card" *ngIf="canAccess('inventory')" (click)="nav('inventory')"><span class="shortcut-icon">▤</span><span><b>Ticket Inventory</b><small>Add, scan and manage tickets</small></span><i>→</i></button>
+          <button class="shortcut-card featured" *ngIf="canAccess('issue')" (click)="nav('issue')"><span class="shortcut-icon">✈</span><span><b>Issue Tickets</b><small>Create and process FIFO requests</small></span><i>→</i></button>
+          <button class="shortcut-card" *ngIf="canAccess('register')" (click)="nav('register')"><span class="shortcut-icon">▧</span><span><b>Issued Register</b><small>{{registerIssues.length}} closed records</small></span><i>→</i></button>
+          <button class="shortcut-card" *ngIf="canAccess('remaining')" (click)="nav('remaining')"><span class="shortcut-icon">◇</span><span><b>Remaining Inventory</b><small>{{remaining.length}} tickets available</small></span><i>→</i></button>
+          <button class="shortcut-card" *ngIf="canAccess('reports')" (click)="nav('reports')"><span class="shortcut-icon">▣</span><span><b>Reports</b><small>Export operational reports</small></span><i>→</i></button>
+          <button class="shortcut-card" *ngIf="canAccess('reconcile')" (click)="nav('reconcile')"><span class="shortcut-icon">⟳</span><span><b>Reconciliation</b><small>End-of-day ticket validation</small></span><i>→</i></button>
+          <button class="shortcut-card" *ngIf="canAccess('departments')" (click)="nav('departments')"><span class="shortcut-icon">▥</span><span><b>Departments</b><small>{{departments.length}} configured</small></span><i>→</i></button>
+          <button class="shortcut-card" *ngIf="canAccess('teams')" (click)="nav('teams')"><span class="shortcut-icon">♢</span><span><b>Teams</b><small>{{teams.length}} configured</small></span><i>→</i></button>
+          <button class="shortcut-card" *ngIf="canAccess('settings')" (click)="nav('settings')"><span class="shortcut-icon">⚙</span><span><b>Settings</b><small>Parking rules and configuration</small></span><i>→</i></button>
+        </div>
+
+        <div class="dashboard-columns">
+          <div class="card dashboard-panel">
+            <div class="panel-head"><div><h3>FIFO Status</h3><span class="muted">Current request workload</span></div><button class="text-action" (click)="nav('issue')">View queue →</button></div>
+            <div class="status-list">
+              <button (click)="nav('issue')"><span><i class="status-dot pending"></i>Pending</span><b>{{pendingIssues.length}}</b></button>
+              <button (click)="nav('register')"><span><i class="status-dot complete"></i>Completed</span><b>{{completedIssues.length}}</b></button>
+              <button (click)="nav('register')"><span><i class="status-dot cancelled"></i>Cancelled</span><b>{{cancelledIssues.length}}</b></button>
+            </div>
+            <div class="recent-queue" *ngIf="pendingIssues.length">
+              <small class="section-caption">NEXT IN QUEUE</small>
+              <button *ngFor="let i of pendingIssues | slice:0:3" (click)="nav('issue')"><span><b>{{i.requestNumber}}</b><small>{{i.personReference}}</small></span><strong>{{i.requiredHours}}h</strong></button>
+            </div>
+            <div class="empty-dashboard" *ngIf="!pendingIssues.length">No pending FIFO requests.</div>
+          </div>
+
+          <div class="card dashboard-panel">
+            <div class="panel-head"><div><h3>People & Organisation</h3><span class="muted">Reference data at a glance</span></div></div>
+            <div class="mini-metrics">
+              <button (click)="nav('employees')" *ngIf="canAccess('employees')"><span>Employees</span><b>{{employees.length}}</b></button>
+              <button (click)="nav('visitors')" *ngIf="canAccess('visitors')"><span>Visitors</span><b>{{visitors.length}}</b></button>
+              <button (click)="nav('departments')" *ngIf="canAccess('departments')"><span>Departments</span><b>{{activeDepartments.length}}</b></button>
+              <button (click)="nav('teams')" *ngIf="canAccess('teams')"><span>Teams</span><b>{{activeTeams.length}}</b></button>
+            </div>
+          </div>
+        </div>
+
+        <div class="card inventory-overview">
+          <div class="panel-head"><div><h3>Available Inventory by Ticket Type</h3><span class="muted">Current physical ticket availability</span></div><button class="text-action" (click)="nav('remaining')">View inventory →</button></div>
+          <div class="chart"><div class="barwrap" *ngFor="let kv of dashboard.availableByType | keyvalue"><div class="bar" [style.height.%]="bar(kv.value)"><b>{{kv.value}}</b><span>{{kv.key}}h</span></div></div></div>
+        </div>
+      </section>
 
       <section *ngSwitchCase="'employees'"><div class="pagehead"><div><h1>Employees</h1><div class="muted">Select department and team from configured reference lists · Double-click a row to edit</div></div></div><div class="msg info" *ngIf="!canManageEmployees()">Security users can view employee records only. Add, edit and delete actions are disabled.</div><div class="card" *ngIf="canManageEmployees()" [class.edit-mode]="!!employee.id"><h3>{{employee.id ? 'Edit Employee' : 'Add Employee'}}</h3><div class="form"><div><label>Employee ID</label><input [(ngModel)]="employee.employeeCode"></div><div><label>Full Name</label><input [(ngModel)]="employee.name"></div><div><label>Vehicle</label><input [(ngModel)]="employee.vehicleNumber"></div><div><label>Department</label><select [(ngModel)]="employee.department"><option value="">Select department</option><option *ngFor="let d of activeDepartments" [value]="d.name">{{d.name}}</option></select></div><div><label>Team</label><select [(ngModel)]="employee.team"><option value="">Select team</option><option *ngFor="let t of activeTeams" [value]="t.name">{{t.name}} <span *ngIf="t.department">- {{t.department}}</span></option></select></div><div><label>Default Entry</label><input type="time" [(ngModel)]="employee.defaultEntryTime"></div><label class="full"><input style="width:auto" type="checkbox" [(ngModel)]="employee.parkingPass"> Existing Parking Pass</label></div><button class="btn" (click)="saveEmployee()">Save</button> <button class="btn secondary" (click)="cancelEmployee()">Cancel / New</button></div><div class="table tall-table" style="max-height:420px;overflow:auto"><table><tr><th>ID</th><th>Name</th><th>Vehicle</th><th>Team</th><th>Department</th><th>Pass</th><th *ngIf="canManageEmployees()"></th></tr><tr [class.clickrow]="canManageEmployees()" *ngFor="let e of employees" (dblclick)="canManageEmployees() && editEmployee(e)"><td>{{e.employeeCode}}</td><td><b>{{e.name}}</b></td><td>{{e.vehicleNumber}}</td><td>{{e.team}}</td><td>{{e.department}}</td><td>{{e.parkingPass ? 'Yes' : 'No'}}</td><td *ngIf="canManageEmployees()"><button class="btn sm danger" (click)="$event.stopPropagation();deleteEmployee(e)">Delete</button></td></tr></table></div></section>
 
