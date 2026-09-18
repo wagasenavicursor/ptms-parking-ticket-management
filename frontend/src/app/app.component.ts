@@ -24,7 +24,10 @@ export class AppComponent implements OnInit, OnDestroy {
   private readonly securityPages=new Set<Page>(['dashboard','employees','visitors','inventory','issue','register','remaining','reports']);
   constructor(private api:ApiService,private scanner:BarcodeScannerService){}
   get role():UserRole{return (this.currentUser?.role||'SECURITY') as UserRole;} get visibleNavItems(){return this.navItems.filter(n=>this.canAccess(n.p));} get registerIssues(){return this.issues.filter(i=>this.isClosedIssue(i));}
-  get activeDepartments(){return this.departments.filter(d=>d.enabled!==false);} get activeTeams(){return this.teams.filter(t=>t.enabled!==false);} 
+  get activeDepartments(){return this.departments.filter(d=>d.enabled!==false);} get activeTeams(){return this.teams.filter(t=>t.enabled!==false);}
+  get pendingIssues(){return this.issues.filter(i=>i.status==='PENDING');}
+  get completedIssues(){return this.issues.filter(i=>i.status==='COMPLETED');}
+  get cancelledIssues(){return this.issues.filter(i=>i.status==='CANCELLED');} 
   canAccess(p:Page){return this.role==='SECURITY'?this.securityPages.has(p):true;} canManageEmployees(){return this.role!=='SECURITY';} canManageVisitors(){return true;} canManageInventory(){return true;} canIssueTickets(){return true;} canGenerateReports(){return true;} canManageSettings(){return this.role==='SUPER_USER'||this.role==='ADMIN';} canManageClosedIssues(){return this.role==='SUPER_USER'||this.role==='ADMIN';} canManageReferenceData(){return this.role==='SUPER_USER'||this.role==='ADMIN';}
   isClosedIssue(i:any){return i?.status==='COMPLETED'||i?.status==='CANCELLED';}
   newEmployee(){return{employeeCode:'',name:'',vehicleNumber:'',department:'',team:'',parkingPass:false,defaultEntryTime:'08:00'}} newVisitor(){return{name:'',nic:'',vehicleNumber:'',hostDepartment:''}} newTicket(){return{barcode:'',durationHours:1,status:'AVAILABLE',expiryDate:''}} newDepartment(){return{name:'',description:'',enabled:true}} newTeam(){return{name:'',department:'',description:'',enabled:true}}
