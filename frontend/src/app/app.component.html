@@ -1,6 +1,10 @@
 <div class="layout">
   <aside class="side"><button class="brand brand-home" type="button" title="Go to Home" aria-label="Go to ParkingTiq Home" (click)="nav('home')"><img src="/assets/parkingtiq-logo.svg" alt="ParkingTiq"></button><div class="nav"><button *ngFor="let n of visibleNavItems" [class.active]="page===n.p" (click)="nav(n.p)">{{n.t}}</button></div></aside>
   <main class="main">
+    <div class="page-navigation-bar" *ngIf="page!=='home'">
+      <button type="button" class="app-back-button" (click)="goBack()" title="Go to previous page (Alt + Left Arrow or Esc)">← <span>Back</span></button>
+      <span class="navigation-shortcut-hint"><kbd>Alt</kbd> + <kbd>←</kbd> <em>or</em> <kbd>Esc</kbd></span>
+    </div>
     <div *ngIf="msg" class="msg">{{msg}}</div><div *ngIf="err" class="msg err">{{err}}</div>
     <ng-container [ngSwitch]="page">
       <section *ngSwitchCase="'home'" class="home-page">
