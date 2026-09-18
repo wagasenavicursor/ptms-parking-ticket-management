@@ -9,6 +9,14 @@ export class ApiService {
 
   dashboard() { return this.h.get<any>(`${this.a}/dashboard`); }
 
+  departments() { return this.h.get<any[]>(`${this.a}/departments`); }
+  saveDepartment(x: any) { return x.id ? this.h.put(`${this.a}/departments/${x.id}`, x) : this.h.post(`${this.a}/departments`, x); }
+  deleteDepartment(id: number) { return this.h.delete(`${this.a}/departments/${id}`); }
+
+  teams() { return this.h.get<any[]>(`${this.a}/teams`); }
+  saveTeam(x: any) { return x.id ? this.h.put(`${this.a}/teams/${x.id}`, x) : this.h.post(`${this.a}/teams`, x); }
+  deleteTeam(id: number) { return this.h.delete(`${this.a}/teams/${id}`); }
+
   employees() { return this.h.get<any[]>(`${this.a}/employees`); }
   saveEmployee(x: any) { return x.id ? this.h.put(`${this.a}/employees/${x.id}`, x) : this.h.post(`${this.a}/employees`, x); }
   deleteEmployee(id: number) { return this.h.delete(`${this.a}/employees/${id}`); }
