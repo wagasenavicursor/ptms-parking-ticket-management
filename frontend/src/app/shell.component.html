@@ -57,7 +57,7 @@
 
 <div *ngIf="user">
   <header class="accountbar">
-    <div class="headerbrand"><img class="header-logo" src="/assets/parkingtiq-logo.svg" alt="ParkingTiq"><span class="role">{{user.role.replace('_',' ')}}</span></div>
+    <div class="headerbrand"><span class="role">{{user.role.replace('_',' ')}}</span></div>
     <div class="topsearch">⌕ <span>Search employee, vehicle or ticket...</span></div>
     <div class="account-actions"><img *ngIf="user.profileImage" class="header-avatar" [src]="user.profileImage" alt=""><span *ngIf="!user.profileImage" class="header-avatar-fallback">👤</span><span>{{user.fullName}}</span><button *ngIf="user.role==='SUPER_USER'" (click)="openUsers()">Users</button><button (click)="logout()">Sign out</button></div>
   </header>
