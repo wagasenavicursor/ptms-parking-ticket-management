@@ -21,6 +21,7 @@ export class AppComponent implements OnInit, OnDestroy {
   settings:any={weekdayStart:'06:00',weekdayEnd:'12:00',weekendStart:'06:00',weekendEnd:'12:30',bufferMinutes:0,ticketTypes:'1,2,4,6,8,12'};
   auditLogs:any[]=[]; auditUser=''; auditAction=''; auditEntity=''; auditFrom=''; auditTo=''; auditExpandedId:any=null;
   confirmDialog:any=null; private confirmResolver:((value:boolean)=>void)|null=null;
+  readonly lowTicketThreshold=5; readonly criticalTicketThreshold=2; readonly staleIssueMinutes=120;
   sub?:Subscription;
   private readonly navItems:NavItem[]=[{p:'home',t:'⌂ Home'},{p:'dashboard',t:'▦ Dashboard'},{p:'employees',t:'♙ Employees'},{p:'visitors',t:'♧ Visitors'},{p:'inventory',t:'▤ Ticket Inventory'},{p:'issue',t:'✈ Issue Tickets'},{p:'register',t:'▧ Issued Register'},{p:'remaining',t:'◇ Remaining Inventory'},{p:'reports',t:'▣ Reports'},{p:'settings',t:'⚙ Settings'}];
   private readonly securityPages=new Set<Page>(['home','dashboard','employees','visitors','inventory','issue','register','remaining','reports']);
@@ -30,6 +31,19 @@ export class AppComponent implements OnInit, OnDestroy {
   get pendingIssues(){return this.issues.filter(i=>i.status==='PENDING');}
   get completedIssues(){return this.issues.filter(i=>i.status==='COMPLETED');}
   get cancelledIssues(){return this.issues.filter(i=>i.status==='CANCELLED');} 
+  get ticketDurationTypes(){const configured=String(this.settings?.ticketTypes||'1,2,4,6,8,12').split(',').map((x:string)=>Number(x.trim())).filter((x:number)=>Number.isFinite(x)&&x>0);return configured.length?[...new Set(configured)].sort((a:number,b:number)=>a-b):[1,2,4,6,8,12];}
+  availableCountFor(h:number){return this.remaining.filter(t=>Number(t.durationHours)===Number(h)).length;}
+  inventoryHealth(count:number){return count<=this.criticalTicketThreshold?'critical':count<=this.lowTicketThreshold?'low':'good';}
+  inventoryHealthLabel(count:number){return count<=this.criticalTicketThreshold?'Critical':count<=this.lowTicketThreshold?'Low':'Healthy';}
+  get inventoryBuckets(){const values=this.ticketDurationTypes.map(h=>({hours:h,count:this.availableCountFor(h)}));const max=Math.max(1,...values.map(x=>x.count));return values.map(x=>({...x,status:this.inventoryHealth(x.count),height:x.count?Math.max(12,Math.round(x.count/max*100)):5}));}
+  get lowInventoryBuckets(){return this.inventoryBuckets.filter(x=>x.status!=='good');}
+  get overallInventoryHealth(){return this.inventoryBuckets.some(x=>x.status==='critical')?'critical':this.inventoryBuckets.some(x=>x.status==='low')?'low':'good';}
+  pendingAgeMinutes(i:any){if(!i?.createdAt)return 0;const created=new Date(i.createdAt).getTime();return Number.isFinite(created)?Math.max(0,Math.floor((Date.now()-created)/60000)):0;}
+  pendingAgeText(i:any){const mins=this.pendingAgeMinutes(i);if(mins<60)return `${mins}m`;const hours=Math.floor(mins/60),rem=mins%60;return rem?`${hours}h ${rem}m`:`${hours}h`;}
+  get stalePendingIssues(){return this.pendingIssues.filter(i=>this.pendingAgeMinutes(i)>=this.staleIssueMinutes);}
+  get canSeeAdminAlerts(){return this.role==='ADMIN'||this.role==='SUPER_USER';}
+  get adminAlertCount(){return this.canSeeAdminAlerts?this.lowInventoryBuckets.length+this.stalePendingIssues.length:0;}
+
   canAccess(p:Page){if(p==='audit')return this.role==='SUPER_USER';return this.role==='SECURITY'?this.securityPages.has(p):true;} canManageEmployees(){return this.role!=='SECURITY';} canManageVisitors(){return true;} canManageInventory(){return true;} canIssueTickets(){return true;} canGenerateReports(){return true;} canManageSettings(){return this.role==='SUPER_USER'||this.role==='ADMIN';} canManageClosedIssues(){return this.role==='SUPER_USER'||this.role==='ADMIN';} canManageReferenceData(){return this.role==='SUPER_USER'||this.role==='ADMIN';}
   isClosedIssue(i:any){return i?.status==='COMPLETED'||i?.status==='CANCELLED';}
   newEmployee(){return{employeeCode:'',name:'',vehicleNumber:'',department:'',team:'',parkingPass:false,defaultEntryTime:'08:00'}} newVisitor(){return{name:'',nic:'',vehicleNumber:'',hostDepartment:''}} newTicket(){return{barcode:'',durationHours:1,status:'AVAILABLE',expiryDate:''}} newDepartment(){return{name:'',description:'',enabled:true}} newTeam(){return{name:'',department:'',description:'',enabled:true}}
