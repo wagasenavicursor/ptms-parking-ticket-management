@@ -13,7 +13,7 @@
         </div>
 
         <div class="home-card-grid home-card-grid-rich">
-          <div class="home-card primary-home home-card-hero" *ngIf="canAccess('issue')">
+          <div class="home-card primary-home home-card-hero" *ngIf="canAccess('issue')" role="button" tabindex="0" (click)="nav('issue')" (keydown.enter)="nav('issue')" (keydown.space)="$event.preventDefault();nav('issue')" aria-label="Open Issue Parking Tickets">
             <span class="home-hero-top">
               <span class="home-card-icon hero-icon">✈</span>
               <span class="home-hero-badge">{{pendingIssues.length}} pending request{{pendingIssues.length===1 ? '' : 's'}}</span>
@@ -31,7 +31,6 @@
             <span class="home-hero-footer">
               <span><strong>{{dashboard.availableTickets||0}}</strong><small>tickets available</small></span>
               <span><strong>{{pendingIssues.length}}</strong><small>waiting in queue</small></span>
-              <button type="button" class="text-action home-open-action" (click)="nav('issue')">Open Issue Tickets →</button>
             </span>
 
             <div class="home-fifo">
@@ -40,12 +39,11 @@
                   <span class="home-card-eyebrow">LIVE QUEUE</span>
                   <h3>Live FIFO Guard Queue</h3>
                 </div>
-                <button type="button" class="text-action" (click)="nav('issue')">View full queue →</button>
               </div>
               <div class="home-fifo-table" *ngIf="pendingIssues.length; else emptyHomeQueue">
                 <table>
                   <tr><th>Request</th><th>Person</th><th>Hours</th><th>Barcodes</th><th>Status</th></tr>
-                  <tr *ngFor="let i of pendingIssues" class="clickrow" (dblclick)="openQueueRecordInRegister(i)" title="Double-click to open in Issued Tickets Register edit mode">
+                  <tr *ngFor="let i of pendingIssues">
                     <td><b>{{i.requestNumber}}</b></td>
                     <td>{{i.personReference}}</td>
                     <td>{{i.requiredHours}}h</td>
@@ -69,6 +67,15 @@
               <span><strong>{{pendingIssues.length}}</strong><small>Pending</small></span>
               <span><strong>{{completedIssues.length}}</strong><small>Completed</small></span>
               <span><strong>{{dashboard.availableTickets||0}}</strong><small>Available</small></span>
+            </span>
+            <span class="home-people-panel">
+              <span class="home-people-heading"><b>People &amp; Organisation</b><small>Reference data at a glance</small></span>
+              <span class="home-people-grid">
+                <span *ngIf="canAccess('employees')"><strong>{{employees.length}}</strong><small>Employees</small></span>
+                <span *ngIf="canAccess('visitors')"><strong>{{visitors.length}}</strong><small>Visitors</small></span>
+                <span *ngIf="canAccess('departments')"><strong>{{activeDepartments.length}}</strong><small>Departments</small></span>
+                <span *ngIf="canAccess('teams')"><strong>{{activeTeams.length}}</strong><small>Teams</small></span>
+              </span>
             </span>
           </button>
 
