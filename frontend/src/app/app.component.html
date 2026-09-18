@@ -285,7 +285,137 @@
           </div>
         </div>
       </section>
-      <section *ngSwitchCase="'settings'"><div class="pagehead"><div><h1>Settings</h1><div class="muted">System configuration, reference data and administrative tools</div></div></div><div class="settings-admin-section"><div class="settings-section-head"><h3>Administration & Reference Data</h3><p>Use these tools to maintain the information used throughout ParkingTiq and to complete end-of-day checks.</p></div><div class="settings-tools"><div class="settings-tool-card" *ngIf="canManageReferenceData()"><div class="settings-tool-top"><span class="settings-tool-icon">▥</span><span class="settings-tool-label">REFERENCE DATA</span></div><h3>Departments</h3><p>Create, edit, enable or disable the departments used when maintaining employees and visitor host details.</p><div class="settings-tool-summary"><b>{{departments.length}}</b><span>departments configured</span></div><button class="btn secondary settings-tool-action" (click)="nav('departments')">Manage Departments →</button></div><div class="settings-tool-card" *ngIf="canManageReferenceData()"><div class="settings-tool-top"><span class="settings-tool-icon">♢</span><span class="settings-tool-label">REFERENCE DATA</span></div><h3>Teams</h3><p>Create and maintain teams, and associate each team with the correct department for employee records.</p><div class="settings-tool-summary"><b>{{teams.length}}</b><span>teams configured</span></div><button class="btn secondary settings-tool-action" (click)="nav('teams')">Manage Teams →</button></div><div class="settings-tool-card" *ngIf="canAccess('reconcile')"><div class="settings-tool-top"><span class="settings-tool-icon">⟳</span><span class="settings-tool-label">DAILY CONTROL</span></div><h3>Reconciliation</h3><p>Compare the physical tickets at the security desk with the system inventory and record the end-of-day result.</p><div class="settings-tool-summary"><b>End of day</b><span>physical vs system check</span></div><button class="btn secondary settings-tool-action" (click)="nav('reconcile')">Open Reconciliation →</button></div></div></div><div class="card"><h3>Parking Pass Coverage</h3><div class="form"><div><label>Weekday Start</label><input type="time" [(ngModel)]="settings.weekdayStart"></div><div><label>Weekday End</label><input type="time" [(ngModel)]="settings.weekdayEnd"></div><div><label>Weekend Start</label><input type="time" [(ngModel)]="settings.weekendStart"></div><div><label>Weekend End</label><input type="time" [(ngModel)]="settings.weekendEnd"></div><div><label>Buffer Minutes</label><input type="number" min="0" [(ngModel)]="settings.bufferMinutes"></div><div><label>Enabled Ticket Durations</label><input [(ngModel)]="settings.ticketTypes" placeholder="1,2,4,6,8,12"></div></div><button class="btn save-action" (click)="saveSettings()">Save Settings</button> <button class="btn secondary" (click)="loadSettings()">Reload Saved Values</button></div><div class="card"><h3>Current Rules</h3><p>Weekdays: <b>{{settings.weekdayStart}}–{{settings.weekdayEnd}}</b></p><p>Weekends: <b>{{settings.weekendStart}}–{{settings.weekendEnd}}</b></p><p>Calculation buffer: <b>{{settings.bufferMinutes}} minutes</b></p><p>Ticket durations: <b>{{settings.ticketTypes}}</b></p></div></section>
+      <section *ngSwitchCase="'audit'" class="audit-page">
+        <div class="pagehead">
+          <div>
+            <h1>Audit History</h1>
+            <div class="muted">Super User record history for creations, updates, completions, cancellations and deletions.</div>
+          </div>
+          <button class="btn secondary" (click)="nav('settings')">← Back to Settings</button>
+        </div>
+
+        <div class="card audit-filter-card">
+          <div class="audit-filter-head">
+            <div>
+              <h3>Filter Audit Records</h3>
+              <p>Use one or more filters to trace exactly what happened to a record.</p>
+            </div>
+            <span class="audit-result-count">{{auditLogs.length}} result{{auditLogs.length===1 ? '' : 's'}}</span>
+          </div>
+          <div class="audit-filter-grid">
+            <div>
+              <label>User / Username</label>
+              <input [(ngModel)]="auditUser" placeholder="e.g. admin or security01">
+            </div>
+            <div>
+              <label>Action</label>
+              <select [(ngModel)]="auditAction">
+                <option value="">All Actions</option>
+                <option value="CREATE">Create</option>
+                <option value="UPDATE">Update</option>
+                <option value="DELETE">Delete</option>
+                <option value="COMPLETE">Complete</option>
+                <option value="CANCEL">Cancel</option>
+                <option value="BULK_CREATE">Bulk Create</option>
+                <option value="PASSWORD_CHANGE">Password Change</option>
+              </select>
+            </div>
+            <div>
+              <label>Record Type</label>
+              <select [(ngModel)]="auditEntity">
+                <option value="">All Record Types</option>
+                <option value="Ticket Issue">Ticket Issue</option>
+                <option value="Parking Ticket">Parking Ticket</option>
+                <option value="Employee">Employee</option>
+                <option value="Visitor">Visitor</option>
+                <option value="Department">Department</option>
+                <option value="Team">Team</option>
+                <option value="User">User</option>
+                <option value="Settings">Settings</option>
+                <option value="Reconciliation">Reconciliation</option>
+                <option value="Account">Account</option>
+              </select>
+            </div>
+            <div>
+              <label>From Date</label>
+              <input type="date" [(ngModel)]="auditFrom">
+            </div>
+            <div>
+              <label>To Date</label>
+              <input type="date" [(ngModel)]="auditTo">
+            </div>
+          </div>
+          <div class="audit-filter-actions">
+            <button class="btn" (click)="loadAudit()">Apply Filters</button>
+            <button class="btn secondary" (click)="clearAuditFilters()">Clear Filters</button>
+          </div>
+        </div>
+
+        <div class="card audit-help-card">
+          <div class="audit-help-icon">i</div>
+          <div>
+            <b>Tracing a ticket issue</b>
+            <span>Select <strong>Ticket Issue</strong> as Record Type, then narrow by user/date if needed. Expand a row to inspect the request and resulting record snapshot captured for that action.</span>
+          </div>
+        </div>
+
+        <div class="card audit-table-card">
+          <div class="audit-table-head">
+            <div><h3>Audit Records</h3><p>Newest activity is shown first. Up to the latest 1,000 records are available.</p></div>
+            <button class="text-action" (click)="loadAudit()">Refresh History</button>
+          </div>
+
+          <div class="table audit-table-wrap" *ngIf="auditLogs.length; else emptyAudit">
+            <table class="audit-table">
+              <tr>
+                <th>Date & Time</th>
+                <th>User</th>
+                <th>Role</th>
+                <th>Action</th>
+                <th>Record Type</th>
+                <th>Record ID</th>
+                <th>Summary</th>
+                <th></th>
+              </tr>
+              <ng-container *ngFor="let a of auditLogs">
+                <tr class="audit-row" (dblclick)="toggleAuditDetails(a)" title="Double-click to show or hide details">
+                  <td class="audit-time">{{a.eventTime | date:'yyyy-MM-dd HH:mm:ss'}}</td>
+                  <td><b>{{a.username}}</b></td>
+                  <td><span class="audit-role">{{a.userRole || '—'}}</span></td>
+                  <td><span class="audit-action-badge" [ngClass]="auditActionClass(a)">{{a.action}}</span></td>
+                  <td>{{a.entityType}}</td>
+                  <td><span class="audit-record-id">{{a.entityId || '—'}}</span></td>
+                  <td>{{a.summary}}</td>
+                  <td><button class="btn sm secondary" (click)="$event.stopPropagation();toggleAuditDetails(a)">{{auditExpandedId===a.id ? 'Hide' : 'Details'}}</button></td>
+                </tr>
+                <tr class="audit-detail-row" *ngIf="auditExpandedId===a.id">
+                  <td colspan="8">
+                    <div class="audit-detail-panel">
+                      <div class="audit-detail-meta">
+                        <span><small>Action</small><b>{{a.action}}</b></span>
+                        <span><small>Record</small><b>{{a.entityType}} {{a.entityId ? '#'+a.entityId : ''}}</b></span>
+                        <span><small>Performed by</small><b>{{a.username}} · {{a.userRole || 'Unknown role'}}</b></span>
+                        <span><small>Timestamp</small><b>{{a.eventTime | date:'medium'}}</b></span>
+                      </div>
+                      <div class="audit-json-wrap">
+                        <small>Captured request / result details</small>
+                        <pre>{{auditDetails(a)}}</pre>
+                      </div>
+                    </div>
+                  </td>
+                </tr>
+              </ng-container>
+            </table>
+          </div>
+          <ng-template #emptyAudit>
+            <div class="audit-empty">
+              <b>No audit records found</b>
+              <span>Try clearing the filters or selecting a wider date range.</span>
+            </div>
+          </ng-template>
+        </div>
+      </section>
+      <section *ngSwitchCase="'settings'"><div class="pagehead"><div><h1>Settings</h1><div class="muted">System configuration, reference data and administrative tools</div></div></div><div class="settings-admin-section"><div class="settings-section-head"><h3>Administration & Reference Data</h3><p>Use these tools to maintain the information used throughout ParkingTiq and to complete end-of-day checks.</p></div><div class="settings-tools"><div class="settings-tool-card" *ngIf="canManageReferenceData()"><div class="settings-tool-top"><span class="settings-tool-icon">▥</span><span class="settings-tool-label">REFERENCE DATA</span></div><h3>Departments</h3><p>Create, edit, enable or disable the departments used when maintaining employees and visitor host details.</p><div class="settings-tool-summary"><b>{{departments.length}}</b><span>departments configured</span></div><button class="btn secondary settings-tool-action" (click)="nav('departments')">Manage Departments →</button></div><div class="settings-tool-card" *ngIf="canManageReferenceData()"><div class="settings-tool-top"><span class="settings-tool-icon">♢</span><span class="settings-tool-label">REFERENCE DATA</span></div><h3>Teams</h3><p>Create and maintain teams, and associate each team with the correct department for employee records.</p><div class="settings-tool-summary"><b>{{teams.length}}</b><span>teams configured</span></div><button class="btn secondary settings-tool-action" (click)="nav('teams')">Manage Teams →</button></div><div class="settings-tool-card" *ngIf="canAccess('reconcile')"><div class="settings-tool-top"><span class="settings-tool-icon">⟳</span><span class="settings-tool-label">DAILY CONTROL</span></div><h3>Reconciliation</h3><p>Compare the physical tickets at the security desk with the system inventory and record the end-of-day result.</p><div class="settings-tool-summary"><b>End of day</b><span>physical vs system check</span></div><button class="btn secondary settings-tool-action" (click)="nav('reconcile')">Open Reconciliation →</button></div><div class="settings-tool-card audit-settings-card" *ngIf="role==='SUPER_USER'"><div class="settings-tool-top"><span class="settings-tool-icon">◷</span><span class="settings-tool-label">SUPER USER</span></div><h3>Audit History</h3><p>Trace record creation, updates, completion, cancellation and deletion across ParkingTiq, including the user and time of each change.</p><div class="settings-tool-summary"><b>Full history</b><span>Super User only</span></div><button class="btn secondary settings-tool-action" (click)="nav('audit')">Open Audit History →</button></div></div></div><div class="card"><h3>Parking Pass Coverage</h3><div class="form"><div><label>Weekday Start</label><input type="time" [(ngModel)]="settings.weekdayStart"></div><div><label>Weekday End</label><input type="time" [(ngModel)]="settings.weekdayEnd"></div><div><label>Weekend Start</label><input type="time" [(ngModel)]="settings.weekendStart"></div><div><label>Weekend End</label><input type="time" [(ngModel)]="settings.weekendEnd"></div><div><label>Buffer Minutes</label><input type="number" min="0" [(ngModel)]="settings.bufferMinutes"></div><div><label>Enabled Ticket Durations</label><input [(ngModel)]="settings.ticketTypes" placeholder="1,2,4,6,8,12"></div></div><button class="btn save-action" (click)="saveSettings()">Save Settings</button> <button class="btn secondary" (click)="loadSettings()">Reload Saved Values</button></div><div class="card"><h3>Current Rules</h3><p>Weekdays: <b>{{settings.weekdayStart}}–{{settings.weekdayEnd}}</b></p><p>Weekends: <b>{{settings.weekendStart}}–{{settings.weekendEnd}}</b></p><p>Calculation buffer: <b>{{settings.bufferMinutes}} minutes</b></p><p>Ticket durations: <b>{{settings.ticketTypes}}</b></p></div></section>
     </ng-container>
   </main>
 </div>
