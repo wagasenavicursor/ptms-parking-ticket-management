@@ -79,12 +79,13 @@
       <div><h2>User Management</h2><p>Manage accounts, email addresses, roles and account status. Double-click a user row to edit.</p></div>
       <button class="modal-close" aria-label="Close user management" title="Close" (click)="manage=false">×</button>
     </div>
-    <div class="rolecards">
-      <div><b>Super User</b><small>Full access including major settings and users.</small></div>
-      <div><b>Admin</b><small>Administration, employees, reports and operations.</small></div>
-      <div><b>Security</b><small>Visitors, inventory, ticket issuing and reports.</small></div>
-    </div>
-    <div class="user-statusbar"><b>{{users.length}} user(s)</b><button type="button" (click)="loadUsers()">↻ Refresh list</button></div><div class="alert user-alert" *ngIf="userError">{{userError}}</div><div class="success user-success" *ngIf="userMessage">{{userMessage}}</div><div class="userform" [class.edit-mode]="!!editing.id">
+    <div class="user-filter-heading"><div><b>Filter Users</b><small>Select a role to filter the user table.</small></div><span>{{filteredUsers.length}} of {{users.length}} users shown</span></div>
+    <div class="rolecards user-role-filters">
+      <button type="button" [class.active]="userRoleFilter==='ALL'" (click)="userRoleFilter='ALL'"><span class="filter-role-icon all-users">◉</span><span><b>All Users</b><small>Show every user account.</small></span><strong>{{roleCount('ALL')}}</strong></button>
+      <button type="button" [class.active]="userRoleFilter==='SUPER_USER'" (click)="userRoleFilter='SUPER_USER'"><span class="filter-role-icon super-users">★</span><span><b>Super User</b><small>Full access including major settings and users.</small></span><strong>{{roleCount('SUPER_USER')}}</strong></button>
+      <button type="button" [class.active]="userRoleFilter==='ADMIN'" (click)="userRoleFilter='ADMIN'"><span class="filter-role-icon admin-users">⚙</span><span><b>Admin</b><small>Administration, employees, reports and operations.</small></span><strong>{{roleCount('ADMIN')}}</strong></button>
+      <button type="button" [class.active]="userRoleFilter==='SECURITY'" (click)="userRoleFilter='SECURITY'"><span class="filter-role-icon security-users">◆</span><span><b>Security</b><small>Visitors, inventory, ticket issuing and reports.</small></span><strong>{{roleCount('SECURITY')}}</strong></button>
+    </div><div class="alert user-alert" *ngIf="userError">{{userError}}</div><div class="success user-success" *ngIf="userMessage">{{userMessage}}</div><div class="userform" [class.edit-mode]="!!editing.id">
       <input placeholder="Full name" [(ngModel)]="editing.fullName">
       <input placeholder="Username" [(ngModel)]="editing.username">
       <input type="email" placeholder="Email" [(ngModel)]="editing.email">
@@ -97,7 +98,7 @@
     <div class="utable user-table-scroll" style="max-height:55vh;min-height:320px;overflow:auto">
       <table>
         <tr><th>Profile</th><th>User</th><th>Email</th><th>Role</th><th>Status</th><th></th></tr>
-        <tr *ngFor="let u of users" (dblclick)="edit(u)" title="Double-click to edit">
+        <tr *ngFor="let u of filteredUsers" (dblclick)="edit(u)" title="Double-click to edit">
           <td><div class="table-avatar"><img *ngIf="u.profileImage" [src]="u.profileImage" alt=""><span *ngIf="!u.profileImage">👤</span></div></td><td><b>{{u.fullName}}</b><br><small>{{u.username}}</small></td>
           <td>{{u.email}}</td>
           <td><span class="role">{{u.role.replace('_',' ')}}</span></td>
