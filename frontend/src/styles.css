@@ -204,7 +204,7 @@ section > h1::after{
 .home-welcome p{margin:0;color:var(--muted);font-size:14px}
 .home-card-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:16px}
 .home-card{min-height:176px;border:1px solid var(--line);border-radius:8px;background:#fff;padding:20px;text-align:left;display:flex;flex-direction:column;align-items:flex-start;cursor:pointer;color:var(--text);box-shadow:0 2px 8px rgba(19,36,54,.04);transition:.16s}
-.home-card:hover{transform:translateY(-2px);border-color:#b8c5d1;box-shadow:0 9px 24px rgba(17,49,83,.08)}
+.home-card:hover{transform:translateY(-2px);border-color:#aebfce;background:#f5f9fd;box-shadow:0 9px 24px rgba(17,49,83,.09)}
 .home-card.primary-home{border-top:4px solid var(--tiq-green);background:linear-gradient(180deg,#fff 0%,#fbfef9 100%)}
 .home-card-icon{width:42px;height:42px;border-radius:6px;display:grid;place-items:center;background:var(--tiq-blue-soft);color:var(--tiq-blue);font-size:20px;margin-bottom:16px}
 .primary-home .home-card-icon{background:#edf7e7;color:var(--tiq-green-dark)}
@@ -399,3 +399,5 @@ section > h1::after{
   .home-fifo-head{align-items:flex-start}
   .home-fifo-table{max-height:260px}
 }
+
+.home-card.primary-home:hover{background:linear-gradient(135deg,#fbfff8 0%,#f1f8ec 100%)!important}
