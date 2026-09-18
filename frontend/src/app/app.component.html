@@ -4,14 +4,6 @@
     <div *ngIf="msg" class="msg">{{msg}}</div><div *ngIf="err" class="msg err">{{err}}</div>
     <ng-container [ngSwitch]="page">
       <section *ngSwitchCase="'home'" class="home-page">
-        <div class="home-welcome">
-          <div>
-            <span class="home-kicker">ParkingTiq</span>
-            <h1>Welcome</h1>
-            <p>Start the most common parking tasks or jump to operational information.</p>
-          </div>
-        </div>
-
         <div class="home-card-grid home-card-grid-rich">
           <div class="home-card primary-home home-card-hero" *ngIf="canAccess('issue')" role="button" tabindex="0" (click)="nav('issue')" (keydown.enter)="nav('issue')" (keydown.space)="$event.preventDefault();nav('issue')" aria-label="Open Issue Parking Tickets">
             <span class="home-hero-top">
