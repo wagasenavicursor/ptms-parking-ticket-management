@@ -59,7 +59,7 @@
   <header class="accountbar">
     <div class="headerbrand"><span class="brandbadge">P</span><b><em>Parking</em>TIQ</b><span class="role">{{user.role.replace('_',' ')}}</span></div>
     <div class="topsearch">⌕ <span>Search employee, vehicle or ticket...</span></div>
-    <div class="account-actions"><span>🔔</span><span>👤 {{user.fullName}}</span><button *ngIf="user.role==='SUPER_USER'" (click)="openUsers()">Users</button><button (click)="logout()">Sign out</button></div>
+    <div class="account-actions"><span>🔔</span><img *ngIf="user.profileImage" class="header-avatar" [src]="user.profileImage" alt=""><span *ngIf="!user.profileImage" class="header-avatar-fallback">👤</span><span>{{user.fullName}}</span><button *ngIf="user.role==='SUPER_USER'" (click)="openUsers()">Users</button><button (click)="logout()">Sign out</button></div>
   </header>
   <div class="force" *ngIf="user.mustChangePassword">⚠ You are using the initial password. Change the Super User password before production use.</div>
   <app-root [currentUser]="user"></app-root>
@@ -76,21 +76,21 @@
       <div><b>Admin</b><small>Administration, employees, reports and operations.</small></div>
       <div><b>Security</b><small>Visitors, inventory, ticket issuing and reports.</small></div>
     </div>
-    <div class="userform" [class.edit-mode]="!!editing.id">
+    <div class="user-statusbar"><b>{{users.length}} user(s)</b><button type="button" (click)="loadUsers()">↻ Refresh list</button></div><div class="alert user-alert" *ngIf="userError">{{userError}}</div><div class="success user-success" *ngIf="userMessage">{{userMessage}}</div><div class="userform" [class.edit-mode]="!!editing.id">
       <input placeholder="Full name" [(ngModel)]="editing.fullName">
       <input placeholder="Username" [(ngModel)]="editing.username">
       <input type="email" placeholder="Email" [(ngModel)]="editing.email">
       <select [(ngModel)]="editing.role"><option>SUPER_USER</option><option>ADMIN</option><option>SECURITY</option></select>
-      <input type="password" placeholder="New/default password" [(ngModel)]="editing.password">
+      <input type="password" placeholder="New/default password" [(ngModel)]="editing.password"><div class="profile-upload"><div class="avatar-preview"><img *ngIf="editing.profileImage" [src]="editing.profileImage" alt="Profile preview"><span *ngIf="!editing.profileImage">👤</span></div><label class="profile-file">Profile picture<input type="file" accept="image/*" (change)="profileSelected($event)"></label><button type="button" *ngIf="editing.profileImage" (click)="removeProfileImage()">Remove</button></div>
       <label><input type="checkbox" [(ngModel)]="editing.enabled"> Enabled</label>
       <button class="primary" (click)="saveUser()">Save User</button>
       <button (click)="editing=blank()">Clear</button>
     </div>
     <div class="utable user-table-scroll" style="max-height:55vh;min-height:320px;overflow:auto">
       <table>
-        <tr><th>User</th><th>Email</th><th>Role</th><th>Status</th><th></th></tr>
+        <tr><th>Profile</th><th>User</th><th>Email</th><th>Role</th><th>Status</th><th></th></tr>
         <tr *ngFor="let u of users" (dblclick)="edit(u)" title="Double-click to edit">
-          <td><b>{{u.fullName}}</b><br><small>{{u.username}}</small></td>
+          <td><div class="table-avatar"><img *ngIf="u.profileImage" [src]="u.profileImage" alt=""><span *ngIf="!u.profileImage">👤</span></div></td><td><b>{{u.fullName}}</b><br><small>{{u.username}}</small></td>
           <td>{{u.email}}</td>
           <td><span class="role">{{u.role.replace('_',' ')}}</span></td>
           <td>{{u.enabled ? 'Active' : 'Disabled'}}</td>
