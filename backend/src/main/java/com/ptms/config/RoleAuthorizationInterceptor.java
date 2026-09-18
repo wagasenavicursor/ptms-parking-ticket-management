@@ -19,6 +19,11 @@ public class RoleAuthorizationInterceptor implements HandlerInterceptor {
       return false;
     }
 
+    if (path.contains("/api/audit") && !"SUPER_USER".equals(role)) {
+      p.sendError(403, "Super User access required");
+      return false;
+    }
+
     if ("SUPER_USER".equals(role)) return true;
 
     if (path.contains("/api/users")) {
