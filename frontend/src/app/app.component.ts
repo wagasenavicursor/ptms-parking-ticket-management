@@ -22,7 +22,7 @@ export class AppComponent implements OnInit, OnDestroy {
   auditLogs:any[]=[]; auditUser=''; auditAction=''; auditEntity=''; auditFrom=''; auditTo=''; auditExpandedId:any=null;
   confirmDialog:any=null; private confirmResolver:((value:boolean)=>void)|null=null;
   readonly lowTicketThreshold=5; readonly criticalTicketThreshold=2; readonly staleIssueMinutes=120;
-  sub?:Subscription;
+  sub?:Subscription; alertRefreshTimer:any=null;
   private readonly navItems:NavItem[]=[{p:'home',t:'⌂ Home'},{p:'dashboard',t:'▦ Dashboard'},{p:'employees',t:'♙ Employees'},{p:'visitors',t:'♧ Visitors'},{p:'inventory',t:'▤ Ticket Inventory'},{p:'issue',t:'✈ Issue Tickets'},{p:'register',t:'▧ Issued Register'},{p:'remaining',t:'◇ Remaining Inventory'},{p:'reports',t:'▣ Reports'},{p:'settings',t:'⚙ Settings'}];
   private readonly securityPages=new Set<Page>(['home','dashboard','employees','visitors','inventory','issue','register','remaining','reports']);
   constructor(private api:ApiService,private scanner:BarcodeScannerService){}
@@ -47,7 +47,7 @@ export class AppComponent implements OnInit, OnDestroy {
   canAccess(p:Page){if(p==='audit')return this.role==='SUPER_USER';return this.role==='SECURITY'?this.securityPages.has(p):true;} canManageEmployees(){return this.role!=='SECURITY';} canManageVisitors(){return true;} canManageInventory(){return true;} canIssueTickets(){return true;} canGenerateReports(){return true;} canManageSettings(){return this.role==='SUPER_USER'||this.role==='ADMIN';} canManageClosedIssues(){return this.role==='SUPER_USER'||this.role==='ADMIN';} canManageReferenceData(){return this.role==='SUPER_USER'||this.role==='ADMIN';}
   isClosedIssue(i:any){return i?.status==='COMPLETED'||i?.status==='CANCELLED';}
   newEmployee(){return{employeeCode:'',name:'',vehicleNumber:'',department:'',team:'',parkingPass:false,defaultEntryTime:'08:00'}} newVisitor(){return{name:'',nic:'',vehicleNumber:'',hostDepartment:''}} newTicket(){return{barcode:'',durationHours:1,status:'AVAILABLE',expiryDate:''}} newDepartment(){return{name:'',description:'',enabled:true}} newTeam(){return{name:'',department:'',description:'',enabled:true}}
-  ngOnInit(){this.sub=this.scanner.scanned$.subscribe(x=>this.route(x));history.replaceState({parkingTiqPage:'home'},'',location.href);this.refresh();if(this.canAccess('settings'))this.loadSettings();} ngOnDestroy(){this.sub?.unsubscribe();this.scanner.disable();}
+  ngOnInit(){this.sub=this.scanner.scanned$.subscribe(x=>this.route(x));history.replaceState({parkingTiqPage:'home'},'',location.href);this.refresh();if(this.canAccess('settings'))this.loadSettings();if(this.canSeeAdminAlerts)this.alertRefreshTimer=setInterval(()=>this.refresh(),60000);} ngOnDestroy(){this.sub?.unsubscribe();if(this.alertRefreshTimer)clearInterval(this.alertRefreshTimer);this.scanner.disable();}
   @HostListener('window:popstate',['$event']) onBrowserBack(event:PopStateEvent){const p=(event.state?.parkingTiqPage||'home') as Page;this.openPage(this.canAccess(p)?p:'home',false);}
   @HostListener('window:keydown',['$event']) onNavigationShortcut(event:KeyboardEvent){
     if(this.page==='home'||this.confirmDialog)return;
