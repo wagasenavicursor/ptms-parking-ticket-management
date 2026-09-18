@@ -35,6 +35,17 @@ export class AppComponent implements OnInit, OnDestroy {
   newEmployee(){return{employeeCode:'',name:'',vehicleNumber:'',department:'',team:'',parkingPass:false,defaultEntryTime:'08:00'}} newVisitor(){return{name:'',nic:'',vehicleNumber:'',hostDepartment:''}} newTicket(){return{barcode:'',durationHours:1,status:'AVAILABLE',expiryDate:''}} newDepartment(){return{name:'',description:'',enabled:true}} newTeam(){return{name:'',department:'',description:'',enabled:true}}
   ngOnInit(){this.sub=this.scanner.scanned$.subscribe(x=>this.route(x));history.replaceState({parkingTiqPage:'home'},'',location.href);this.refresh();if(this.canAccess('settings'))this.loadSettings();} ngOnDestroy(){this.sub?.unsubscribe();this.scanner.disable();}
   @HostListener('window:popstate',['$event']) onBrowserBack(event:PopStateEvent){const p=(event.state?.parkingTiqPage||'home') as Page;this.openPage(this.canAccess(p)?p:'home',false);}
+  @HostListener('window:keydown',['$event']) onNavigationShortcut(event:KeyboardEvent){
+    if(this.page==='home'||this.confirmDialog)return;
+    const target=event.target as HTMLElement|null;
+    const typing=!!target&&(['INPUT','TEXTAREA','SELECT'].includes(target.tagName)||target.isContentEditable);
+    if(typing)return;
+    if((event.altKey&&event.key==='ArrowLeft')||event.key==='Escape'){
+      event.preventDefault();
+      this.goBack();
+    }
+  }
+  goBack(){if(this.page!=='home')history.back();}
   nav(p:Page){if(!this.canAccess(p)){this.openPage('home',false);this.err='Your role does not have access to that function';return;}if(p===this.page)return;history.pushState({parkingTiqPage:p},'',location.href);this.openPage(p,false);}
   private openPage(p:Page,pushHistory=false){if(pushHistory)history.pushState({parkingTiqPage:p},'',location.href);this.page=p;this.syncScanner();this.refresh();if(p==='settings')this.loadSettings();if(p==='audit')this.loadAudit();window.scrollTo({top:0,behavior:'smooth'});} 
   syncScanner(){const on=this.page==='inventory'||this.page==='reconcile'||(this.page==='issue'&&this.barcodeMode==='SCAN');on?this.scanner.enable():this.scanner.disable();} setBarcodeMode(m:'SCAN'|'MANUAL'){this.barcodeMode=m;this.syncScanner();}
