@@ -43,6 +43,17 @@ export class ApiService {
 
   reconcile(date: string, barcodes: string[]) { return this.h.post<any>(`${this.a}/reconciliations`, { date, barcodes }); }
 
+  audit(username = '', action = '', entityType = '', from = '', to = '') {
+    const p = new URLSearchParams();
+    if (username) p.set('username', username);
+    if (action) p.set('action', action);
+    if (entityType) p.set('entityType', entityType);
+    if (from) p.set('from', from);
+    if (to) p.set('to', to);
+    const q = p.toString();
+    return this.h.get<any[]>(`${this.a}/audit${q ? '?' + q : ''}`);
+  }
+
   settings() { return this.h.get<any>(`${this.a}/settings`); }
   saveSettings(x: any) { return this.h.put<any>(`${this.a}/settings`, x); }
 }
