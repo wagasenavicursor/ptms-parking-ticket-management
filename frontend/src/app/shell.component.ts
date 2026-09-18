@@ -7,8 +7,10 @@ import { AppComponent } from './app.component';
 
 @Component({selector:'ptms-shell',standalone:true,imports:[CommonModule,FormsModule,AppComponent],templateUrl:'./shell.component.html',styleUrls:['./shell.component.css']})
 export class ShellComponent {
-  user:any=null; username='admin'; password='admin'; email=''; loginError=''; message=''; userError=''; userMessage=''; forgot=false; users:any[]=[]; manage=false; editing:any=this.blank(); loading=false; loadingText='Loading ParkingTiq...';
+  user:any=null; username='admin'; password='admin'; email=''; loginError=''; message=''; userError=''; userMessage=''; forgot=false; users:any[]=[]; userRoleFilter='ALL'; manage=false; editing:any=this.blank(); loading=false; loadingText='Loading ParkingTiq...';
   constructor(private h:HttpClient){}
+  get filteredUsers(){return this.userRoleFilter==='ALL'?this.users:this.users.filter(u=>u.role===this.userRoleFilter);}
+  roleCount(role:string){return role==='ALL'?this.users.length:this.users.filter(u=>u.role===role).length;}
   blank(){return{fullName:'',username:'',email:'',role:'SECURITY',enabled:true,password:'',profileImage:''}}
   busy(text:string){this.loadingText=text;this.loading=true}
   login(){this.loginError='';const started=Date.now();this.busy('Signing in securely...');const finish=(action:()=>void)=>setTimeout(()=>{action();this.loading=false},Math.max(0,3000-(Date.now()-started)));this.h.post<any>('/ptms/api/auth/login',{username:this.username,password:this.password}).subscribe({next:u=>finish(()=>{this.user=u;if(u.mustChangePassword)this.message='Default password detected. Change it from the account menu.'}),error:e=>finish(()=>this.loginError=e?.error?.message||'Invalid username or password')});}
