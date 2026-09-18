@@ -503,3 +503,25 @@ section > h1::after{
 .audit-empty span{font-size:11px}
 @media(max-width:1180px){.audit-filter-grid{grid-template-columns:repeat(3,minmax(0,1fr))}.audit-detail-meta{grid-template-columns:repeat(2,minmax(0,1fr))}}
 @media(max-width:760px){.audit-filter-head,.audit-table-head{display:block}.audit-result-count{display:inline-block;margin-top:8px}.audit-filter-grid{grid-template-columns:1fr}.audit-filter-actions{display:grid;grid-template-columns:1fr 1fr}.audit-detail-meta{grid-template-columns:1fr}.audit-table-head .text-action{margin-top:8px}}
+
+
+/* ParkingTiq themed confirmation dialogs */
+.theme-confirm-backdrop{position:fixed;inset:0;z-index:10000;display:grid;place-items:center;padding:20px;background:rgba(17,33,49,.46);backdrop-filter:blur(3px)}
+.theme-confirm-dialog{width:min(440px,100%);border:1px solid #d8e1e9;border-radius:12px;background:#fff;box-shadow:0 24px 70px rgba(14,35,55,.24);padding:22px;animation:confirmPop .16s ease-out}
+.theme-confirm-icon{width:48px;height:48px;border-radius:12px;display:grid;place-items:center;margin-bottom:14px;background:#edf3fb;color:#174a96;font-size:22px;font-weight:900}
+.theme-confirm-copy{margin-bottom:20px}
+.theme-confirm-eyebrow{display:block;margin-bottom:4px;color:#67b52c;font-size:9px;font-weight:900;letter-spacing:.8px;text-transform:uppercase}
+.theme-confirm-copy h3{margin:0 0 7px;color:#1b2f41;font-size:20px;line-height:1.2}
+.theme-confirm-copy p{margin:0;color:#64727f;font-size:12.5px;line-height:1.55}
+.theme-confirm-actions{display:flex;justify-content:flex-end;gap:10px;padding-top:14px;border-top:1px solid #edf0f2}
+.theme-confirm-primary{background:#174a96!important;border-color:#174a96!important;color:#fff!important}
+.theme-confirm-primary:hover{background:#0d326f!important}
+.confirm-danger .theme-confirm-icon{background:#fff0f0;color:#bd2c2c}
+.confirm-danger .theme-confirm-primary{background:#c93434!important;border-color:#c93434!important}
+.confirm-danger .theme-confirm-primary:hover{background:#a92727!important}
+.confirm-success .theme-confirm-icon{background:#edf7e7;color:#4f9120}
+.confirm-success .theme-confirm-primary{background:#67b52c!important;border-color:#67b52c!important}
+.confirm-success .theme-confirm-primary:hover{background:#4f9120!important}
+@keyframes confirmPop{from{opacity:0;transform:translateY(8px) scale(.985)}to{opacity:1;transform:translateY(0) scale(1)}}
+@media(max-width:520px){.theme-confirm-dialog{padding:18px}.theme-confirm-actions{display:grid;grid-template-columns:1fr 1fr}.theme-confirm-actions button{width:100%}}
+@media(prefers-reduced-motion:reduce){.theme-confirm-dialog{animation:none}}
