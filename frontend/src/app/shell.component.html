@@ -68,7 +68,7 @@
 <div class="modal" *ngIf="manage">
   <div class="manage">
     <div class="modalhead">
-      <div><h2>User Management</h2><p>Manage accounts, email addresses, roles and account status.</p></div>
+      <div><h2>User Management</h2><p>Manage accounts, email addresses, roles and account status. Double-click a user row to edit.</p></div>
       <button class="modal-close" aria-label="Close user management" title="Close" (click)="manage=false">×</button>
     </div>
     <div class="rolecards">
@@ -76,7 +76,7 @@
       <div><b>Admin</b><small>Administration, employees, reports and operations.</small></div>
       <div><b>Security</b><small>Visitors, inventory, ticket issuing and reports.</small></div>
     </div>
-    <div class="userform">
+    <div class="userform" [class.edit-mode]="!!editing.id">
       <input placeholder="Full name" [(ngModel)]="editing.fullName">
       <input placeholder="Username" [(ngModel)]="editing.username">
       <input type="email" placeholder="Email" [(ngModel)]="editing.email">
@@ -89,7 +89,7 @@
     <div class="utable user-table-scroll" style="max-height:55vh;min-height:320px;overflow:auto">
       <table>
         <tr><th>User</th><th>Email</th><th>Role</th><th>Status</th><th></th></tr>
-        <tr *ngFor="let u of users" (click)="edit(u)">
+        <tr *ngFor="let u of users" (dblclick)="edit(u)" title="Double-click to edit">
           <td><b>{{u.fullName}}</b><br><small>{{u.username}}</small></td>
           <td>{{u.email}}</td>
           <td><span class="role">{{u.role.replace('_',' ')}}</span></td>
