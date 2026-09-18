@@ -1,7 +1,7 @@
 :host{font-family:"Helvetica Neue",Helvetica,Arial,sans-serif;color:#17212b}
-.login-page{min-height:100vh;display:grid;grid-template-columns:minmax(420px,1.04fr) minmax(420px,.96fr);background:#f6f7f4}
+.login-page{min-height:100vh;display:grid;grid-template-columns:minmax(500px,1.16fr) minmax(420px,.84fr);background:#f6f7f4}
 .login-brand-panel{position:relative;display:flex;flex-direction:column;justify-content:center;padding:8vw;background:#174a96;color:#fff;overflow:hidden}
-.login-brand-panel:after{content:"ParkingTiq";position:absolute;right:-4%;bottom:1%;font-size:118px;font-weight:800;letter-spacing:-6px;color:#fff;opacity:.045;white-space:nowrap}
+.login-brand-panel:after{content:"ParkingTiq";position:absolute;right:2%;bottom:1%;font-size:118px;font-weight:800;letter-spacing:-6px;color:#fff;opacity:.045;white-space:nowrap}
 .brand-copy{position:relative;z-index:2;max-width:620px}
 .login-logo,.mobile-logo,.loading-brand{display:flex;align-items:center}.login-logo img{width:230px;max-width:70%;height:auto;filter:drop-shadow(0 3px 10px rgba(0,0,0,.08))}.mobile-logo img{width:180px;height:auto}.loading-brand{justify-content:center}.loading-brand img{width:190px;height:auto}
 .eyebrow,.welcome-label{display:block;font-size:11px;font-weight:800;letter-spacing:1.7px;text-transform:uppercase}
