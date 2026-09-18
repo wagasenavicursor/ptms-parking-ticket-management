@@ -57,7 +57,15 @@
 
 <div *ngIf="user">
   <header class="accountbar">
-    <div class="headerbrand"><span class="role">{{user.role.replace('_',' ')}}</span></div>
+    <div class="header-role-panel" [class.super-role]="user.role==='SUPER_USER'" [class.admin-role]="user.role==='ADMIN'" [class.security-role]="user.role==='SECURITY'">
+      <span class="role-icon" *ngIf="user.role==='SUPER_USER'" aria-hidden="true">★</span>
+      <span class="role-icon" *ngIf="user.role==='ADMIN'" aria-hidden="true">⚙</span>
+      <span class="role-icon" *ngIf="user.role==='SECURITY'" aria-hidden="true">◆</span>
+      <span class="role-copy">
+        <small>Signed in as</small>
+        <b>{{user.role.replace('_',' ')}}</b>
+      </span>
+    </div>
     <div class="topsearch">⌕ <span>Search employee, vehicle or ticket...</span></div>
     <div class="account-actions"><img *ngIf="user.profileImage" class="header-avatar" [src]="user.profileImage" alt=""><span *ngIf="!user.profileImage" class="header-avatar-fallback">👤</span><span>{{user.fullName}}</span><button *ngIf="user.role==='SUPER_USER'" (click)="openUsers()">Users</button><button (click)="logout()">Sign out</button></div>
   </header>
