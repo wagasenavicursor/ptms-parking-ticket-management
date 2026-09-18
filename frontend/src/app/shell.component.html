@@ -1,7 +1,7 @@
 <div class="loading-overlay" *ngIf="loading" role="status" aria-live="polite">
   <div class="simple-loader spinner-loader">
-    <div class="loading-brand"><b>Parking</b><strong>TIQ</strong></div>
-    <div class="spinner-frame suv-loader-frame"><img class="parking-spinner parking-suv-loader" src="/assets/parkingtiq-suv.svg" alt="ParkingTIQ loading animation"></div>
+    <div class="loading-brand"><b>Parking</b><strong>Tiq</strong></div>
+    <div class="spinner-frame suv-loader-frame"><img class="parking-spinner parking-suv-loader" src="/assets/parkingtiq-suv.svg" alt="ParkingTiq loading animation"></div>
     <b>{{loadingText}}</b>
     <small>Getting your parking environment ready</small>
     <div class="loader-bar"><i></i></div>
@@ -11,7 +11,7 @@
 <div class="login-page" *ngIf="!user">
   <section class="login-brand-panel">
     <div class="brand-copy">
-      <div class="login-logo"><b>Parking</b><strong>TIQ</strong></div>
+      <div class="login-logo"><b>Parking</b><strong>Tiq</strong></div>
       <span class="eyebrow">PARKING TICKET MANAGEMENT SYSTEM</span>
       <h1>Smart parking for a<br>better workplace.</h1>
       <p>Manage parking tickets, inventory, visitors and daily operations from one secure workspace.</p>
@@ -26,9 +26,9 @@
 
   <section class="login-form-panel">
     <div class="login-card">
-      <div class="mobile-logo"><b>Parking</b><strong>TIQ</strong></div>
+      <div class="mobile-logo"><b>Parking</b><strong>Tiq</strong></div>
       <span class="welcome-label">WELCOME BACK</span>
-      <h2>{{forgot ? 'Reset your password' : 'Sign in to ParkingTIQ'}}</h2>
+      <h2>{{forgot ? 'Reset your password' : 'Sign in to ParkingTiq'}}</h2>
       <p>{{forgot ? 'Enter your registered email address and we will prepare password reset instructions.' : 'Enter your account details to continue to the parking management workspace.'}}</p>
       <div class="alert" *ngIf="loginError">{{loginError}}</div>
       <div class="success" *ngIf="message">{{message}}</div>
@@ -57,7 +57,7 @@
 
 <div *ngIf="user">
   <header class="accountbar">
-    <div class="headerbrand"><span class="brandbadge">P</span><b><em>Parking</em>TIQ</b><span class="role">{{user.role.replace('_',' ')}}</span></div>
+    <div class="headerbrand"><span class="brandbadge">P</span><b><em>Parking</em>Tiq</b><span class="role">{{user.role.replace('_',' ')}}</span></div>
     <div class="topsearch">⌕ <span>Search employee, vehicle or ticket...</span></div>
     <div class="account-actions"><span>🔔</span><img *ngIf="user.profileImage" class="header-avatar" [src]="user.profileImage" alt=""><span *ngIf="!user.profileImage" class="header-avatar-fallback">👤</span><span>{{user.fullName}}</span><button *ngIf="user.role==='SUPER_USER'" (click)="openUsers()">Users</button><button (click)="logout()">Sign out</button></div>
   </header>
