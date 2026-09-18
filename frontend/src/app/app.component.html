@@ -3,6 +3,71 @@
   <main class="main">
     <div *ngIf="msg" class="msg">{{msg}}</div><div *ngIf="err" class="msg err">{{err}}</div>
     <ng-container [ngSwitch]="page">
+      <section *ngSwitchCase="'home'" class="home-page">
+        <div class="home-welcome">
+          <div>
+            <span class="home-kicker">ParkingTiq</span>
+            <h1>Welcome</h1>
+            <p>Quick access to the parking tasks used most often.</p>
+          </div>
+        </div>
+
+        <div class="home-card-grid">
+          <button class="home-card primary-home" *ngIf="canAccess('issue')" (click)="nav('issue')">
+            <span class="home-card-icon">✈</span>
+            <span class="home-card-copy">
+              <b>Issue Parking Ticket</b>
+              <small>Create a parking request and validate physical ticket barcodes.</small>
+            </span>
+            <span class="home-card-meta">{{pendingIssues.length}} pending</span>
+          </button>
+
+          <button class="home-card" *ngIf="canAccess('dashboard')" (click)="nav('dashboard')">
+            <span class="home-card-icon">▦</span>
+            <span class="home-card-copy">
+              <b>Dashboard</b>
+              <small>See ticket, queue and operational status at a glance.</small>
+            </span>
+            <span class="home-card-meta">Overview</span>
+          </button>
+
+          <button class="home-card" *ngIf="canAccess('inventory')" (click)="nav('inventory')">
+            <span class="home-card-icon">▤</span>
+            <span class="home-card-copy">
+              <b>Ticket Inventory</b>
+              <small>Add, scan and manage physical parking tickets.</small>
+            </span>
+            <span class="home-card-meta">{{dashboard.availableTickets||0}} available</span>
+          </button>
+
+          <button class="home-card" *ngIf="canAccess('register')" (click)="nav('register')">
+            <span class="home-card-icon">▧</span>
+            <span class="home-card-copy">
+              <b>Issued Register</b>
+              <small>Review completed and cancelled parking requests.</small>
+            </span>
+            <span class="home-card-meta">{{registerIssues.length}} records</span>
+          </button>
+
+          <button class="home-card" *ngIf="canAccess('employees')" (click)="nav('employees')">
+            <span class="home-card-icon">♙</span>
+            <span class="home-card-copy">
+              <b>Employees</b>
+              <small>Find employee parking and vehicle information.</small>
+            </span>
+            <span class="home-card-meta">{{employees.length}} employees</span>
+          </button>
+
+          <button class="home-card" *ngIf="canAccess('visitors')" (click)="nav('visitors')">
+            <span class="home-card-icon">♧</span>
+            <span class="home-card-copy">
+              <b>Visitors</b>
+              <small>Manage visitor and host department information.</small>
+            </span>
+            <span class="home-card-meta">{{visitors.length}} visitors</span>
+          </button>
+        </div>
+      </section>
       <section *ngSwitchCase="'dashboard'" class="dashboard-page">
         <div class="pagehead dashboard-head">
           <div><h1>Dashboard</h1><div class="muted">ParkingTiq operational overview and quick navigation</div></div>
