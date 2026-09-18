@@ -86,7 +86,7 @@
       <button class="primary" (click)="saveUser()">Save User</button>
       <button (click)="editing=blank()">Clear</button>
     </div>
-    <div class="utable user-table-scroll">
+    <div class="utable user-table-scroll" style="max-height:55vh;min-height:320px;overflow:auto">
       <table>
         <tr><th>User</th><th>Email</th><th>Role</th><th>Status</th><th></th></tr>
         <tr *ngFor="let u of users" (click)="edit(u)">
