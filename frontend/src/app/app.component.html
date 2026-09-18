@@ -423,15 +423,22 @@
 
 <div class="theme-confirm-backdrop" *ngIf="confirmDialog" (click)="resolveConfirm(false)">
   <div class="theme-confirm-dialog" [class.confirm-danger]="confirmDialog.tone==='danger'" [class.confirm-success]="confirmDialog.tone==='success'" (click)="$event.stopPropagation()" role="dialog" aria-modal="true">
-    <div class="theme-confirm-icon">
-      <span *ngIf="confirmDialog.tone==='danger'">!</span>
-      <span *ngIf="confirmDialog.tone==='success'">✓</span>
-      <span *ngIf="confirmDialog.tone==='default'">?</span>
+    <div class="theme-confirm-accent"></div>
+    <div class="theme-confirm-header">
+      <div class="theme-confirm-brand"><span class="brand-parking">Parking</span><span class="brand-tiq">Tiq</span></div>
+      <button type="button" class="theme-confirm-close" aria-label="Close confirmation" (click)="resolveConfirm(false)">×</button>
     </div>
-    <div class="theme-confirm-copy">
-      <span class="theme-confirm-eyebrow">ParkingTiq</span>
-      <h3>{{confirmDialog.title}}</h3>
-      <p>{{confirmDialog.message}}</p>
+    <div class="theme-confirm-body">
+      <div class="theme-confirm-icon">
+        <span *ngIf="confirmDialog.tone==='danger'">!</span>
+        <span *ngIf="confirmDialog.tone==='success'">✓</span>
+        <span *ngIf="confirmDialog.tone==='default'">?</span>
+      </div>
+      <div class="theme-confirm-copy">
+        <span class="theme-confirm-eyebrow">{{confirmDialog.tone==='danger' ? 'Please confirm carefully' : confirmDialog.tone==='success' ? 'Confirmation required' : 'Please confirm'}}</span>
+        <h3>{{confirmDialog.title}}</h3>
+        <p>{{confirmDialog.message}}</p>
+      </div>
     </div>
     <div class="theme-confirm-actions">
       <button type="button" class="btn secondary" (click)="resolveConfirm(false)">Cancel</button>
