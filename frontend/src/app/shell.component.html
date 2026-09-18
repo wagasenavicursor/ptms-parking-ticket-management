@@ -1,6 +1,6 @@
 <div class="loading-overlay" *ngIf="loading" role="status" aria-live="polite">
   <div class="simple-loader spinner-loader">
-    <div class="loading-brand"><b>Parking</b><strong>Tiq</strong></div>
+    <div class="loading-brand"><img src="/assets/parkingtiq-logo.svg" alt="ParkingTiq"></div>
     <div class="spinner-frame suv-loader-frame"><img class="parking-spinner parking-suv-loader" src="/assets/parkingtiq-suv.svg" alt="ParkingTiq loading animation"></div>
     <b>{{loadingText}}</b>
     <small>Getting your parking environment ready</small>
@@ -11,7 +11,7 @@
 <div class="login-page" *ngIf="!user">
   <section class="login-brand-panel">
     <div class="brand-copy">
-      <div class="login-logo"><b>Parking</b><strong>Tiq</strong></div>
+      <div class="login-logo"><img src="/assets/parkingtiq-logo.svg" alt="ParkingTiq"></div>
       <span class="eyebrow">PARKING TICKET MANAGEMENT SYSTEM</span>
       <h1>Smart parking for a<br>better workplace.</h1>
       <p>Manage parking tickets, inventory, visitors and daily operations from one secure workspace.</p>
@@ -26,7 +26,7 @@
 
   <section class="login-form-panel">
     <div class="login-card">
-      <div class="mobile-logo"><b>Parking</b><strong>Tiq</strong></div>
+      <div class="mobile-logo"><img src="/assets/parkingtiq-logo.svg" alt="ParkingTiq"></div>
       <span class="welcome-label">WELCOME BACK</span>
       <h2>{{forgot ? 'Reset your password' : 'Sign in to ParkingTiq'}}</h2>
       <p>{{forgot ? 'Enter your registered email address and we will prepare password reset instructions.' : 'Enter your account details to continue to the parking management workspace.'}}</p>
@@ -57,7 +57,7 @@
 
 <div *ngIf="user">
   <header class="accountbar">
-    <div class="headerbrand"><span class="brandbadge">P</span><b><em>Parking</em>Tiq</b><span class="role">{{user.role.replace('_',' ')}}</span></div>
+    <div class="headerbrand"><img class="header-logo" src="/assets/parkingtiq-logo.svg" alt="ParkingTiq"><span class="role">{{user.role.replace('_',' ')}}</span></div>
     <div class="topsearch">⌕ <span>Search employee, vehicle or ticket...</span></div>
     <div class="account-actions"><span>🔔</span><img *ngIf="user.profileImage" class="header-avatar" [src]="user.profileImage" alt=""><span *ngIf="!user.profileImage" class="header-avatar-fallback">👤</span><span>{{user.fullName}}</span><button *ngIf="user.role==='SUPER_USER'" (click)="openUsers()">Users</button><button (click)="logout()">Sign out</button></div>
   </header>
@@ -83,8 +83,8 @@
       <select [(ngModel)]="editing.role"><option>SUPER_USER</option><option>ADMIN</option><option>SECURITY</option></select>
       <input type="password" placeholder="New/default password" [(ngModel)]="editing.password"><div class="profile-upload"><div class="avatar-preview"><img *ngIf="editing.profileImage" [src]="editing.profileImage" alt="Profile preview"><span *ngIf="!editing.profileImage">👤</span></div><label class="profile-file">Profile picture<input type="file" accept="image/*" (change)="profileSelected($event)"></label><button type="button" *ngIf="editing.profileImage" (click)="removeProfileImage()">Remove</button></div>
       <label><input type="checkbox" [(ngModel)]="editing.enabled"> Enabled</label>
-      <button class="primary" (click)="saveUser()">Save User</button>
-      <button (click)="editing=blank()">Clear</button>
+      <button class="primary save-user" (click)="saveUser()">Save User</button>
+      <button class="secondary-user" (click)="editing=blank()">Clear</button>
     </div>
     <div class="utable user-table-scroll" style="max-height:55vh;min-height:320px;overflow:auto">
       <table>
