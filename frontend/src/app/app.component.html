@@ -6,7 +6,7 @@
       <section *ngSwitchCase="'dashboard'" class="dashboard-page">
         <div class="pagehead dashboard-head">
           <div><h1>Dashboard</h1><div class="muted">ParkingTiq operational overview and quick navigation</div></div>
-          <div class="dashboard-head-actions"><button class="btn secondary" (click)="refresh()">↻ Refresh</button><button class="btn" *ngIf="canAccess('issue')" (click)="nav('issue')">＋ Issue Parking Ticket</button></div>
+          <div class="dashboard-head-actions"><button class="btn" *ngIf="canAccess('issue')" (click)="nav('issue')">＋ Issue Parking Ticket</button></div>
         </div>
 
         <div class="grid cards dashboard-kpis">
