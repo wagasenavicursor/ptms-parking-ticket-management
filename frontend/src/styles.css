@@ -19,7 +19,7 @@ body{margin:0;background:var(--bg);font-size:14px;line-height:1.45}
 button,input,select,textarea{font:inherit}
 .layout{min-height:100vh;display:flex}
 .side{width:232px;background:#fff;border-right:1px solid var(--line);position:sticky;top:0;height:100vh;z-index:20}
-.brand{padding:14px 16px 12px;border-bottom:1px solid var(--line);display:flex;align-items:center;justify-content:center;height:92px}.brand img{display:block;max-width:170px;max-height:68px;width:auto;height:auto}
+.brand{padding:14px 16px 12px;border:0;border-bottom:1px solid var(--line);background:#fff;display:flex;align-items:center;justify-content:center;width:100%;height:92px;cursor:pointer}.brand img{display:block;max-width:170px;max-height:68px;width:auto;height:auto}.brand-home:hover{background:#f7f9fb}.brand-home:focus-visible{outline:3px solid rgba(23,74,150,.18);outline-offset:-3px}
 .nav{padding:16px 10px;display:grid;gap:3px}
 .nav button{position:relative;border:0;background:transparent;color:#344657;padding:11px 13px 11px 16px;text-align:left;cursor:pointer;font-weight:600;border-radius:4px;transition:.15s}
 .nav button:hover{background:#f2f5f8;color:var(--tiq-blue)}
