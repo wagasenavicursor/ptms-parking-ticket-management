@@ -32,7 +32,13 @@ public class TicketIssueService {
 
   public IssuePreviewResponse preview(IssuePreviewRequest q) {
     boolean pass = hasParkingPass(q.personType(), q.personReference());
-    int h = ds.requiredTicketHours(q.personType(), pass, q.visitDate(), q.entryTime(), q.exitTime(), q.extraHours());
+    int h;
+    if (q.manualHours() != null) {
+      h = q.manualHours();
+    } else {
+      if (q.entryTime() == null || q.exitTime() == null) throw new BusinessRuleException("Entry and exit time are required when using time range mode");
+      h = ds.requiredTicketHours(q.personType(), pass, q.visitDate(), q.entryTime(), q.exitTime(), q.extraHours());
+    }
     List<List<Integer>> available = cs.combinationsFor(h).stream().filter(this::inventoryCanSupply).toList();
     if (h > 0 && available.isEmpty()) throw new BusinessRuleException("No available ticket combination can cover " + h + " hour(s) with current inventory");
     return new IssuePreviewResponse(h, available);
@@ -53,7 +59,7 @@ public class TicketIssueService {
   }
 
   public IssueResponse create(CreateIssueRequest q) {
-    IssuePreviewResponse p = preview(new IssuePreviewRequest(q.personType(), q.personReference(), q.visitDate(), q.entryTime(), q.exitTime(), q.extraHours()));
+    IssuePreviewResponse p = preview(new IssuePreviewRequest(q.personType(), q.personReference(), q.visitDate(), q.entryTime(), q.exitTime(), q.extraHours(), q.manualHours()));
     if (q.selectedCombination().stream().mapToInt(Integer::intValue).sum() != p.requiredHours() || !p.combinations().contains(q.selectedCombination())) throw new BusinessRuleException("Invalid or unavailable ticket combination");
     if (new HashSet<>(q.barcodes().stream().map(String::toLowerCase).toList()).size() != q.barcodes().size()) throw new BusinessRuleException("Duplicate barcode in request");
     if (q.barcodes().size() != q.selectedCombination().size()) throw new BusinessRuleException("Barcode count mismatch");
