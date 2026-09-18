@@ -5,14 +5,14 @@ import { Subscription } from 'rxjs';
 import { ApiService } from './core/api.service';
 import { BarcodeScannerService } from './core/barcode-scanner.service';
 
-type Page = 'dashboard' | 'employees' | 'visitors' | 'departments' | 'teams' | 'inventory' | 'issue' | 'register' | 'remaining' | 'reconcile' | 'reports' | 'settings';
+type Page = 'home' | 'dashboard' | 'employees' | 'visitors' | 'departments' | 'teams' | 'inventory' | 'issue' | 'register' | 'remaining' | 'reconcile' | 'reports' | 'settings';
 type UserRole = 'SUPER_USER' | 'ADMIN' | 'SECURITY';
 type NavItem = { p: Page; t: string };
 
 @Component({selector:'app-root',standalone:true,imports:[CommonModule,FormsModule],templateUrl:'./app.component.html'})
 export class AppComponent implements OnInit, OnDestroy {
   @Input() currentUser: any = null;
-  page: Page = 'dashboard';
+  page: Page = 'home';
   dashboard:any={}; employees:any[]=[]; visitors:any[]=[]; tickets:any[]=[]; issues:any[]=[]; remaining:any[]=[]; departments:any[]=[]; teams:any[]=[];
   msg=''; err=''; employee:any=this.newEmployee(); visitor:any=this.newVisitor(); ticket:any=this.newTicket(); department:any=this.newDepartment(); team:any=this.newTeam();
   hours=1; expiry=''; inventoryScans:string[]=[]; ticketSearch=''; hourFilter=''; statusFilter='';
@@ -20,8 +20,8 @@ export class AppComponent implements OnInit, OnDestroy {
   registerEdit:any=null; reconScans:string[]=[]; recon:any; reportDate=this.date; reportPerson='';
   settings:any={weekdayStart:'06:00',weekdayEnd:'12:00',weekendStart:'06:00',weekendEnd:'12:30',bufferMinutes:0,ticketTypes:'1,2,4,6,8,12'};
   sub?:Subscription;
-  private readonly navItems:NavItem[]=[{p:'dashboard',t:'▦ Dashboard'},{p:'employees',t:'♙ Employees'},{p:'visitors',t:'♧ Visitors'},{p:'departments',t:'▥ Departments'},{p:'teams',t:'♢ Teams'},{p:'inventory',t:'▤ Ticket Inventory'},{p:'issue',t:'✈ Issue Tickets'},{p:'register',t:'▧ Issued Register'},{p:'remaining',t:'◇ Remaining Inventory'},{p:'reconcile',t:'⟳ Reconciliation'},{p:'reports',t:'▣ Reports'},{p:'settings',t:'⚙ Settings'}];
-  private readonly securityPages=new Set<Page>(['dashboard','employees','visitors','inventory','issue','register','remaining','reports']);
+  private readonly navItems:NavItem[]=[{p:'home',t:'⌂ Home'},{p:'dashboard',t:'▦ Dashboard'},{p:'employees',t:'♙ Employees'},{p:'visitors',t:'♧ Visitors'},{p:'departments',t:'▥ Departments'},{p:'teams',t:'♢ Teams'},{p:'inventory',t:'▤ Ticket Inventory'},{p:'issue',t:'✈ Issue Tickets'},{p:'register',t:'▧ Issued Register'},{p:'remaining',t:'◇ Remaining Inventory'},{p:'reconcile',t:'⟳ Reconciliation'},{p:'reports',t:'▣ Reports'},{p:'settings',t:'⚙ Settings'}];
+  private readonly securityPages=new Set<Page>(['home','dashboard','employees','visitors','inventory','issue','register','remaining','reports']);
   constructor(private api:ApiService,private scanner:BarcodeScannerService){}
   get role():UserRole{return (this.currentUser?.role||'SECURITY') as UserRole;} get visibleNavItems(){return this.navItems.filter(n=>this.canAccess(n.p));} get registerIssues(){return this.issues.filter(i=>this.isClosedIssue(i));}
   get activeDepartments(){return this.departments.filter(d=>d.enabled!==false);} get activeTeams(){return this.teams.filter(t=>t.enabled!==false);}
@@ -32,7 +32,7 @@ export class AppComponent implements OnInit, OnDestroy {
   isClosedIssue(i:any){return i?.status==='COMPLETED'||i?.status==='CANCELLED';}
   newEmployee(){return{employeeCode:'',name:'',vehicleNumber:'',department:'',team:'',parkingPass:false,defaultEntryTime:'08:00'}} newVisitor(){return{name:'',nic:'',vehicleNumber:'',hostDepartment:''}} newTicket(){return{barcode:'',durationHours:1,status:'AVAILABLE',expiryDate:''}} newDepartment(){return{name:'',description:'',enabled:true}} newTeam(){return{name:'',department:'',description:'',enabled:true}}
   ngOnInit(){this.sub=this.scanner.scanned$.subscribe(x=>this.route(x));this.refresh();if(this.canAccess('settings'))this.loadSettings();} ngOnDestroy(){this.sub?.unsubscribe();this.scanner.disable();}
-  nav(p:Page){if(!this.canAccess(p)){this.page='dashboard';this.err='Your role does not have access to that function';return;}this.page=p;this.syncScanner();this.refresh();if(p==='settings')this.loadSettings();window.scrollTo({top:0,behavior:'smooth'});} 
+  nav(p:Page){if(!this.canAccess(p)){this.page='home';this.err='Your role does not have access to that function';return;}this.page=p;this.syncScanner();this.refresh();if(p==='settings')this.loadSettings();window.scrollTo({top:0,behavior:'smooth'});} 
   syncScanner(){const on=this.page==='inventory'||this.page==='reconcile'||(this.page==='issue'&&this.barcodeMode==='SCAN');on?this.scanner.enable():this.scanner.disable();} setBarcodeMode(m:'SCAN'|'MANUAL'){this.barcodeMode=m;this.syncScanner();}
   refresh(){this.api.dashboard().subscribe({next:x=>this.dashboard=x,error:e=>this.loadFail('Dashboard',e)});this.api.employees().subscribe({next:x=>this.employees=x,error:e=>this.loadFail('Employees',e)});this.api.visitors().subscribe({next:x=>this.visitors=x,error:e=>this.loadFail('Visitors',e)});this.api.tickets().subscribe({next:x=>this.tickets=x,error:e=>this.loadFail('Tickets',e)});this.api.issues().subscribe({next:x=>this.issues=x,error:e=>this.loadFail('Issues',e)});this.api.remaining().subscribe({next:x=>this.remaining=x,error:e=>this.loadFail('Remaining inventory',e)});this.api.departments().subscribe({next:x=>this.departments=x,error:e=>this.loadFail('Departments',e)});this.api.teams().subscribe({next:x=>this.teams=x,error:e=>this.loadFail('Teams',e)});}
   route(b:string){if(this.page==='inventory')this.scanInventory(b);if(this.page==='issue'&&this.barcodeMode==='SCAN')this.scanIssue(b);if(this.page==='reconcile')this.scanRecon(b);}
