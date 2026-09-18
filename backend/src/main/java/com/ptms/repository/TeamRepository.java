@@ -1,0 +1,1 @@
+package com.ptms.repository; import com.ptms.domain.Team; import org.springframework.data.jpa.repository.JpaRepository; import java.util.*; public interface TeamRepository extends JpaRepository<Team,Long>{List<Team> findAllByOrderByNameAsc(); Optional<Team> findByNameIgnoreCase(String name);}
