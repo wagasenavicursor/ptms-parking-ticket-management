@@ -4,4 +4,4 @@ import { provideHttpClient } from '@angular/common/http';
 import { ShellComponent } from './app/shell.component';
 
 bootstrapApplication(ShellComponent, { providers: [provideHttpClient()] })
-  .catch(error => console.error('ParkingTIQ bootstrap failed:', error));
+  .catch(error => console.error('ParkingTiq bootstrap failed:', error));
