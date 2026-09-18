@@ -19,7 +19,7 @@ export class AppComponent implements OnInit, OnDestroy {
   ptype='EMPLOYEE'; search=''; person=''; date=new Date().toISOString().slice(0,10); durationMode:'HOURS'|'TIME'='HOURS'; manualHours:any=1; entry='08:00'; exit='17:00'; extra:any=''; reason=''; required=0; combos:number[][]=[]; combo:number[]=[]; issueScans:string[]=[]; barcodeMode:'SCAN'|'MANUAL'='SCAN'; manualBarcode='';
   registerEdit:any=null; pendingEdit:any=null; reconScans:string[]=[]; recon:any; reportDate=this.date; reportPerson=''; reportFrom=this.date; reportTo=this.date; reportStatus=''; reportDuration=''; reportPersonType=''; reportPreviewKind='';
   settings:any={weekdayStart:'06:00',weekdayEnd:'12:00',weekendStart:'06:00',weekendEnd:'12:30',bufferMinutes:0,ticketTypes:'1,2,4,6,8,12'};
-  auditLogs:any[]=[]; auditUser=''; auditAction=''; auditEntity=''; auditFrom=''; auditTo='';
+  auditLogs:any[]=[]; auditUser=''; auditAction=''; auditEntity=''; auditFrom=''; auditTo=''; auditExpandedId:any=null;
   sub?:Subscription;
   private readonly navItems:NavItem[]=[{p:'home',t:'⌂ Home'},{p:'dashboard',t:'▦ Dashboard'},{p:'employees',t:'♙ Employees'},{p:'visitors',t:'♧ Visitors'},{p:'inventory',t:'▤ Ticket Inventory'},{p:'issue',t:'✈ Issue Tickets'},{p:'register',t:'▧ Issued Register'},{p:'remaining',t:'◇ Remaining Inventory'},{p:'reports',t:'▣ Reports'},{p:'settings',t:'⚙ Settings'}];
   private readonly securityPages=new Set<Page>(['home','dashboard','employees','visitors','inventory','issue','register','remaining','reports']);
@@ -64,8 +64,10 @@ export class AppComponent implements OnInit, OnDestroy {
   scanRecon(b:string){b=b.trim();if(b&&!this.reconScans.some(x=>x.toLowerCase()===b.toLowerCase()))this.reconScans.push(b);} manualRecon(i:HTMLInputElement){this.scanRecon(i.value);i.value='';i.focus();} runRecon(){this.api.reconcile(this.date,this.reconScans).subscribe({next:x=>{this.recon=x;this.ok('Reconciliation saved')},error:e=>this.fail(e)});} clearRecon(){this.reconScans=[];this.recon=null;}
   loadSettings(){if(!this.canAccess('settings'))return;this.api.settings().subscribe({next:x=>this.settings=x,error:e=>this.loadFail('Settings',e)});} saveSettings(){if(!this.canManageSettings()){this.err='Only Admin and Super User can change settings';return}this.api.saveSettings(this.settings).subscribe({next:x=>{this.settings=x;this.ok('Settings saved and calculation rules updated')},error:e=>this.fail(e)});}
   loadAudit(){if(this.role!=='SUPER_USER')return;this.api.audit(this.auditUser,this.auditAction,this.auditEntity,this.auditFrom,this.auditTo).subscribe({next:x=>this.auditLogs=x,error:e=>this.fail(e)});}
-  clearAuditFilters(){this.auditUser='';this.auditAction='';this.auditEntity='';this.auditFrom='';this.auditTo='';this.loadAudit();}
+  clearAuditFilters(){this.auditUser='';this.auditAction='';this.auditEntity='';this.auditFrom='';this.auditTo='';this.auditExpandedId=null;this.loadAudit();}
+  toggleAuditDetails(a:any){this.auditExpandedId=this.auditExpandedId===a.id?null:a.id;}
   auditDetails(a:any){try{return JSON.stringify(JSON.parse(a?.details||'{}'),null,2);}catch{return a?.details||'—';}}
+  auditActionClass(a:any){return 'audit-'+String(a?.action||'').toLowerCase().replace(/_/g,'-');}
 
   openReportPreview(kind:string){if(!this.canGenerateReports()){this.err='Reports are not available for your role';return;}this.reportPreviewKind=kind;this.reportStatus='';this.reportDuration='';this.reportPersonType='';this.reportPerson='';if(kind==='daily'||kind==='person'){this.reportFrom=this.date;this.reportTo=this.date;}else{this.reportFrom='';this.reportTo='';}this.msg='';this.err='';}
   closeReportPreview(){this.reportPreviewKind='';}
