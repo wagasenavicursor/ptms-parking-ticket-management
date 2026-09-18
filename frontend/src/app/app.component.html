@@ -13,7 +13,7 @@
         </div>
 
         <div class="home-card-grid home-card-grid-rich">
-          <button class="home-card primary-home home-card-hero" *ngIf="canAccess('issue')" (click)="nav('issue')">
+          <div class="home-card primary-home home-card-hero" *ngIf="canAccess('issue')">
             <span class="home-hero-top">
               <span class="home-card-icon hero-icon">✈</span>
               <span class="home-hero-badge">{{pendingIssues.length}} pending request{{pendingIssues.length===1 ? '' : 's'}}</span>
@@ -31,11 +31,34 @@
             <span class="home-hero-footer">
               <span><strong>{{dashboard.availableTickets||0}}</strong><small>tickets available</small></span>
               <span><strong>{{pendingIssues.length}}</strong><small>waiting in queue</small></span>
-              <span class="home-open-action">Open Issue Tickets →</span>
+              <button type="button" class="text-action home-open-action" (click)="nav('issue')">Open Issue Tickets →</button>
             </span>
-          </button>
 
-          <button class="home-card home-card-wide" *ngIf="canAccess('dashboard')" (click)="nav('dashboard')">
+            <div class="home-fifo">
+              <div class="home-fifo-head">
+                <div>
+                  <span class="home-card-eyebrow">LIVE QUEUE</span>
+                  <h3>Live FIFO Guard Queue</h3>
+                </div>
+                <button type="button" class="text-action" (click)="nav('issue')">View full queue →</button>
+              </div>
+              <div class="home-fifo-table" *ngIf="pendingIssues.length; else emptyHomeQueue">
+                <table>
+                  <tr><th>Request</th><th>Person</th><th>Hours</th><th>Barcodes</th><th>Status</th></tr>
+                  <tr *ngFor="let i of pendingIssues" class="clickrow" (dblclick)="openQueueRecordInRegister(i)" title="Double-click to open in Issued Tickets Register edit mode">
+                    <td><b>{{i.requestNumber}}</b></td>
+                    <td>{{i.personReference}}</td>
+                    <td>{{i.requiredHours}}h</td>
+                    <td>{{i.barcodes.join(', ') || '—'}}</td>
+                    <td><span class="badge">{{i.status}}</span></td>
+                  </tr>
+                </table>
+              </div>
+              <ng-template #emptyHomeQueue><div class="home-fifo-empty">No pending FIFO requests.</div></ng-template>
+            </div>
+          </div>
+
+          <button class="home-card home-card-wide home-dashboard-card" *ngIf="canAccess('dashboard')" (click)="nav('dashboard')">
             <span class="home-card-icon">▦</span>
             <span class="home-card-copy">
               <span class="home-card-eyebrow">OPERATIONS</span>
@@ -49,7 +72,7 @@
             </span>
           </button>
 
-          <button class="home-card home-card-medium inventory-home-card" *ngIf="canAccess('inventory')" (click)="nav('inventory')">
+          <button class="home-card home-card-second-row inventory-home-card" *ngIf="canAccess('inventory')" (click)="nav('inventory')">
             <span class="home-card-icon">▤</span>
             <span class="home-card-copy">
               <span class="home-card-eyebrow">TICKETS</span>
@@ -59,7 +82,7 @@
             <span class="home-card-meta"><strong>{{dashboard.availableTickets||0}}</strong> available physical tickets</span>
           </button>
 
-          <button class="home-card home-card-medium" *ngIf="canAccess('register')" (click)="nav('register')">
+          <button class="home-card home-card-second-row" *ngIf="canAccess('register')" (click)="nav('register')">
             <span class="home-card-icon">▧</span>
             <span class="home-card-copy">
               <span class="home-card-eyebrow">HISTORY</span>
@@ -69,7 +92,27 @@
             <span class="home-card-meta"><strong>{{registerIssues.length}}</strong> register records</span>
           </button>
 
-          <button class="home-card home-card-small" *ngIf="canAccess('employees')" (click)="nav('employees')">
+          <button class="home-card home-card-second-row" *ngIf="canAccess('remaining')" (click)="nav('remaining')">
+            <span class="home-card-icon">◇</span>
+            <span class="home-card-copy">
+              <span class="home-card-eyebrow">AVAILABILITY</span>
+              <b>Remaining Inventory</b>
+              <small>Quickly check physical tickets still available to issue by ticket duration.</small>
+            </span>
+            <span class="home-card-meta"><strong>{{remaining.length}}</strong> available</span>
+          </button>
+
+          <button class="home-card home-card-second-row" *ngIf="canAccess('reports')" (click)="nav('reports')">
+            <span class="home-card-icon">▣</span>
+            <span class="home-card-copy">
+              <span class="home-card-eyebrow">EXPORTS</span>
+              <b>Reports</b>
+              <small>Export ticket, inventory, remaining-stock and person-history reports.</small>
+            </span>
+            <span class="home-card-meta">Reports & exports</span>
+          </button>
+
+          <button class="home-card home-card-third-row" *ngIf="canAccess('employees')" (click)="nav('employees')">
             <span class="home-card-icon compact-icon">♙</span>
             <span class="home-card-copy">
               <b>Employees</b>
@@ -78,31 +121,13 @@
             <span class="home-card-meta">{{employees.length}} employees</span>
           </button>
 
-          <button class="home-card home-card-small" *ngIf="canAccess('visitors')" (click)="nav('visitors')">
+          <button class="home-card home-card-third-row" *ngIf="canAccess('visitors')" (click)="nav('visitors')">
             <span class="home-card-icon compact-icon">♧</span>
             <span class="home-card-copy">
               <b>Visitors</b>
               <small>Visitor, vehicle and host department information.</small>
             </span>
             <span class="home-card-meta">{{visitors.length}} visitors</span>
-          </button>
-
-          <button class="home-card home-card-small" *ngIf="canAccess('remaining')" (click)="nav('remaining')">
-            <span class="home-card-icon compact-icon">◇</span>
-            <span class="home-card-copy">
-              <b>Remaining Inventory</b>
-              <small>Quickly check physical tickets still available to issue.</small>
-            </span>
-            <span class="home-card-meta">{{remaining.length}} available</span>
-          </button>
-
-          <button class="home-card home-card-small" *ngIf="canAccess('reports')" (click)="nav('reports')">
-            <span class="home-card-icon compact-icon">▣</span>
-            <span class="home-card-copy">
-              <b>Reports</b>
-              <small>Export ticket, inventory and person-history reports.</small>
-            </span>
-            <span class="home-card-meta">Reports & exports</span>
           </button>
         </div>
       </section>
