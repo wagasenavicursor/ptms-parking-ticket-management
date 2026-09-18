@@ -1,0 +1,12 @@
+CREATE TABLE department (id BIGINT AUTO_INCREMENT PRIMARY KEY, name VARCHAR(160) NOT NULL UNIQUE, description VARCHAR(500), enabled BOOLEAN NOT NULL DEFAULT TRUE);
+CREATE TABLE team (id BIGINT AUTO_INCREMENT PRIMARY KEY, name VARCHAR(160) NOT NULL UNIQUE, department VARCHAR(160), description VARCHAR(500), enabled BOOLEAN NOT NULL DEFAULT TRUE);
+INSERT INTO department(name,description,enabled) SELECT DISTINCT department,'Migrated from employee records',TRUE FROM employee WHERE department IS NOT NULL AND TRIM(department)<>'' ON DUPLICATE KEY UPDATE name=name;
+INSERT INTO department(name,description,enabled) SELECT DISTINCT host_department,'Migrated from visitor host departments',TRUE FROM visitor WHERE host_department IS NOT NULL AND TRIM(host_department)<>'' ON DUPLICATE KEY UPDATE name=name;
+INSERT INTO department(name,description,enabled) SELECT 'Administration','Default department',TRUE WHERE NOT EXISTS (SELECT 1 FROM department WHERE name='Administration');
+INSERT INTO department(name,description,enabled) SELECT 'Engineering','Default department',TRUE WHERE NOT EXISTS (SELECT 1 FROM department WHERE name='Engineering');
+INSERT INTO department(name,description,enabled) SELECT 'Finance','Default department',TRUE WHERE NOT EXISTS (SELECT 1 FROM department WHERE name='Finance');
+INSERT INTO department(name,description,enabled) SELECT 'Operations','Default department',TRUE WHERE NOT EXISTS (SELECT 1 FROM department WHERE name='Operations');
+INSERT INTO team(name,department,description,enabled) SELECT DISTINCT team,department,'Migrated from employee records',TRUE FROM employee WHERE team IS NOT NULL AND TRIM(team)<>'' ON DUPLICATE KEY UPDATE name=name;
+INSERT INTO team(name,department,description,enabled) SELECT 'Security Desk','Operations','Default team',TRUE WHERE NOT EXISTS (SELECT 1 FROM team WHERE name='Security Desk');
+INSERT INTO team(name,department,description,enabled) SELECT 'Admin Team','Administration','Default team',TRUE WHERE NOT EXISTS (SELECT 1 FROM team WHERE name='Admin Team');
+INSERT INTO team(name,department,description,enabled) SELECT 'Engineering Team','Engineering','Default team',TRUE WHERE NOT EXISTS (SELECT 1 FROM team WHERE name='Engineering Team');
