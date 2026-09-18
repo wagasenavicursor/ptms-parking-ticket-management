@@ -8,6 +8,17 @@
     <div *ngIf="msg" class="msg">{{msg}}</div><div *ngIf="err" class="msg err">{{err}}</div>
     <ng-container [ngSwitch]="page">
       <section *ngSwitchCase="'home'" class="home-page">
+        <div class="admin-alert-center" *ngIf="canSeeAdminAlerts && adminAlertCount">
+          <div class="admin-alert-title"><span class="admin-alert-pulse"></span><div><b>Admin attention required</b><small>{{adminAlertCount}} active operational alert{{adminAlertCount===1 ? '' : 's'}}</small></div></div>
+          <div class="admin-alert-items">
+            <button *ngFor="let b of lowInventoryBuckets" type="button" class="admin-alert-item inventory-alert" [ngClass]="'alert-'+b.status" (click)="nav('remaining')">
+              <span class="alert-icon">◇</span><span><b>{{b.hours}}h tickets {{b.status==='critical' ? 'critically low' : 'running low'}}</b><small>{{b.count}} ticket{{b.count===1 ? '' : 's'}} remaining</small></span><i>→</i>
+            </button>
+            <button *ngFor="let i of stalePendingIssues | slice:0:3" type="button" class="admin-alert-item stale-alert" (click)="nav('issue')">
+              <span class="alert-icon">◷</span><span><b>{{i.requestNumber}} waiting too long</b><small>{{i.personReference}} · pending {{pendingAgeText(i)}}</small></span><i>→</i>
+            </button>
+          </div>
+        </div>
         <div class="home-card-grid home-card-grid-rich">
           <div class="home-card primary-home home-card-hero" *ngIf="canAccess('issue')" role="button" tabindex="0" (click)="nav('issue')" (keydown.enter)="nav('issue')" (keydown.space)="$event.preventDefault();nav('issue')" aria-label="Open Issue Parking Tickets">
             <span class="home-hero-top">
@@ -95,14 +106,20 @@
             <span class="home-card-meta"><strong>{{registerIssues.length}}</strong> register records</span>
           </button>
 
-          <button class="home-card home-card-second-row" *ngIf="canAccess('remaining')" (click)="nav('remaining')">
+          <button class="home-card home-card-second-row inventory-health-card" [ngClass]="'inventory-'+overallInventoryHealth" *ngIf="canAccess('remaining')" (click)="nav('remaining')">
             <span class="home-card-icon">◇</span>
             <span class="home-card-copy">
-              <span class="home-card-eyebrow">AVAILABILITY</span>
+              <span class="home-card-eyebrow">AVAILABILITY · {{overallInventoryHealth | uppercase}}</span>
               <b>Remaining Inventory</b>
               <small>Quickly check physical tickets still available to issue by ticket duration.</small>
             </span>
             <span class="home-card-meta"><strong>{{remaining.length}}</strong> available</span>
+            <span class="home-inventory-mini-chart">
+              <span *ngFor="let b of inventoryBuckets" class="mini-ticket-bar-wrap" [title]="b.hours+'h: '+b.count+' available'">
+                <i class="mini-ticket-bar" [ngClass]="'bar-'+b.status" [style.height.%]="b.height"></i>
+                <small>{{b.hours}}h</small>
+              </span>
+            </span>
           </button>
 
           <button class="home-card home-card-second-row" *ngIf="canAccess('reports')" (click)="nav('reports')">
@@ -140,11 +157,23 @@
           <div class="dashboard-head-actions"><button class="btn" *ngIf="canAccess('issue')" (click)="nav('issue')">＋ Issue Parking Ticket</button></div>
         </div>
 
+        <div class="admin-alert-center dashboard-alert-center" *ngIf="canSeeAdminAlerts && adminAlertCount">
+          <div class="admin-alert-title"><span class="admin-alert-pulse"></span><div><b>Admin attention required</b><small>Low ticket stock and overdue FIFO requests are monitored continuously while you use ParkingTiq.</small></div><strong>{{adminAlertCount}}</strong></div>
+          <div class="admin-alert-items">
+            <button *ngFor="let b of lowInventoryBuckets" type="button" class="admin-alert-item inventory-alert" [ngClass]="'alert-'+b.status" (click)="nav('remaining')">
+              <span class="alert-icon">◇</span><span><b>{{b.hours}}h inventory {{b.status==='critical' ? 'critical' : 'low'}}</b><small>{{b.count}} remaining · warning at {{lowTicketThreshold}} or fewer</small></span><i>→</i>
+            </button>
+            <button *ngFor="let i of stalePendingIssues | slice:0:4" type="button" class="admin-alert-item stale-alert" (click)="nav('issue')">
+              <span class="alert-icon">◷</span><span><b>{{i.requestNumber}} has been pending {{pendingAgeText(i)}}</b><small>{{i.personReference}} · alert after {{staleIssueMinutes/60}} hours</small></span><i>→</i>
+            </button>
+          </div>
+        </div>
+
         <div class="grid cards dashboard-kpis">
           <div class="card dashstat"><span class="dash-icon">▤</span><span class="muted">Total Tickets</span><div class="metric">{{tickets.length}}</div><small>All physical parking tickets</small></div>
-          <div class="card dashstat"><span class="dash-icon">◇</span><span class="muted">Available Tickets</span><div class="metric">{{dashboard.availableTickets||0}}</div><small>Ready for allocation</small></div>
+          <div class="card dashstat inventory-kpi" [ngClass]="'inventory-'+overallInventoryHealth"><span class="dash-icon">◇</span><span class="muted">Available Tickets</span><div class="metric">{{dashboard.availableTickets||0}}</div><small>{{overallInventoryHealth==='critical' ? 'Critical stock level' : overallInventoryHealth==='low' ? 'Low stock warning' : 'Healthy availability'}}</small></div>
           <div class="card dashstat"><span class="dash-icon">▧</span><span class="muted">Issued Tickets</span><div class="metric">{{dashboard.issuedTickets||0}}</div><small>Currently issued records</small></div>
-          <div class="card dashstat attention"><span class="dash-icon">✈</span><span class="muted">Pending Requests</span><div class="metric">{{dashboard.pendingRequests||0}}</div><small>Waiting in FIFO queue</small></div>
+          <div class="card dashstat attention" [class.stale-kpi]="stalePendingIssues.length"><span class="dash-icon">✈</span><span class="muted">Pending Requests</span><div class="metric">{{dashboard.pendingRequests||0}}</div><small *ngIf="!stalePendingIssues.length">Waiting in FIFO queue</small><small *ngIf="stalePendingIssues.length">{{stalePendingIssues.length}} overdue request{{stalePendingIssues.length===1 ? '' : 's'}}</small></div>
         </div>
 
         <div class="dashboard-section-title"><div><h3>Quick Access</h3><span class="muted">Go directly to the most-used ParkingTiq functions</span></div></div>
@@ -182,9 +211,17 @@
           </div>
         </div>
 
-        <div class="card inventory-overview">
-          <div class="panel-head"><div><h3>Available Inventory by Ticket Type</h3><span class="muted">Current physical ticket availability</span></div><button class="text-action" (click)="nav('remaining')">View inventory →</button></div>
-          <div class="chart"><div class="barwrap" *ngFor="let kv of dashboard.availableByType | keyvalue"><div class="bar" [style.height.%]="bar(kv.value)"><b>{{kv.value}}</b><span>{{kv.key}}h</span></div></div></div>
+        <div class="card inventory-overview inventory-health-overview" [ngClass]="'inventory-'+overallInventoryHealth">
+          <div class="panel-head"><div><h3>Ticket Availability by Duration</h3><span class="muted">Green = healthy · amber = low (≤ {{lowTicketThreshold}}) · red = critical (≤ {{criticalTicketThreshold}})</span></div><button class="text-action" (click)="nav('remaining')">View inventory →</button></div>
+          <div class="availability-legend"><span class="legend-good"><i></i>Healthy</span><span class="legend-low"><i></i>Low</span><span class="legend-critical"><i></i>Critical</span></div>
+          <div class="ticket-availability-chart">
+            <div class="availability-bar-wrap" *ngFor="let b of inventoryBuckets">
+              <div class="availability-count">{{b.count}}</div>
+              <div class="availability-track"><div class="availability-bar" [ngClass]="'bar-'+b.status" [style.height.%]="b.height"></div></div>
+              <div class="availability-label">{{b.hours}}h</div>
+              <small>{{inventoryHealthLabel(b.count)}}</small>
+            </div>
+          </div>
         </div>
       </section>
 
