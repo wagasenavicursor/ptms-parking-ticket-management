@@ -215,3 +215,16 @@ section > h1::after{
 .primary-home .home-card-meta{color:var(--tiq-green-dark)}
 @media(max-width:1000px){.home-card-grid{grid-template-columns:repeat(2,minmax(0,1fr))}}
 @media(max-width:640px){.home-card-grid{grid-template-columns:1fr}.home-card{min-height:155px}.home-welcome h1{font-size:28px}}
+
+
+/* Settings administration tools */
+.settings-tools{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px;margin-bottom:18px}
+.settings-tool{border:1px solid var(--line);border-radius:7px;background:#fff;padding:16px;text-align:left;display:grid;grid-template-columns:40px 1fr auto;gap:12px;align-items:center;cursor:pointer;color:var(--text);transition:.15s}
+.settings-tool:hover{border-color:#b8c5d1;box-shadow:0 5px 16px rgba(17,49,83,.07);transform:translateY(-1px)}
+.settings-tool-icon{width:40px;height:40px;border-radius:5px;background:var(--tiq-blue-soft);color:var(--tiq-blue);display:grid;place-items:center;font-size:18px}
+.settings-tool b{display:block;font-size:14px;color:#1a2d40}
+.settings-tool small{display:block;color:var(--muted);font-size:11px;line-height:1.35;margin-top:3px}
+.settings-tool i{font-style:normal;color:var(--tiq-blue);font-size:18px}
+.queue-hint{margin:-4px 0 12px;font-size:12px}
+.readonly-value{padding:10px 11px;border:1px solid #d8dfe5;border-radius:5px;background:#f4f6f7;color:#566572;min-height:40px}
+@media(max-width:900px){.settings-tools{grid-template-columns:1fr}}
