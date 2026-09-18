@@ -51,7 +51,6 @@
 .simple-loader>small{display:block;color:#7d8994;margin-top:5px;font-size:11px}
 .accountbar{min-height:62px;background:#fff;color:#17212b;display:flex;align-items:center;justify-content:space-between;padding:8px 22px;position:sticky;top:0;z-index:60;border-bottom:1px solid #dce2e8}
 .accountbar>div{display:flex;align-items:center;gap:10px}
-.header-logo{width:118px;height:42px;object-fit:contain;object-position:left center}
 .topsearch{flex:1;max-width:620px;margin:0 30px;background:#f3f5f6;border:1px solid #e1e5e8;border-radius:4px;padding:9px 13px;color:#7a8791}
 .account-actions button{border:1px solid #cbd4dc;background:#fff;color:#174a96;border-radius:4px;padding:8px 10px;cursor:pointer;font-weight:700}
 .account-actions button:hover{background:#edf3fb}
