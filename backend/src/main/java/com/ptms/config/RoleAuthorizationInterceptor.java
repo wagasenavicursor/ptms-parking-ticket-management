@@ -30,15 +30,19 @@ public class RoleAuthorizationInterceptor implements HandlerInterceptor {
 
     if ("SECURITY".equals(role)) {
       boolean readEmployees = path.contains("/api/employees") && "GET".equals(method);
+      boolean readDepartments = path.contains("/api/departments") && "GET".equals(method);
+      boolean readTeams = path.contains("/api/teams") && "GET".equals(method);
       boolean allowed = path.contains("/api/tickets")
         || path.contains("/api/issues")
         || path.contains("/api/visitors")
         || path.contains("/api/dashboard")
         || path.contains("/api/auth/")
-        || readEmployees;
+        || readEmployees
+        || readDepartments
+        || readTeams;
 
       if (!allowed) {
-        p.sendError(403, "Security role cannot access this function");
+        p.sendError(403, "This role cannot access this function");
         return false;
       }
     }
