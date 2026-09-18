@@ -441,3 +441,15 @@ section > h1::after{
 .report-preview-actions .muted{font-size:11px}
 @media(max-width:1100px){.report-filter-grid{grid-template-columns:repeat(2,minmax(0,1fr))}}
 @media(max-width:640px){.report-preview-head{display:block}.report-preview-head .btn{margin-top:12px;width:100%}.report-filter-grid{grid-template-columns:1fr}.report-preview-summary{display:block}.report-preview-summary span{display:block;margin:3px 0}.report-preview-actions{display:block}.report-preview-actions .btn{width:100%;margin-bottom:8px}}
+
+
+/* Parking requirement duration mode */
+.duration-mode-options{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
+.duration-option{align-items:flex-start;padding:11px 12px}
+.duration-option>span{display:block}
+.duration-option b{display:block;font-size:12px}
+.duration-option small{display:block;margin-top:3px;color:var(--muted);font-size:10.5px;font-weight:500;line-height:1.35}
+.manual-hours-field{padding:12px;border:1px solid #d8e3cf;border-radius:7px;background:#f8fcf5}
+.manual-hours-field input{max-width:220px}
+.field-help{display:block;margin-top:6px;color:var(--muted);font-size:10.5px}
+@media(max-width:700px){.duration-mode-options{grid-template-columns:1fr}.manual-hours-field input{max-width:none}}
