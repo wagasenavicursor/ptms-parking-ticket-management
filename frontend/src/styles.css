@@ -816,3 +816,56 @@ button:focus-visible,.btn:focus-visible{box-shadow:0 0 0 3px rgba(23,74,150,.12)
 .barcodechip-button{appearance:none;-webkit-appearance:none;border:0;font:inherit;cursor:pointer}
 .barcodechip-button:focus-visible{outline:2px solid #174a96;outline-offset:2px}
 @media(prefers-reduced-motion:reduce){.skip-link{transition:none}}
+
+
+/* Responsive page-width consistency */
+.main{padding:clamp(18px,2.2vw,32px) clamp(16px,2.6vw,38px) 48px}
+.main>section{width:100%;max-width:1280px;margin-left:auto;margin-right:auto;min-width:0}
+.home-page,.dashboard-page{width:100%;max-width:1280px!important;margin-left:auto!important;margin-right:auto!important}
+.pagehead,.dashboard-head{width:100%}
+.card,.home-card,.dashboard-panel,.inventory-overview{min-width:0}
+.table{max-width:100%;overflow-x:auto}
+table{max-width:100%}
+
+@media(max-width:1100px){
+  .cards.dashboard-kpis{grid-template-columns:repeat(2,minmax(0,1fr))}
+  .dashboard-columns{grid-template-columns:1fr}
+  .dashboard-shortcuts{grid-template-columns:repeat(2,minmax(0,1fr))}
+  .settings-tools{grid-template-columns:repeat(2,minmax(0,1fr))}
+  .current-rules-grid,.rule-duration-grid{grid-template-columns:repeat(2,minmax(0,1fr))}
+}
+
+@media(max-width:900px){
+  .main{padding:22px 22px 42px}
+  .pagehead{gap:12px}
+  .cards:not(.dashboard-kpis){grid-template-columns:repeat(2,minmax(0,1fr))}
+  .form{grid-template-columns:repeat(2,minmax(0,1fr))}
+  .settings-tools{grid-template-columns:1fr}
+}
+
+@media(max-width:760px){
+  .main{padding:16px 14px 88px}
+  .main>section,.home-page,.dashboard-page{max-width:none!important}
+  .home-card-grid-rich{grid-template-columns:1fr!important;gap:12px}
+  .home-card-hero,.home-dashboard-card,.home-card-second-row,.home-card-third-row{grid-column:1/-1!important;min-height:auto}
+  .home-hero-steps{grid-template-columns:1fr}
+  .home-hero-footer{grid-template-columns:1fr 1fr}
+  .cards,.cards.dashboard-kpis,.form,.dashboard-shortcuts,.dashboard-columns,.settings-tools,.current-rules-grid,.rule-duration-grid{grid-template-columns:1fr}
+  .pagehead,.dashboard-head{flex-direction:column;align-items:stretch}
+  .pagehead .btn,.dashboard-head-actions .btn{width:100%}
+  .person-picker-layout{grid-template-columns:1fr}
+  .toolbar{flex-wrap:wrap}
+  .toolbar>*{min-width:min(100%,180px)}
+}
+
+@media(max-width:520px){
+  .main{padding-left:10px;padding-right:10px}
+  .card{padding:14px}
+  .home-card{padding:16px}
+  .pagehead h1,.main>section>h1{font-size:24px}
+  .home-hero-footer{grid-template-columns:1fr}
+  .home-mini-stats{grid-template-columns:1fr 1fr}
+  .form{grid-template-columns:1fr}
+  .actions,.quick,.audit-filter-actions,.settings-save-row{flex-direction:column;align-items:stretch}
+  .actions .btn,.quick .btn,.audit-filter-actions .btn,.settings-save-row .btn{width:100%}
+}
