@@ -754,3 +754,27 @@ button.physical-ticket.pending-fifo-ticket:disabled{opacity:1;cursor:not-allowed
 .requirement-message.requirement-error{border-color:#e6bcbc;background:#fff5f5;color:#a32d2d}
 .requirement-message.requirement-success{border-color:#cce2bf;background:#f3faef;color:#4f7d38}
 .requirement-message.requirement-info{border-color:#c8d9eb;background:#f3f8fd;color:#3f658e}
+
+
+/* Current Rules settings summary */
+.current-rules-card{margin-bottom:16px;padding:18px;border-color:#d6e0e8;background:linear-gradient(180deg,#fff 0%,#fbfcfd 100%)}
+.current-rules-head{display:flex;align-items:flex-start;justify-content:space-between;gap:16px;margin-bottom:14px}
+.current-rules-head h3{margin:3px 0 4px;color:#1f3447;font-size:18px}
+.current-rules-head p{margin:0;max-width:760px;color:#74818c;font-size:10.5px;line-height:1.45}
+.settings-rule-kicker{display:block;color:#67b52c;font-size:8.5px;font-weight:900;letter-spacing:.8px}
+.current-rules-badge{flex:0 0 auto;padding:5px 9px;border:1px solid #c7dbb8;border-radius:999px;background:#eff8ea;color:#568b3b;font-size:9px;font-weight:850}
+.current-rules-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:9px}
+.rule-summary-card{display:flex;align-items:center;gap:10px;padding:11px 12px;border:1px solid #e0e6eb;border-radius:8px;background:#fff}
+.rule-summary-icon{width:34px;height:34px;display:grid;place-items:center;flex:0 0 34px;border-radius:8px;background:#edf3fb;color:#174a96;font-weight:900}
+.rule-summary-card small,.rule-duration-copy small{display:block;color:#7a8791;font-size:8.5px;text-transform:uppercase;letter-spacing:.35px}
+.rule-summary-card b{display:block;margin-top:2px;color:#253a4c;font-size:12px}
+.rule-duration-section{margin-top:13px;padding-top:13px;border-top:1px solid #e9edf0}
+.rule-duration-title{display:flex;align-items:center;justify-content:space-between;margin-bottom:9px}
+.rule-duration-title b{display:block;color:#2d4052;font-size:11px}
+.rule-duration-title small{display:block;margin-top:2px;color:#7a8791;font-size:9px}
+.rule-duration-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}
+.rule-duration-item{display:flex;align-items:center;gap:9px;padding:9px 10px;border:1px solid #e1e7eb;border-radius:8px;background:#fff}
+.rule-duration-copy{min-width:0}
+.rule-duration-copy b{display:block;margin-top:2px;color:#34495b;font-size:10px}
+@media(max-width:900px){.current-rules-grid,.rule-duration-grid{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media(max-width:560px){.current-rules-head{flex-direction:column}.current-rules-grid,.rule-duration-grid{grid-template-columns:1fr}.current-rules-badge{align-self:flex-start}}
