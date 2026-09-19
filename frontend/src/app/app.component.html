@@ -276,7 +276,48 @@
     </div>
   </div>
 </section>
-      <section *ngSwitchCase="'reconcile'"><h1>End-of-Day Reconciliation</h1><div class="card"><div class="scanner"><div class="live"><span class="dot"></span><b>Reconciliation Scanner Active</b></div><input #rec placeholder="Scan barcode or type and press Enter" (keyup.enter)="manualRecon(rec)"><div class="muted">Scanned {{reconScans.length}} · Last {{reconScans.at(-1) || '—'}}</div></div><div class="actions"><button class="btn secondary" (click)="clearRecon()">Clear</button><button class="btn save-action" (click)="runRecon()">Validate & Save</button></div></div><div class="card" *ngIf="recon"><div class="grid cards"><div><span class="muted">Expected</span><div class="metric">{{recon.expectedAvailable}}</div></div><div><span class="muted">Scanned</span><div class="metric">{{recon.scannedCount}}</div></div><div><span class="muted">Missing</span><div class="metric">{{recon.missingCount}}</div></div><div><span class="muted">Unknown</span><div class="metric">{{recon.unknownCount}}</div></div></div></div></section>
+      <section *ngSwitchCase="'reconcile'" class="reconcile-page">
+  <div class="pagehead"><div><h1>End-of-Day Reconciliation</h1><div class="muted">Compare the physical tickets at the security desk with the current system inventory.</div></div></div>
+
+  <div class="card recon-remaining-card">
+    <div class="panel-head">
+      <div><h3>Current Remaining Inventory</h3><span class="muted">These are the physical tickets the system currently expects to be available.</span></div>
+      <div class="recon-remaining-total"><strong>{{remaining.length}}</strong><small>total available</small></div>
+    </div>
+    <div class="recon-inventory-grid">
+      <div class="recon-inventory-type" *ngFor="let h of ticketDurationTypes" [ngClass]="'inventory-'+inventoryHealth(availableFor(h).length,h)">
+        <div class="recon-inventory-head">
+          <span class="hour-chip hour-chip-large" [ngClass]="hourClass(h)">{{h}}h</span>
+          <span><b>{{availableFor(h).length}}</b><small>available</small></span>
+        </div>
+        <div class="recon-ticket-list" *ngIf="availableTicketObjectsFor(h).length; else noReconTickets">
+          <div class="barcode-ticket recon-barcode-ticket" *ngFor="let t of availableTicketObjectsFor(h)" [class.recon-scanned]="reconScans.includes(t.barcode)" [class.has-expiry]="t.expiryDate">
+            <span class="ticket-notch notch-left"></span><span class="ticket-notch notch-right"></span>
+            <b>{{t.barcode}}</b>
+            <small class="recon-scan-state" *ngIf="reconScans.includes(t.barcode)">✓ Scanned</small>
+            <small *ngIf="t.expiryDate && !reconScans.includes(t.barcode)" [ngClass]="'expiry-'+expiryState(t)">{{expiryText(t)}}</small>
+          </div>
+        </div>
+        <ng-template #noReconTickets><div class="remaining-empty">No tickets</div></ng-template>
+      </div>
+    </div>
+  </div>
+
+  <div class="card recon-scanner-card">
+    <div class="scanner"><div class="live"><span class="dot"></span><b>Reconciliation Scanner Active</b></div><input #rec placeholder="Scan barcode or type and press Enter" (keyup.enter)="manualRecon(rec)"><div class="muted">Scanned {{reconScans.length}} · Last {{reconScans.at(-1) || '—'}}</div></div>
+    <div class="actions"><button class="btn secondary" (click)="clearRecon()">Clear</button><button class="btn save-action" (click)="runRecon()">Validate & Save</button></div>
+  </div>
+
+  <div class="card recon-result-card" *ngIf="recon">
+    <div class="panel-head"><div><h3>Reconciliation Result</h3><span class="muted">Saved comparison between expected and scanned physical inventory.</span></div></div>
+    <div class="grid cards recon-result-grid">
+      <div><span class="muted">Expected</span><div class="metric">{{recon.expectedAvailable}}</div></div>
+      <div><span class="muted">Scanned</span><div class="metric">{{recon.scannedCount}}</div></div>
+      <div><span class="muted">Missing</span><div class="metric">{{recon.missingCount}}</div></div>
+      <div><span class="muted">Unknown</span><div class="metric">{{recon.unknownCount}}</div></div>
+    </div>
+  </div>
+</section>
       <section *ngSwitchCase="'reports'">
         <div class="pagehead"><div><h1>Reports</h1><div class="muted">Preview, filter and confirm each report before saving.</div></div></div>
 
