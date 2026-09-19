@@ -820,8 +820,8 @@ button:focus-visible,.btn:focus-visible{box-shadow:0 0 0 3px rgba(23,74,150,.12)
 
 /* Responsive page-width consistency */
 .main{width:100%;min-width:0;padding:clamp(18px,1.8vw,28px) clamp(12px,1.6vw,24px) 48px}
-.main>section{width:100%;max-width:none;margin-left:auto;margin-right:auto;min-width:0}
-.home-page,.dashboard-page{width:100%;max-width:none!important;margin-left:auto!important;margin-right:auto!important}
+.main>section{width:80%;max-width:none;margin-left:auto;margin-right:auto;min-width:0}
+.home-page,.dashboard-page{width:80%;max-width:none!important;margin-left:auto!important;margin-right:auto!important}
 .main>section>*,
 .card,.home-card,.dashboard-panel,.inventory-overview,
 .grid,.home-card-grid-rich,.issuegrid,.dashboard-columns,.settings-tools,
@@ -858,7 +858,7 @@ input,select,textarea{max-width:100%}
 
 @media(max-width:760px){
   .main{padding:16px 14px 88px}
-  .main>section,.home-page,.dashboard-page{max-width:none!important}
+  .main>section,.home-page,.dashboard-page{width:100%!important;max-width:none!important}
   .home-card-grid-rich{grid-template-columns:1fr!important;gap:12px}
   .home-card-hero,.home-dashboard-card,.home-card-second-row,.home-card-third-row{grid-column:1/-1!important;min-height:auto}
   .home-hero-steps{grid-template-columns:1fr}
