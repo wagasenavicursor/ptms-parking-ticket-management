@@ -692,3 +692,15 @@ section > h1::after{
   .remaining-ticket-list{display:grid;grid-template-columns:1fr}
   .barcode-ticket{min-width:0}
 }
+
+
+/* Keep duration identity colors consistent even inside stock-health cards */
+.remaining-inventory-card .hour-chip.hour-1{background:#eef5ff!important;border-color:#c8daf5!important;color:#2f5f9f!important}
+.remaining-inventory-card .hour-chip.hour-2{background:#eefaf7!important;border-color:#c6e7df!important;color:#287a68!important}
+.remaining-inventory-card .hour-chip.hour-4{background:#f4f0ff!important;border-color:#d8cdf5!important;color:#6b51a5!important}
+.remaining-inventory-card .hour-chip.hour-6{background:#fff6e8!important;border-color:#f0d7aa!important;color:#9a681f!important}
+.remaining-inventory-card .hour-chip.hour-8{background:#fff0f4!important;border-color:#efc9d4!important;color:#9f5369!important}
+.remaining-inventory-card .hour-chip.hour-12{background:#eef8ea!important;border-color:#cce4c0!important;color:#558c3d!important}
+.combo-hours{display:inline-flex;align-items:center;gap:5px;flex-wrap:wrap}
+.combo-hours i{font-style:normal;color:#8a959e;font-weight:700}
+.combo>small{display:block;margin-top:5px}
