@@ -246,9 +246,100 @@
   <span class="ticket-barcode">{{t.barcode}}</span>
   <span class="ticket-action" *ngIf="!pendingIssueForBarcode(t.barcode)">Select →</span>
   <span class="ticket-pending-info" *ngIf="pendingIssueForBarcode(t.barcode)"><b>Pending FIFO</b><small>{{pendingIssueForBarcode(t.barcode)?.requestNumber}} · {{pendingIssueForBarcode(t.barcode)?.personReference}} · {{pendingAgeText(pendingIssueForBarcode(t.barcode))}}</small></span>
-</button></div><div class="empty-ticket-choice" *ngIf="!manualAvailableTickets.length && issueScans.length<combo.length">No matching available tickets remain for this combination.</div><div class="complete-ticket-choice" *ngIf="issueScans.length===combo.length">All required physical tickets selected.</div></div></div><div class="card"><h3>3. Add Physical Ticket Barcodes</h3><div class="quick"><button class="btn" [class.secondary]="barcodeMode!=='SCAN'" (click)="setBarcodeMode('SCAN')">Use Scanner</button><button class="btn" [class.secondary]="barcodeMode!=='MANUAL'" (click)="setBarcodeMode('MANUAL')">Select Manually</button></div><div class="scanner" *ngIf="barcodeMode==='SCAN'"><div class="live"><span class="dot"></span><b>Scanner capture active</b><span class="badge green">Enter suffix</span></div><input #iss placeholder="Scanner input (or type + Enter)" (keyup.enter)="manualIssue(iss)"></div><div class="manual-selected-panel" *ngIf="barcodeMode==='MANUAL'"><div class="manual-ticket-head"><div><b>Selected physical tickets</b><small>Click a selected ticket to remove it and return it to section 2.</small></div><span>{{issueScans.length}} / {{combo.length}}</span></div><div class="ticket-pick-grid selected-ticket-grid" *ngIf="issueScans.length"><button type="button" class="physical-ticket selected-physical-ticket" *ngFor="let b of issueScans" (click)="removeIssueBarcode(b)"><span class="ticket-duration" [ngClass]="hourClass(selectedIssueTicket(b)?.durationHours)">{{selectedIssueTicket(b)?.durationHours}}h</span><span class="ticket-barcode">{{b}}</span><span class="ticket-action remove-ticket">Remove ×</span></button></div><div class="empty-ticket-choice" *ngIf="!issueScans.length">No tickets selected yet. Choose a ticket from section 2.</div></div><div class="scanner manual-entry-fallback" *ngIf="barcodeMode==='MANUAL'"><label>Or enter a barcode</label><div class="quick"><input [(ngModel)]="manualBarcode" placeholder="e.g. OGF-04H-4001" (keyup.enter)="manualIssue()"><button class="btn secondary" (click)="manualIssue()">Add Barcode</button></div></div><div *ngIf="barcodeMode==='SCAN'" style="margin-top:12px"><button type="button" class="badge green barcodechip barcodechip-button" *ngFor="let b of issueScans" (click)="removeIssueBarcode(b)" [attr.aria-label]="'Remove ticket '+b">{{b}} ×</button></div><div class="actions" style="margin-top:14px"><button class="btn success" (click)="createIssue()">Create FIFO Request</button></div></div></div><div class="card register-editor edit-mode" *ngIf="pendingEdit"><h3>Edit Pending FIFO Request</h3><div class="muted">{{pendingEdit.requestNumber}} · {{pendingEdit.personReference}} · Double-click any pending queue row to edit</div><div class="form" style="margin-top:12px"><div><label>Date</label><input type="date" [(ngModel)]="pendingEdit.visitDate"></div><div><label>Extra Hours</label><input type="number" min="0" [(ngModel)]="pendingEdit.extraHours"></div><div><label>Entry Time</label><input type="time" [(ngModel)]="pendingEdit.entryTime"></div><div><label>Exit Time</label><input type="time" [(ngModel)]="pendingEdit.exitTime"></div><div class="full"><label>Reason</label><input [(ngModel)]="pendingEdit.reason"></div><div class="full"><label>Assigned Barcodes</label><div class="readonly-value">{{pendingEdit.barcodes.join(', ') || '—'}}</div></div></div><button class="btn save-action" (click)="savePendingEdit()">Save Changes</button> <button class="btn secondary" (click)="clearPendingEdit()">Cancel</button></div><div class="card"><h3>Live FIFO Guard Queue</h3><div class="muted queue-hint">Double-click a request to open it in edit mode in the Issued Tickets Register.</div><div class="table tall-table" style="max-height:420px;overflow:auto"><table><tr><th>Request</th><th>Person</th><th>Hours</th><th>Barcodes</th><th>Status</th><th>Actions</th></tr><tr *ngFor="let i of issues" class="clickrow" tabindex="0" role="button" (dblclick)="openQueueRecordInRegister(i)" (keydown.enter)="openQueueRecordInRegister(i)" (keydown.space)="$event.preventDefault();openQueueRecordInRegister(i)" [attr.aria-label]="'Open FIFO request '+i.requestNumber"><td>{{i.requestNumber}}</td><td>{{i.personReference}}</td><td><span class="hour-chip hour-chip-inline" [ngClass]="hourClass(i.requiredHours)">{{i.requiredHours}}h</span></td><td>{{i.barcodes.join(', ')}}</td><td>{{i.status}}</td><td><span class="row-actions" *ngIf="i.status==='PENDING'"><button class="btn sm success" (click)="complete(i)">Complete</button><button class="btn sm secondary" (click)="cancelIssue(i)">Cancel</button><button class="btn sm danger" (click)="deleteIssue(i)">Delete</button></span></td></tr></table></div></div></section>
+</button></div><div class="empty-ticket-choice" *ngIf="!manualAvailableTickets.length && issueScans.length<combo.length">No matching available tickets remain for this combination.</div><div class="complete-ticket-choice" *ngIf="issueScans.length===combo.length">All required physical tickets selected.</div></div></div><div class="card"><h3>3. Add Physical Ticket Barcodes</h3><div class="quick"><button class="btn" [class.secondary]="barcodeMode!=='SCAN'" (click)="setBarcodeMode('SCAN')">Use Scanner</button><button class="btn" [class.secondary]="barcodeMode!=='MANUAL'" (click)="setBarcodeMode('MANUAL')">Select Manually</button></div><div class="scanner" *ngIf="barcodeMode==='SCAN'"><div class="live"><span class="dot"></span><b>Scanner capture active</b><span class="badge green">Enter suffix</span></div><input #iss placeholder="Scanner input (or type + Enter)" (keyup.enter)="manualIssue(iss)"></div><div class="manual-selected-panel" *ngIf="barcodeMode==='MANUAL'"><div class="manual-ticket-head"><div><b>Selected physical tickets</b><small>Click a selected ticket to remove it and return it to section 2.</small></div><span>{{issueScans.length}} / {{combo.length}}</span></div><div class="ticket-pick-grid selected-ticket-grid" *ngIf="issueScans.length"><button type="button" class="physical-ticket selected-physical-ticket" *ngFor="let b of issueScans" (click)="removeIssueBarcode(b)"><span class="ticket-duration" [ngClass]="hourClass(selectedIssueTicket(b)?.durationHours)">{{selectedIssueTicket(b)?.durationHours}}h</span><span class="ticket-barcode">{{b}}</span><span class="ticket-action remove-ticket">Remove ×</span></button></div><div class="empty-ticket-choice" *ngIf="!issueScans.length">No tickets selected yet. Choose a ticket from section 2.</div></div><div class="scanner manual-entry-fallback" *ngIf="barcodeMode==='MANUAL'"><label>Or enter a barcode</label><div class="quick"><input [(ngModel)]="manualBarcode" placeholder="e.g. OGF-04H-4001" (keyup.enter)="manualIssue()"><button class="btn secondary" (click)="manualIssue()">Add Barcode</button></div></div><div *ngIf="barcodeMode==='SCAN'" style="margin-top:12px"><button type="button" class="badge green barcodechip barcodechip-button" *ngFor="let b of issueScans" (click)="removeIssueBarcode(b)" [attr.aria-label]="'Remove ticket '+b">{{b}} ×</button></div><div class="actions" style="margin-top:14px"><button class="btn success" (click)="createIssue()">Create FIFO Request</button></div></div></div><div class="card register-editor edit-mode" *ngIf="pendingEdit"><h3>Edit Pending FIFO Request</h3><div class="muted">{{pendingEdit.requestNumber}} · {{pendingEdit.personReference}} · Double-click any pending queue row to edit</div><div class="form" style="margin-top:12px"><div><label>Date</label><input type="date" [(ngModel)]="pendingEdit.visitDate"></div><div><label>Extra Hours</label><input type="number" min="0" [(ngModel)]="pendingEdit.extraHours"></div><div><label>Entry Time</label><input type="time" [(ngModel)]="pendingEdit.entryTime"></div><div><label>Exit Time</label><input type="time" [(ngModel)]="pendingEdit.exitTime"></div><div class="full"><label>Reason</label><input [(ngModel)]="pendingEdit.reason"></div><div class="full"><label>Assigned Barcodes</label><div class="readonly-value">{{pendingEdit.barcodes.join(', ') || '—'}}</div></div></div><button class="btn save-action" (click)="savePendingEdit()">Save Changes</button> <button class="btn secondary" (click)="clearPendingEdit()">Cancel</button></div><div class="card live-fifo-queue-card"><h3>Live FIFO Guard Queue</h3><div class="muted queue-hint">Double-click a request to open it in edit mode in the Issued Tickets Register.</div><div class="table tall-table" style="max-height:420px;overflow:auto"><table><tr><th>Request</th><th>Person</th><th>Hours</th><th>Barcodes</th><th>Status</th><th>Actions</th></tr><tr *ngFor="let i of issues" class="clickrow" tabindex="0" role="button" (dblclick)="openQueueRecordInRegister(i)" (keydown.enter)="openQueueRecordInRegister(i)" (keydown.space)="$event.preventDefault();openQueueRecordInRegister(i)" [attr.aria-label]="'Open FIFO request '+i.requestNumber"><td>{{i.requestNumber}}</td><td>{{i.personReference}}</td><td><span class="hour-chip hour-chip-inline" [ngClass]="hourClass(i.requiredHours)">{{i.requiredHours}}h</span></td><td>{{i.barcodes.join(', ')}}</td><td>{{i.status}}</td><td><span class="row-actions" *ngIf="i.status==='PENDING'"><button class="btn sm success" (click)="complete(i)">Complete</button><button class="btn sm secondary" (click)="cancelIssue(i)">Cancel</button><button class="btn sm danger" (click)="deleteIssue(i)">Delete</button></span></td></tr></table></div></div></section>
 
-      <section *ngSwitchCase="'register'"><div class="pagehead"><div><h1>Issued Tickets Register</h1><div class="muted">Completed and cancelled FIFO records · Double-click a row to edit</div></div></div><div class="card register-editor edit-mode" *ngIf="registerEdit && canEditRegisterRecord(registerEdit)"><h3>Edit FIFO Register Record</h3><div class="muted">{{registerEdit.requestNumber}} · {{registerEdit.status}} · {{registerEdit.personReference}}</div><div class="form" style="margin-top:12px"><div><label>Date</label><input type="date" [(ngModel)]="registerEdit.visitDate"></div><div><label>Extra Hours</label><input type="number" min="0" [(ngModel)]="registerEdit.extraHours"></div><div><label>Entry Time</label><input type="time" [(ngModel)]="registerEdit.entryTime"></div><div><label>Exit Time</label><input type="time" [(ngModel)]="registerEdit.exitTime"></div><div class="full"><label>Reason</label><input [(ngModel)]="registerEdit.reason"></div></div><button class="btn save-action" (click)="saveRegisterEdit()">Save Changes</button> <button class="btn secondary" (click)="clearRegisterEdit()">Cancel</button></div><div class="table tall-table" style="max-height:480px;overflow:auto"><table><tr><th>Request</th><th>Type</th><th>Person</th><th>Date</th><th>Reason</th><th>Hours</th><th>Barcodes</th><th>Status</th><th *ngIf="canManageClosedIssues()">Actions</th></tr><tr *ngFor="let i of registerIssues" [class.closed-row]="i.status==='CANCELLED'" [class.clickrow]="canManageClosedIssues()" [attr.tabindex]="canManageClosedIssues() ? 0 : null" [attr.role]="canManageClosedIssues() ? 'button' : null" (dblclick)="canManageClosedIssues() && startRegisterEdit(i)" (keydown.enter)="canManageClosedIssues() && startRegisterEdit(i)" (keydown.space)="$event.preventDefault();canManageClosedIssues() && startRegisterEdit(i)" [attr.aria-label]="canManageClosedIssues() ? 'Edit register request '+i.requestNumber : null"><td>{{i.requestNumber}}</td><td>{{i.personType}}</td><td>{{i.personReference}}</td><td>{{i.visitDate}}</td><td>{{i.reason || '—'}}</td><td><span class="hour-chip hour-chip-inline" [ngClass]="hourClass(i.requiredHours)">{{i.requiredHours}}h</span></td><td>{{i.barcodes.join(', ') || '—'}}</td><td><span class="badge" [class.green]="i.status==='COMPLETED'">{{i.status}}</span></td><td *ngIf="canManageClosedIssues()"><span class="row-actions"><button class="btn sm danger" (click)="$event.stopPropagation();deleteIssue(i)">Delete</button></span></td></tr></table></div></section>
+      <section *ngSwitchCase="'register'" class="issued-register-page">
+  <div class="pagehead">
+    <div>
+      <h1>Issued Tickets Register</h1>
+      <div class="muted">Completed and cancelled FIFO records · Double-click, Enter or Space on a row to edit</div>
+    </div>
+  </div>
+
+  <div class="register-summary-grid">
+    <div class="card register-summary-card">
+      <span class="register-summary-icon all">▧</span>
+      <div><small>Total Register Records</small><strong>{{registerIssues.length}}</strong><span>completed + cancelled</span></div>
+    </div>
+    <div class="card register-summary-card">
+      <span class="register-summary-icon completed">✓</span>
+      <div><small>Completed</small><strong>{{completedRegisterIssues.length}}</strong><span>successfully issued</span></div>
+    </div>
+    <div class="card register-summary-card">
+      <span class="register-summary-icon cancelled">×</span>
+      <div><small>Cancelled</small><strong>{{cancelledRegisterIssues.length}}</strong><span>closed without issue</span></div>
+    </div>
+    <div class="card register-summary-card">
+      <span class="register-summary-icon tickets">◇</span>
+      <div><small>Physical Tickets</small><strong>{{registeredTicketCount}}</strong><span>linked to register records</span></div>
+    </div>
+  </div>
+
+  <div class="card register-editor edit-mode" *ngIf="registerEdit && canEditRegisterRecord(registerEdit)">
+    <div class="register-editor-head">
+      <div><span class="register-kicker">EDIT REGISTER RECORD</span><h3>Edit FIFO Register Record</h3><div class="muted">{{registerEdit.requestNumber}} · {{registerEdit.status}} · {{registerEdit.personReference}}</div></div>
+      <span class="badge" [class.green]="registerEdit.status==='COMPLETED'">{{registerEdit.status}}</span>
+    </div>
+    <div class="form" style="margin-top:12px">
+      <div><label>Date</label><input type="date" [(ngModel)]="registerEdit.visitDate"></div>
+      <div><label>Extra Hours</label><input type="number" min="0" [(ngModel)]="registerEdit.extraHours"></div>
+      <div><label>Entry Time</label><input type="time" [(ngModel)]="registerEdit.entryTime"></div>
+      <div><label>Exit Time</label><input type="time" [(ngModel)]="registerEdit.exitTime"></div>
+      <div class="full"><label>Reason</label><input [(ngModel)]="registerEdit.reason"></div>
+    </div>
+    <button class="btn save-action" (click)="saveRegisterEdit()">Save Changes</button>
+    <button class="btn secondary" (click)="clearRegisterEdit()">Cancel</button>
+  </div>
+
+  <div class="card issued-register-table-card">
+    <div class="panel-head issued-register-table-head">
+      <div>
+        <span class="register-kicker">HISTORY</span>
+        <h3>Issued Register Details</h3>
+        <span class="muted">Full history of completed and cancelled parking ticket requests.</span>
+      </div>
+      <span class="register-table-count">{{registerIssues.length}} record{{registerIssues.length===1 ? '' : 's'}}</span>
+    </div>
+
+    <div class="register-table-help">
+      <span>ⓘ</span>
+      <div><b>Quick editing</b><small *ngIf="canManageClosedIssues()">Double-click, press Enter, or press Space on a row to edit the record.</small><small *ngIf="!canManageClosedIssues()">Register history is read-only for your role.</small></div>
+    </div>
+
+    <div class="table tall-table issued-register-table-wrap" style="max-height:560px;overflow:auto">
+      <table class="issued-register-table">
+        <tr>
+          <th>Request</th><th>Type</th><th>Person</th><th>Date</th><th>Reason</th><th>Hours</th><th>Physical Tickets</th><th>Status</th><th *ngIf="canManageClosedIssues()">Actions</th>
+        </tr>
+        <tr *ngFor="let i of registerIssues"
+            [class.closed-row]="i.status==='CANCELLED'"
+            [class.clickrow]="canManageClosedIssues()"
+            [attr.tabindex]="canManageClosedIssues() ? 0 : null"
+            [attr.role]="canManageClosedIssues() ? 'button' : null"
+            (dblclick)="canManageClosedIssues() && startRegisterEdit(i)"
+            (keydown.enter)="canManageClosedIssues() && startRegisterEdit(i)"
+            (keydown.space)="$event.preventDefault();canManageClosedIssues() && startRegisterEdit(i)"
+            [attr.aria-label]="canManageClosedIssues() ? 'Edit register request '+i.requestNumber : null">
+          <td><b class="register-request-no">{{i.requestNumber}}</b></td>
+          <td><span class="register-person-type">{{i.personType}}</span></td>
+          <td><b>{{i.personReference}}</b></td>
+          <td>{{i.visitDate}}</td>
+          <td class="register-reason">{{i.reason || '—'}}</td>
+          <td><span class="hour-chip hour-chip-inline" [ngClass]="hourClass(i.requiredHours)">{{i.requiredHours}}h</span></td>
+          <td>
+            <div class="register-barcode-list" *ngIf="i.barcodes.length; else noRegisterBarcode">
+              <span class="register-barcode-chip" *ngFor="let b of i.barcodes">{{b}}</span>
+            </div>
+            <ng-template #noRegisterBarcode>—</ng-template>
+          </td>
+          <td><span class="register-status-badge" [class.completed]="i.status==='COMPLETED'" [class.cancelled]="i.status==='CANCELLED'">{{i.status}}</span></td>
+          <td *ngIf="canManageClosedIssues()"><span class="row-actions"><button class="btn sm danger" (click)="$event.stopPropagation();deleteIssue(i)">Delete</button></span></td>
+        </tr>
+      </table>
+    </div>
+  </div>
+</section>
+
       <section *ngSwitchCase="'remaining'" class="remaining-page">
   <div class="pagehead"><div><h1>Remaining Inventory</h1><div class="muted">Available physical tickets</div></div><button class="btn" *ngIf="canManageInventory()" (click)="nav('inventory')">＋ Add Tickets</button></div>
   <div class="grid cards remaining-inventory-grid">
