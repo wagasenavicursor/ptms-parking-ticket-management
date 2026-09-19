@@ -627,3 +627,68 @@ section > h1::after{
 .remaining-inventory-card.inventory-good .hour-chip{background:#eef8e9;border-color:#c9e2bb;color:#4f9120}
 .remaining-inventory-card.inventory-low .hour-chip{background:#fff5dd;border-color:#e7c56e;color:#9a6511}
 .remaining-inventory-card.inventory-critical .hour-chip{background:#fff0f0;border-color:#e3aaaa;color:#b52e2e}
+
+
+/* Distinct light colors for ticket durations */
+.hour-chip.hour-1,.ticket-duration.hour-1,.alert-hour.hour-1{background:#eef5ff!important;border-color:#c8daf5!important;color:#2f5f9f!important}
+.hour-chip.hour-2,.ticket-duration.hour-2,.alert-hour.hour-2{background:#eefaf7!important;border-color:#c6e7df!important;color:#287a68!important}
+.hour-chip.hour-4,.ticket-duration.hour-4,.alert-hour.hour-4{background:#f4f0ff!important;border-color:#d8cdf5!important;color:#6b51a5!important}
+.hour-chip.hour-6,.ticket-duration.hour-6,.alert-hour.hour-6{background:#fff6e8!important;border-color:#f0d7aa!important;color:#9a681f!important}
+.hour-chip.hour-8,.ticket-duration.hour-8,.alert-hour.hour-8{background:#fff0f4!important;border-color:#efc9d4!important;color:#9f5369!important}
+.hour-chip.hour-12,.ticket-duration.hour-12,.alert-hour.hour-12{background:#eef8ea!important;border-color:#cce4c0!important;color:#558c3d!important}
+.hour-chip.hour-other,.ticket-duration.hour-other,.alert-hour.hour-other{background:#f1f4f6!important;border-color:#d7dfe5!important;color:#5f6d79!important}
+.hour-chip-large{min-width:58px;padding:8px 12px;font-size:19px;letter-spacing:-.3px}
+.ticket-duration{border:1px solid #d4dde5;border-radius:999px;padding:4px 8px;font-weight:900}
+
+/* Admin attention hour marker */
+.admin-alert-item{grid-template-columns:50px 1fr auto}
+.alert-hour{width:48px;height:40px;display:grid;place-items:center;border:1px solid #d5dfe7;border-radius:10px;font-size:16px;font-weight:900;letter-spacing:-.3px}
+.admin-alert-item.alert-critical .alert-hour{box-shadow:0 0 0 2px rgba(201,52,52,.05)}
+.admin-alert-item.alert-low .alert-hour{box-shadow:0 0 0 2px rgba(213,154,42,.05)}
+
+/* Remaining inventory ticket-style barcode cards */
+.remaining-inventory-card{min-height:230px}
+.remaining-card-head{align-items:center}
+.remaining-ticket-list{display:flex;flex-wrap:wrap;gap:8px;margin-top:10px}
+.barcode-ticket{position:relative;min-width:112px;display:flex;flex-direction:column;gap:4px;padding:10px 14px;border:1px dashed #b9c7d4;border-radius:7px;background:linear-gradient(180deg,#fff 0%,#f8fbfd 100%);box-shadow:0 2px 6px rgba(17,49,83,.05);overflow:hidden}
+.barcode-ticket:before{content:"";position:absolute;left:7px;top:7px;bottom:7px;border-left:2px dotted #dce4ea}
+.barcode-ticket b{padding-left:4px;color:#20384d;font-size:11px;letter-spacing:.25px;word-break:break-all}
+.barcode-ticket small{padding-left:4px;font-size:8.5px;font-weight:800}
+.ticket-notch{position:absolute;top:50%;width:10px;height:10px;margin-top:-5px;border-radius:50%;background:#fff;border:1px solid #dbe3e9}
+.notch-left{left:-6px}.notch-right{right:-6px}
+.barcode-ticket.has-expiry{background:linear-gradient(180deg,#fff 0%,#fffaf2 100%);border-color:#dac89b}
+.remaining-empty{padding:16px 0;color:#8a959e;font-size:10px;font-style:italic}
+
+/* Expiry information */
+.expiry-watch-card{margin-top:16px}
+.expiry-watch-list{display:grid;gap:8px;margin-top:12px}
+.expiry-watch-item{display:grid;grid-template-columns:auto 1fr auto;align-items:center;gap:12px;padding:10px 12px;border:1px solid #e3e8ec;border-radius:7px;background:#fafcfd}
+.expiry-ticket-info b,.expiry-countdown b{display:block;color:#26394b;font-size:11px}
+.expiry-ticket-info small,.expiry-countdown small{display:block;margin-top:2px;color:#7b8791;font-size:9px}
+.expiry-countdown{text-align:right}
+.expiry-watch-item.expiry-soon,.expiry-watch-item.expiry-watch{background:#fffaf0;border-color:#ead8aa}
+.expiry-watch-item.expiry-soon .expiry-countdown b,.barcode-ticket .expiry-soon{color:#a46b13}
+.expiry-watch-item.expiry-expired{background:#fff5f5;border-color:#e4bcbc}
+.expiry-watch-item.expiry-expired .expiry-countdown b,.barcode-ticket .expiry-expired{color:#b52e2e}
+.expiry-watch-item.expiry-ok .expiry-countdown b,.barcode-ticket .expiry-ok{color:#4f7e39}
+
+/* Quick visitor creation from parking requirement */
+.person-picker-heading{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:6px}
+.person-picker-heading label{margin:0}
+.quick-add-visitor{white-space:nowrap}
+.quick-visitor-backdrop{position:fixed;inset:0;z-index:10020;display:grid;place-items:center;padding:18px;background:rgba(17,33,49,.46);backdrop-filter:blur(3px)}
+.quick-visitor-modal{width:min(560px,100%);overflow:hidden;border:1px solid #d8e1e9;border-radius:12px;background:#fff;box-shadow:0 24px 70px rgba(14,35,55,.25)}
+.quick-visitor-header{display:flex;justify-content:space-between;align-items:flex-start;gap:14px;padding:18px 20px 12px;border-top:5px solid #174a96}
+.quick-visitor-header h3{margin:2px 0 4px;color:#1b2f41}
+.quick-visitor-header p{margin:0;color:#72808b;font-size:10px}
+.quick-visitor-form{display:grid;grid-template-columns:1fr 1fr;gap:12px;padding:14px 20px 18px}
+.quick-visitor-form label{display:block;margin-bottom:5px;font-size:10px;font-weight:800;color:#52606c}
+.quick-visitor-form input,.quick-visitor-form select{width:100%}
+.quick-visitor-actions{display:flex;justify-content:flex-end;gap:10px;padding:13px 20px 16px;border-top:1px solid #edf0f2;background:#fafbfc}
+@media(max-width:650px){
+  .quick-visitor-form{grid-template-columns:1fr}
+  .expiry-watch-item{grid-template-columns:auto 1fr}
+  .expiry-countdown{grid-column:2;text-align:left}
+  .remaining-ticket-list{display:grid;grid-template-columns:1fr}
+  .barcode-ticket{min-width:0}
+}
