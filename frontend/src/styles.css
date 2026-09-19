@@ -778,3 +778,29 @@ button.physical-ticket.pending-fifo-ticket:disabled{opacity:1;cursor:not-allowed
 .rule-duration-copy b{display:block;margin-top:2px;color:#34495b;font-size:10px}
 @media(max-width:900px){.current-rules-grid,.rule-duration-grid{grid-template-columns:repeat(2,minmax(0,1fr))}}
 @media(max-width:560px){.current-rules-head{flex-direction:column}.current-rules-grid,.rule-duration-grid{grid-template-columns:1fr}.current-rules-badge{align-self:flex-start}}
+
+
+/* End-of-day reconciliation inventory overview */
+.reconcile-page .panel-head{align-items:flex-start}
+.recon-remaining-card{margin-bottom:14px}
+.recon-remaining-total{display:flex;flex-direction:column;align-items:flex-end;gap:1px}
+.recon-remaining-total strong{font-size:24px;line-height:1;color:#174a96}
+.recon-remaining-total small{font-size:9px;color:#7b8791;text-transform:uppercase;letter-spacing:.35px}
+.recon-inventory-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px;margin-top:13px}
+.recon-inventory-type{padding:11px;border:1px solid #dfe6eb;border-radius:9px;background:#fbfcfd}
+.recon-inventory-type.inventory-low{border-color:#e4c575;background:#fffaf0}
+.recon-inventory-type.inventory-critical{border-color:#df9b9b;background:#fff6f6}
+.recon-inventory-head{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:9px}
+.recon-inventory-head>span:last-child{display:flex;flex-direction:column;align-items:flex-end}
+.recon-inventory-head b{font-size:17px;color:#26394b;line-height:1}
+.recon-inventory-head small{margin-top:2px;font-size:8px;color:#7b8791;text-transform:uppercase}
+.recon-ticket-list{display:flex;flex-wrap:wrap;gap:7px}
+.recon-barcode-ticket{min-width:105px;padding:8px 12px}
+.recon-barcode-ticket.recon-scanned{border-color:#9fc98a;background:linear-gradient(180deg,#fff 0%,#f1f9ed 100%);box-shadow:inset 3px 0 0 #67b52c,0 2px 6px rgba(17,49,83,.04)}
+.recon-scan-state{color:#4f9120!important;font-weight:900!important;text-transform:uppercase;letter-spacing:.3px}
+.recon-scanner-card{margin-top:14px}
+.recon-result-card{margin-top:14px}
+.recon-result-grid{margin-top:10px}
+.recon-result-grid>div{padding:11px;border:1px solid #e2e7eb;border-radius:8px;background:#fafcfd}
+@media(max-width:1000px){.recon-inventory-grid{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media(max-width:640px){.recon-inventory-grid{grid-template-columns:1fr}.recon-remaining-total{align-items:flex-start}.reconcile-page .panel-head{flex-direction:column;gap:8px}.recon-ticket-list{display:grid;grid-template-columns:1fr}.recon-barcode-ticket{min-width:0}}
