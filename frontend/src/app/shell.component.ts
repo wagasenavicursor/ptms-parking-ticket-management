@@ -7,8 +7,13 @@ import { AppComponent } from './app.component';
 
 @Component({selector:'ptms-shell',standalone:true,imports:[CommonModule,FormsModule,AppComponent],templateUrl:'./shell.component.html',styleUrls:['./shell.component.css']})
 export class ShellComponent {
-  user:any=null; username='admin'; password='admin'; email=''; loginError=''; message=''; userError=''; userMessage=''; forgot=false; users:any[]=[]; userRoleFilter='ALL'; manage=false; editing:any=this.blank(); loading=false; loadingText='Loading ParkingTiq...'; confirmDialog:any=null; private confirmResolver:((value:boolean)=>void)|null=null;
-  constructor(private h:HttpClient){}
+  user:any=null; username=''; password=''; rememberMe=false; email=''; loginError=''; message=''; userError=''; userMessage=''; forgot=false; users:any[]=[]; userRoleFilter='ALL'; manage=false; editing:any=this.blank(); loading=false; loadingText='Loading ParkingTiq...'; confirmDialog:any=null; private confirmResolver:((value:boolean)=>void)|null=null;
+  constructor(private h:HttpClient){
+    try{
+      const remembered=localStorage.getItem('parkingtiq.rememberedUsername');
+      if(remembered){this.username=remembered;this.rememberMe=true;}
+    }catch{}
+  }
   @HostListener('window:keydown',['$event']) onShellKeyboard(event:KeyboardEvent){
     if(event.key!=='Escape')return;
     if(this.confirmDialog){event.preventDefault();this.resolveConfirm(false);return;}
@@ -18,8 +23,10 @@ export class ShellComponent {
   roleCount(role:string){return role==='ALL'?this.users.length:this.users.filter(u=>u.role===role).length;}
   blank(){return{fullName:'',username:'',email:'',role:'SECURITY',enabled:true,password:'',profileImage:''}}
   busy(text:string){this.loadingText=text;this.loading=true}
-  login(){this.loginError='';this.message='';const started=Date.now();this.busy('Signing in securely...');const finish=(action:()=>void)=>setTimeout(()=>{action();this.loading=false},Math.max(0,3000-(Date.now()-started)));this.h.post<any>('/ptms/api/auth/login',{username:this.username,password:this.password}).subscribe({next:u=>finish(()=>{this.user=u;this.message=u.mustChangePassword?'Default password detected. Change it from the account menu.':''}),error:e=>finish(()=>this.loginError=e?.error?.message||'Invalid username or password')});}
-  logout(){this.busy('Signing out...');this.h.post('/ptms/api/auth/logout',{}).pipe(finalize(()=>this.loading=false)).subscribe({next:()=>{this.user=null;this.manage=false;this.password='';}})}
+  login(){this.loginError='';this.message='';const started=Date.now();this.busy('Signing in securely...');const finish=(action:()=>void)=>setTimeout(()=>{action();this.loading=false},Math.max(0,3000-(Date.now()-started)));this.h.post<any>('/ptms/api/auth/login',{username:this.username,password:this.password}).subscribe({next:u=>finish(()=>{this.user=u;this.message=u.mustChangePassword?'Default password detected. Change it from the account menu.':'';this.saveRememberedLogin();}),error:e=>finish(()=>this.loginError=e?.error?.message||'Invalid username or password')});}
+  saveRememberedLogin(){try{if(this.rememberMe&&this.username.trim())localStorage.setItem('parkingtiq.rememberedUsername',this.username.trim());else localStorage.removeItem('parkingtiq.rememberedUsername');}catch{}}
+  rememberChanged(){if(!this.rememberMe){try{localStorage.removeItem('parkingtiq.rememberedUsername');}catch{}}}
+  logout(){this.busy('Signing out...');this.h.post('/ptms/api/auth/logout',{}).pipe(finalize(()=>this.loading=false)).subscribe({next:()=>{this.user=null;this.manage=false;this.password='';if(!this.rememberMe)this.username='';}})}
   forgotPassword(){if(!this.email){this.loginError='Enter your account email first';return}this.busy('Preparing password reset...');this.h.post<any>('/ptms/api/auth/forgot-password',{email:this.email}).pipe(finalize(()=>this.loading=false)).subscribe({next:r=>{this.message=r.message;this.forgot=false},error:e=>this.loginError=e?.error?.message||'Unable to process request'});}
   openUsers(){this.manage=true;this.userError='';this.userMessage='';this.loadUsers()}
   loadUsers(){this.busy('Loading users...');this.h.get<any[]>('/ptms/api/users').pipe(finalize(()=>this.loading=false)).subscribe({next:x=>{this.users=x;this.userError='';},error:e=>this.userError=e?.error?.message||'Unable to load users'});}
