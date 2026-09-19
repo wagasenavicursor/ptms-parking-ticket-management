@@ -1,0 +1,2 @@
+ALTER TABLE parking_ticket
+  ADD COLUMN created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP AFTER expiry_date;
