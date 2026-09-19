@@ -52,7 +52,9 @@ export class AppComponent implements OnInit, OnDestroy {
   ngOnInit(){this.sub=this.scanner.scanned$.subscribe(x=>this.route(x));history.replaceState({parkingTiqPage:'home'},'',location.href);this.refresh();if(this.canAccess('settings'))this.loadSettings();if(this.canSeeAdminAlerts)this.alertRefreshTimer=setInterval(()=>this.refresh(),60000);} ngOnDestroy(){this.sub?.unsubscribe();if(this.alertRefreshTimer)clearInterval(this.alertRefreshTimer);this.scanner.disable();}
   @HostListener('window:popstate',['$event']) onBrowserBack(event:PopStateEvent){const p=(event.state?.parkingTiqPage||'home') as Page;this.openPage(this.canAccess(p)?p:'home',false);}
   @HostListener('window:keydown',['$event']) onNavigationShortcut(event:KeyboardEvent){
-    if(this.page==='home'||this.confirmDialog)return;
+    if(this.confirmDialog)return;
+    if(this.quickVisitorOpen&&event.key==='Escape'){event.preventDefault();this.closeQuickVisitor();return;}
+    if(this.page==='home')return;
     const target=event.target as HTMLElement|null;
     const typing=!!target&&(['INPUT','TEXTAREA','SELECT'].includes(target.tagName)||target.isContentEditable);
     if(typing)return;
