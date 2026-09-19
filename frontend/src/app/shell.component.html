@@ -69,7 +69,7 @@
     <div class="topsearch">⌕ <span>Search employee, vehicle or ticket...</span></div>
     <div class="account-actions"><img *ngIf="user.profileImage" class="header-avatar" [src]="user.profileImage" alt=""><span *ngIf="!user.profileImage" class="header-avatar-fallback">👤</span><span>{{user.fullName}}</span><button *ngIf="user.role==='SUPER_USER'" (click)="openUsers()">Users</button><button (click)="logout()">Sign out</button></div>
   </header>
-  <div class="force" *ngIf="user.mustChangePassword">⚠ You are using the initial password. Change the Super User password before production use.</div>
+  <div class="force" *ngIf="user.role==='SUPER_USER' && user.mustChangePassword">⚠ You are using the initial password. Change the Super User password before production use.</div>
   <app-root [currentUser]="user"></app-root>
 </div>
 
