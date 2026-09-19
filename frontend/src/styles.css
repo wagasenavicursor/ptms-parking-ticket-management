@@ -630,12 +630,12 @@ section > h1::after{
 
 
 /* Distinct light colors for ticket durations */
-.hour-chip.hour-1,.ticket-duration.hour-1,.alert-hour.hour-1{background:#eef5ff!important;border-color:#c8daf5!important;color:#2f5f9f!important}
-.hour-chip.hour-2,.ticket-duration.hour-2,.alert-hour.hour-2{background:#eefaf7!important;border-color:#c6e7df!important;color:#287a68!important}
-.hour-chip.hour-4,.ticket-duration.hour-4,.alert-hour.hour-4{background:#f4f0ff!important;border-color:#d8cdf5!important;color:#6b51a5!important}
-.hour-chip.hour-6,.ticket-duration.hour-6,.alert-hour.hour-6{background:#fff6e8!important;border-color:#f0d7aa!important;color:#9a681f!important}
-.hour-chip.hour-8,.ticket-duration.hour-8,.alert-hour.hour-8{background:#eafcff!important;border-color:#b7e4eb!important;color:#27717d!important}
-.hour-chip.hour-12,.ticket-duration.hour-12,.alert-hour.hour-12{background:#f7f8e9!important;border-color:#dce2ad!important;color:#737b2b!important}
+.hour-chip.hour-1,.ticket-duration.hour-1,.alert-hour.hour-1{background:#D7F2F6!important;border-color:#A9DEE6!important;color:#2F7D88!important}
+.hour-chip.hour-2,.ticket-duration.hour-2,.alert-hour.hour-2{background:#E0F3CC!important;border-color:#BFE2A7!important;color:#5E8E43!important}
+.hour-chip.hour-4,.ticket-duration.hour-4,.alert-hour.hour-4{background:#FAF3BF!important;border-color:#E9DE98!important;color:#8E8232!important}
+.hour-chip.hour-6,.ticket-duration.hour-6,.alert-hour.hour-6{background:#FCE0DA!important;border-color:#EABEB7!important;color:#A86A61!important}
+.hour-chip.hour-8,.ticket-duration.hour-8,.alert-hour.hour-8{background:#EFD8F1!important;border-color:#D9B6DD!important;color:#8C5B90!important}
+.hour-chip.hour-12,.ticket-duration.hour-12,.alert-hour.hour-12{background:#E6D8F8!important;border-color:#C8B0EE!important;color:#6F57A8!important}
 .hour-chip.hour-other,.ticket-duration.hour-other,.alert-hour.hour-other{background:#f1f4f6!important;border-color:#d7dfe5!important;color:#5f6d79!important}
 .hour-chip-large{min-width:58px;padding:8px 12px;font-size:19px;letter-spacing:-.3px}
 .ticket-duration{border:1px solid #d4dde5;border-radius:999px;padding:4px 8px;font-weight:900}
@@ -695,12 +695,12 @@ section > h1::after{
 
 
 /* Keep duration identity colors consistent even inside stock-health cards */
-.remaining-inventory-card .hour-chip.hour-1{background:#eef5ff!important;border-color:#c8daf5!important;color:#2f5f9f!important}
-.remaining-inventory-card .hour-chip.hour-2{background:#eefaf7!important;border-color:#c6e7df!important;color:#287a68!important}
-.remaining-inventory-card .hour-chip.hour-4{background:#f4f0ff!important;border-color:#d8cdf5!important;color:#6b51a5!important}
-.remaining-inventory-card .hour-chip.hour-6{background:#fff6e8!important;border-color:#f0d7aa!important;color:#9a681f!important}
-.remaining-inventory-card .hour-chip.hour-8{background:#eafcff!important;border-color:#b7e4eb!important;color:#27717d!important}
-.remaining-inventory-card .hour-chip.hour-12{background:#f7f8e9!important;border-color:#dce2ad!important;color:#737b2b!important}
+.remaining-inventory-card .hour-chip.hour-1{background:#D7F2F6!important;border-color:#A9DEE6!important;color:#2F7D88!important}
+.remaining-inventory-card .hour-chip.hour-2{background:#E0F3CC!important;border-color:#BFE2A7!important;color:#5E8E43!important}
+.remaining-inventory-card .hour-chip.hour-4{background:#FAF3BF!important;border-color:#E9DE98!important;color:#8E8232!important}
+.remaining-inventory-card .hour-chip.hour-6{background:#FCE0DA!important;border-color:#EABEB7!important;color:#A86A61!important}
+.remaining-inventory-card .hour-chip.hour-8{background:#EFD8F1!important;border-color:#D9B6DD!important;color:#8C5B90!important}
+.remaining-inventory-card .hour-chip.hour-12{background:#E6D8F8!important;border-color:#C8B0EE!important;color:#6F57A8!important}
 .combo-hours{display:inline-flex;align-items:center;gap:5px;flex-wrap:wrap}
 .combo-hours i{font-style:normal;color:#8a959e;font-weight:700}
 .combo>small{display:block;margin-top:5px}
