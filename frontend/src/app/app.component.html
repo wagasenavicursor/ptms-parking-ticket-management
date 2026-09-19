@@ -213,7 +213,7 @@
         </div>
 
         <div class="card inventory-overview inventory-health-overview" [ngClass]="'inventory-'+overallInventoryHealth">
-          <div class="panel-head"><div><h3>Ticket Availability by Duration</h3><span class="muted">Green = healthy · amber = low (per-duration limit) · red = critical</span></div><button class="text-action" (click)="nav('remaining')">View inventory →</button></div>
+          <div class="panel-head"><div><h3>Ticket Availability by Duration</h3></div><button class="text-action" (click)="nav('remaining')">View inventory →</button></div>
           <div class="availability-legend"><span class="legend-good"><i></i>Healthy</span><span class="legend-low"><i></i>Low</span><span class="legend-critical"><i></i>Critical</span></div>
           <div class="ticket-availability-chart">
             <div class="availability-bar-wrap" *ngFor="let b of inventoryBuckets">
