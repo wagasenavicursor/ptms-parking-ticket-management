@@ -804,3 +804,15 @@ button.physical-ticket.pending-fifo-ticket:disabled{opacity:1;cursor:not-allowed
 .recon-result-grid>div{padding:11px;border:1px solid #e2e7eb;border-radius:8px;background:#fafcfd}
 @media(max-width:1000px){.recon-inventory-grid{grid-template-columns:repeat(2,minmax(0,1fr))}}
 @media(max-width:640px){.recon-inventory-grid{grid-template-columns:1fr}.recon-remaining-total{align-items:flex-start}.reconcile-page .panel-head{flex-direction:column;gap:8px}.recon-ticket-list{display:grid;grid-template-columns:1fr}.recon-barcode-ticket{min-width:0}}
+
+
+/* Keyboard navigation and focus accessibility */
+.skip-link{position:fixed;left:14px;top:10px;z-index:20000;transform:translateY(-160%);padding:9px 12px;border:2px solid #174a96;border-radius:7px;background:#fff;color:#174a96;font-weight:900;text-decoration:none;box-shadow:0 6px 18px rgba(17,49,83,.16);transition:transform .14s ease}
+.skip-link:focus{transform:translateY(0)}
+:where(button,a,input,select,textarea,[tabindex]):focus-visible{outline:3px solid rgba(23,74,150,.28);outline-offset:2px}
+button:focus-visible,.btn:focus-visible{box-shadow:0 0 0 3px rgba(23,74,150,.12)}
+.clickrow[tabindex]:focus-visible,.audit-row:focus-visible,.utable tr[tabindex]:focus-visible{outline:2px solid #174a96;outline-offset:-2px;background:#f2f7fc}
+.clickrow[tabindex],.audit-row[tabindex],.utable tr[tabindex]{cursor:pointer}
+.barcodechip-button{appearance:none;-webkit-appearance:none;border:0;font:inherit;cursor:pointer}
+.barcodechip-button:focus-visible{outline:2px solid #174a96;outline-offset:2px}
+@media(prefers-reduced-motion:reduce){.skip-link{transition:none}}
