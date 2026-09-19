@@ -33,15 +33,19 @@
       <div class="alert" *ngIf="loginError">{{loginError}}</div>
       <div class="success" *ngIf="message">{{message}}</div>
 
-      <ng-container *ngIf="!forgot">
-        <label>Username</label>
-        <div class="input-icon"><span>✉</span><input [(ngModel)]="username" placeholder="Enter username" autocomplete="username"></div>
-        <label>Password</label>
-        <div class="input-icon"><span>●</span><input type="password" [(ngModel)]="password" placeholder="Enter password" autocomplete="current-password" (keyup.enter)="login()"></div>
-        <div class="login-options"><label class="remember"><input type="checkbox"> Remember me</label><button class="text-link" (click)="forgot=true;loginError=''">Forgot password?</button></div>
-        <button class="primary signin" (click)="login()">Sign in</button>
+      <form *ngIf="!forgot" class="login-form" (ngSubmit)="login()" autocomplete="on">
+        <label for="login-username">Username</label>
+        <div class="input-icon"><span>✉</span><input id="login-username" name="username" [(ngModel)]="username" placeholder="Enter username" autocomplete="username"></div>
+        <label for="login-password">Password</label>
+        <div class="input-icon"><span>●</span><input id="login-password" name="password" type="password" [(ngModel)]="password" placeholder="Enter password" autocomplete="current-password"></div>
+        <div class="login-options">
+          <label class="remember"><input name="rememberMe" type="checkbox" [(ngModel)]="rememberMe" (change)="rememberChanged()"> Remember me</label>
+          <button type="button" class="text-link" (click)="forgot=true;loginError=''">Forgot password?</button>
+        </div>
+        <button type="submit" class="primary signin">Sign in</button>
+        <div class="remember-help" *ngIf="rememberMe">Your username will be remembered on this device. Password saving is handled securely by your browser or password manager.</div>
         <div class="demo"><b>Initial setup:</b> admin / admin <span>· Change after first sign-in</span></div>
-      </ng-container>
+      </form>
 
       <ng-container *ngIf="forgot">
         <label>Email address</label>
