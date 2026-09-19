@@ -11,7 +11,9 @@ export class ShellComponent {
   constructor(private h:HttpClient){
     try{
       const remembered=localStorage.getItem('parkingtiq.rememberedUsername');
-      if(remembered){this.username=remembered;this.rememberMe=true;}
+      this.rememberMe=localStorage.getItem('parkingtiq.rememberLogin')==='true';
+      if(remembered)this.username=remembered;
+      if(this.rememberMe)this.restoreSession();
     }catch{}
   }
   @HostListener('window:keydown',['$event']) onShellKeyboard(event:KeyboardEvent){
@@ -23,9 +25,10 @@ export class ShellComponent {
   roleCount(role:string){return role==='ALL'?this.users.length:this.users.filter(u=>u.role===role).length;}
   blank(){return{fullName:'',username:'',email:'',role:'SECURITY',enabled:true,password:'',profileImage:''}}
   busy(text:string){this.loadingText=text;this.loading=true}
-  login(){this.loginError='';this.message='';const started=Date.now();this.busy('Signing in securely...');const finish=(action:()=>void)=>setTimeout(()=>{action();this.loading=false},Math.max(0,3000-(Date.now()-started)));this.h.post<any>('/ptms/api/auth/login',{username:this.username,password:this.password}).subscribe({next:u=>finish(()=>{this.user=u;this.message=u.mustChangePassword?'Default password detected. Change it from the account menu.':'';this.saveRememberedLogin();}),error:e=>finish(()=>this.loginError=e?.error?.message||'Invalid username or password')});}
-  saveRememberedLogin(){try{if(this.rememberMe&&this.username.trim())localStorage.setItem('parkingtiq.rememberedUsername',this.username.trim());else localStorage.removeItem('parkingtiq.rememberedUsername');}catch{}}
-  rememberChanged(){if(!this.rememberMe){try{localStorage.removeItem('parkingtiq.rememberedUsername');}catch{}}}
+  login(){this.loginError='';this.message='';const started=Date.now();this.busy('Signing in securely...');const finish=(action:()=>void)=>setTimeout(()=>{action();this.loading=false},Math.max(0,3000-(Date.now()-started)));this.h.post<any>('/ptms/api/auth/login',{username:this.username,password:this.password,rememberMe:this.rememberMe}).subscribe({next:u=>finish(()=>{this.user=u;this.message=u.mustChangePassword?'Default password detected. Change it from the account menu.':'';this.saveRememberedLogin();}),error:e=>finish(()=>this.loginError=e?.error?.message||'Invalid username or password')});}
+  saveRememberedLogin(){try{if(this.rememberMe&&this.username.trim()){localStorage.setItem('parkingtiq.rememberedUsername',this.username.trim());localStorage.setItem('parkingtiq.rememberLogin','true');}else{localStorage.removeItem('parkingtiq.rememberedUsername');localStorage.removeItem('parkingtiq.rememberLogin');}}catch{}}
+  rememberChanged(){if(!this.rememberMe){try{localStorage.removeItem('parkingtiq.rememberedUsername');localStorage.removeItem('parkingtiq.rememberLogin');}catch{}}}
+  restoreSession(){this.busy('Restoring your session...');this.h.get<any>('/ptms/api/auth/me').pipe(finalize(()=>this.loading=false)).subscribe({next:u=>{this.user=u;this.username=u.username||this.username;this.message=u.mustChangePassword?'Default password detected. Change it from the account menu.':'';},error:()=>{this.user=null;}});}
   logout(){this.busy('Signing out...');this.h.post('/ptms/api/auth/logout',{}).pipe(finalize(()=>this.loading=false)).subscribe({next:()=>{this.user=null;this.manage=false;this.password='';if(!this.rememberMe)this.username='';}})}
   forgotPassword(){if(!this.email){this.loginError='Enter your account email first';return}this.busy('Preparing password reset...');this.h.post<any>('/ptms/api/auth/forgot-password',{email:this.email}).pipe(finalize(()=>this.loading=false)).subscribe({next:r=>{this.message=r.message;this.forgot=false},error:e=>this.loginError=e?.error?.message||'Unable to process request'});}
   openUsers(){this.manage=true;this.userError='';this.userMessage='';this.loadUsers()}
