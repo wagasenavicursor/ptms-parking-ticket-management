@@ -74,9 +74,9 @@
 </div>
 
 <div class="modal" *ngIf="manage">
-  <div class="manage">
+  <div class="manage" role="dialog" aria-modal="true" aria-labelledby="user-management-title">
     <div class="modalhead">
-      <div><h2>User Management</h2><p>Manage accounts, email addresses, roles and account status. Double-click a user row to edit.</p></div>
+      <div><h2 id="user-management-title">User Management</h2><p>Manage accounts, email addresses, roles and account status. Double-click, Enter or Space on a user row to edit.</p></div>
       <button class="modal-close" aria-label="Close user management" title="Close" (click)="manage=false">×</button>
     </div>
 <div class="alert user-alert" *ngIf="userError">{{userError}}</div><div class="success user-success" *ngIf="userMessage">{{userMessage}}</div><div class="userform" [class.edit-mode]="!!editing.id">
@@ -99,7 +99,7 @@
     <div class="utable user-table-scroll" style="max-height:55vh;min-height:320px;overflow:auto">
       <table>
         <tr><th>Profile</th><th>User</th><th>Email</th><th>Role</th><th>Status</th><th></th></tr>
-        <tr *ngFor="let u of filteredUsers" (dblclick)="edit(u)" title="Double-click to edit">
+        <tr *ngFor="let u of filteredUsers" tabindex="0" role="button" (dblclick)="edit(u)" (keydown.enter)="edit(u)" (keydown.space)="$event.preventDefault();edit(u)" title="Double-click, Enter or Space to edit" [attr.aria-label]="'Edit user '+u.fullName">
           <td><div class="table-avatar"><img *ngIf="u.profileImage" [src]="u.profileImage" alt=""><span *ngIf="!u.profileImage">👤</span></div></td><td><b>{{u.fullName}}</b><br><small>{{u.username}}</small></td>
           <td>{{u.email}}</td>
           <td><span class="role">{{u.role.replace('_',' ')}}</span></td>
