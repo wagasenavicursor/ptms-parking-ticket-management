@@ -29,6 +29,9 @@ export class AppComponent implements OnInit, OnDestroy {
   private readonly securityPages=new Set<Page>(['home','dashboard','employees','visitors','inventory','issue','register','remaining','reports']);
   constructor(private api:ApiService,private scanner:BarcodeScannerService){}
   get role():UserRole{return (this.currentUser?.role||'SECURITY') as UserRole;} get visibleNavItems(){return this.navItems.filter(n=>this.canAccess(n.p));} get registerIssues(){return this.issues.filter(i=>this.isClosedIssue(i));}
+  get completedRegisterIssues(){return this.registerIssues.filter(i=>i.status==='COMPLETED');}
+  get cancelledRegisterIssues(){return this.registerIssues.filter(i=>i.status==='CANCELLED');}
+  get registeredTicketCount(){return this.registerIssues.reduce((n:number,i:any)=>n+(Array.isArray(i.barcodes)?i.barcodes.length:0),0);}
   get activeDepartments(){return this.departments.filter(d=>d.enabled!==false);} get activeTeams(){return this.teams.filter(t=>t.enabled!==false);}
   get pendingIssues(){return this.issues.filter(i=>i.status==='PENDING');}
   get completedIssues(){return this.issues.filter(i=>i.status==='COMPLETED');}
