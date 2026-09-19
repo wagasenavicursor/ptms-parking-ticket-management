@@ -42,7 +42,8 @@ export class AppComponent implements OnInit, OnDestroy {
   pendingAgeText(i:any){const mins=this.pendingAgeMinutes(i);if(mins<60)return `${mins}m`;const hours=Math.floor(mins/60),rem=mins%60;return rem?`${hours}h ${rem}m`:`${hours}h`;}
   get stalePendingIssues(){return this.pendingIssues.filter(i=>this.pendingAgeMinutes(i)>=this.staleIssueMinutes);}
   get canSeeAdminAlerts(){return this.role==='ADMIN'||this.role==='SUPER_USER';}
-  get adminAlertCount(){return this.canSeeAdminAlerts?this.lowInventoryBuckets.length+this.stalePendingIssues.length:0;}
+  get hasAdminAlerts(){return this.canSeeAdminAlerts&&(this.lowInventoryBuckets.length>0||this.stalePendingIssues.length>0);}
+  get adminAlertCount(){return this.hasAdminAlerts?this.lowInventoryBuckets.length+this.stalePendingIssues.length:0;}
 
   canAccess(p:Page){if(p==='audit')return this.role==='SUPER_USER';return this.role==='SECURITY'?this.securityPages.has(p):true;} canManageEmployees(){return this.role!=='SECURITY';} canManageVisitors(){return true;} canManageInventory(){return true;} canIssueTickets(){return true;} canGenerateReports(){return true;} canManageSettings(){return this.role==='SUPER_USER'||this.role==='ADMIN';} canManageClosedIssues(){return this.role==='SUPER_USER'||this.role==='ADMIN';} canManageReferenceData(){return this.role==='SUPER_USER'||this.role==='ADMIN';}
   isClosedIssue(i:any){return i?.status==='COMPLETED'||i?.status==='CANCELLED';}
