@@ -499,7 +499,7 @@
     <label *ngFor="let wh of [1,2,4,6,8,12]" class="warning-limit-item">
       <span class="hour-chip hour-chip-large" [ngClass]="hourClass(wh)">{{wh}}h</span>
       <span class="warning-limit-copy"><b>Warn at or below</b><small>remaining tickets</small></span>
-      <input type="number" min="0" step="1" [(ngModel)]="settings['warning'+wh+'h']">
+      <input type="number" min="0" step="1" [ngModel]="ticketWarningLimit(wh)" (ngModelChange)="setTicketWarningLimit(wh,$event)">
     </label>
   </div>
   <div class="settings-save-row"><button class="btn save-action" (click)="saveSettings()">Save Warning Limits</button><small>0 means warn only when this ticket type reaches zero.</small></div>
