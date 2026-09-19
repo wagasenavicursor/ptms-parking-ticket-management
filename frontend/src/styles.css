@@ -610,3 +610,20 @@ section > h1::after{
 .availability-bar-wrap small{font-size:8.5px;color:#7a8792}
 @media(max-width:850px){.admin-alert-items{grid-template-columns:1fr}.ticket-availability-chart{overflow-x:auto;justify-content:flex-start}.availability-bar-wrap{min-width:58px}}
 @media(max-width:600px){.admin-alert-center{padding:11px}.admin-alert-title{align-items:flex-start}.home-inventory-mini-chart{height:52px}}
+
+
+/* Ticket duration emphasis */
+.hour-chip{display:inline-flex;align-items:center;justify-content:center;min-width:38px;padding:4px 8px;border-radius:999px;background:#eaf2fb;border:1px solid #bdd0e4;color:#174a96;font-weight:900;line-height:1;white-space:nowrap;box-shadow:inset 0 0 0 1px rgba(255,255,255,.45)}
+.hour-chip-inline{min-width:34px;padding:3px 7px;font-size:.9em;vertical-align:middle}
+.hour-chip-mini{min-width:29px;padding:2px 5px!important;font-size:8px!important;color:#174a96!important;background:#edf3fb}
+.hour-chip-chart{min-width:36px;padding:3px 7px;font-size:10px}
+.remaining-inventory-grid{align-items:stretch}
+.remaining-inventory-card{position:relative;overflow:hidden}
+.remaining-card-head{display:flex;align-items:center;gap:9px;margin-bottom:12px}
+.remaining-card-head b{font-size:12px;color:#2d4052}
+.remaining-ticket-count{display:flex;align-items:baseline;gap:8px;margin-bottom:8px}
+.remaining-ticket-count .metric{margin:0}
+.remaining-ticket-count span{color:#6d7984;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.35px}
+.remaining-inventory-card.inventory-good .hour-chip{background:#eef8e9;border-color:#c9e2bb;color:#4f9120}
+.remaining-inventory-card.inventory-low .hour-chip{background:#fff5dd;border-color:#e7c56e;color:#9a6511}
+.remaining-inventory-card.inventory-critical .hour-chip{background:#fff0f0;border-color:#e3aaaa;color:#b52e2e}
