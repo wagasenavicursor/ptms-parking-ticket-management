@@ -1,4 +1,4 @@
-import { Component } from '@angular/core';
+import { Component, HostListener } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { HttpClient } from '@angular/common/http';
@@ -9,6 +9,11 @@ import { AppComponent } from './app.component';
 export class ShellComponent {
   user:any=null; username='admin'; password='admin'; email=''; loginError=''; message=''; userError=''; userMessage=''; forgot=false; users:any[]=[]; userRoleFilter='ALL'; manage=false; editing:any=this.blank(); loading=false; loadingText='Loading ParkingTiq...'; confirmDialog:any=null; private confirmResolver:((value:boolean)=>void)|null=null;
   constructor(private h:HttpClient){}
+  @HostListener('window:keydown',['$event']) onShellKeyboard(event:KeyboardEvent){
+    if(event.key!=='Escape')return;
+    if(this.confirmDialog){event.preventDefault();this.resolveConfirm(false);return;}
+    if(this.manage){event.preventDefault();this.manage=false;return;}
+  }
   get filteredUsers(){return this.userRoleFilter==='ALL'?this.users:this.users.filter(u=>u.role===this.userRoleFilter);}
   roleCount(role:string){return role==='ALL'?this.users.length:this.users.filter(u=>u.role===role).length;}
   blank(){return{fullName:'',username:'',email:'',role:'SECURITY',enabled:true,password:'',profileImage:''}}
