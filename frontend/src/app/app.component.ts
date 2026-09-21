@@ -36,7 +36,7 @@ export class AppComponent implements OnInit, OnDestroy {
   get activeDepartments(){return this.departments.filter(d=>d.enabled!==false);} get activeTeams(){return this.teams.filter(t=>t.enabled!==false);}
   get departmentOptions():SearchSelectOption[]{return this.activeDepartments.map(d=>({value:d.name,label:d.name,search:d.description||''}));}
   get teamOptions():SearchSelectOption[]{return this.activeTeams.map(t=>({value:t.name,label:t.department?`${t.name} — ${t.department}`:t.name,search:`${t.department||''} ${t.description||''}`}));}
-  get peopleOptions():SearchSelectOption[]{return this.people.map((p:any)=>({value:p.id,label:`${p.name} — ${p.vehicle||'No vehicle'}`,search:`${p.id||''} ${p.vehicle||''} ${p.department||''} ${p.team||''} ${p.nic||''}`}));}
+  get peopleOptions():SearchSelectOption[]{return this.people.map((p:any)=>({value:p.id,label:`${p.name} | 🚗 ${p.vehicle||'No vehicle'}`,search:`${p.id||''} ${p.vehicle||''} ${p.department||''} ${p.team||''} ${p.nic||''}`}));}
   get reportPeopleOptions():SearchSelectOption[]{return[...this.employees.map(e=>({value:e.employeeCode,label:`${e.name} — ${e.employeeCode}`,search:`${e.vehicleNumber||''} ${e.department||''} ${e.team||''}`})),...this.visitors.map(v=>({value:v.visitorCode,label:`${v.name} — ${v.visitorCode}`,search:`${v.nic||''} ${v.vehicleNumber||''} ${v.hostDepartment||''}`}))];}
   get pendingIssues(){return this.issues.filter(i=>i.status==='PENDING');}
   get completedIssues(){return this.issues.filter(i=>i.status==='COMPLETED');}

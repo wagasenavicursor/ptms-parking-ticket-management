@@ -56,6 +56,6 @@ export class SearchSelectComponent {
   chooseEmpty(){this.value='';this.valueChange.emit('');this.query='';this.open=false;}
   onKeydown(event:KeyboardEvent){const list=this.filteredOptions;if(event.key==='ArrowDown'){event.preventDefault();this.open=true;this.activeIndex=Math.min(this.activeIndex+1,Math.max(0,list.length-1));}else if(event.key==='ArrowUp'){event.preventDefault();this.activeIndex=Math.max(0,this.activeIndex-1);}else if(event.key==='Enter'&&this.open&&list.length){event.preventDefault();this.choose(list[this.activeIndex]||list[0]);}else if(event.key==='Escape'){event.preventDefault();this.close();}}
   highlighted(label:string){const q=this.query.trim();if(!q)return[{text:label,match:false}];const i=label.toLowerCase().indexOf(q.toLowerCase());if(i<0)return[{text:label,match:false}];return[{text:label.slice(0,i),match:false},{text:label.slice(i,i+q.length),match:true},{text:label.slice(i+q.length),match:false}].filter(p=>p.text);}
-  splitLabel(label:string){const [primary,...secondary]=label.split(' — ');return{primary,secondary:secondary.join(' — ')}}
+  splitLabel(label:string){const separator=label.includes(' | ')?' | ':' — ';const [primary,...secondary]=label.split(separator);return{primary,secondary:secondary.join(separator)}}
   @HostListener('document:mousedown',['$event']) outside(event:MouseEvent){if(!this.host.nativeElement.contains(event.target as Node))this.close();}
 }
