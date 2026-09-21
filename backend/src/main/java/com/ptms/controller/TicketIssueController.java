@@ -26,6 +26,16 @@ public class TicketIssueController {
     return s.create(q);
   }
 
+  @PostMapping("/rush")
+  public IssueResponse createRush(@Valid @RequestBody RushIssueRequest q) {
+    return s.createRush(q);
+  }
+
+  @PostMapping("/{id}/rush-finalize")
+  public IssueResponse finalizeRush(@PathVariable Long id, @Valid @RequestBody FinalizeRushIssueRequest q) {
+    return s.finalizeRush(id, q);
+  }
+
   @PutMapping("/{id}")
   public IssueResponse update(@PathVariable Long id, @Valid @RequestBody UpdateIssueRequest q, HttpSession session) {
     return s.update(id, q, canManageClosed(session));

@@ -6,7 +6,7 @@ public class TicketIssue {
  @Column(name="request_number",nullable=false,unique=true) private String requestNumber;
  @Enumerated(EnumType.STRING) @Column(name="person_type",nullable=false) private PersonType personType;
  @Column(name="person_reference",nullable=false) private String personReference;
- @Column(name="visit_date",nullable=false) private LocalDate visitDate; @Column(name="entry_time",nullable=false) private LocalTime entryTime; @Column(name="exit_time",nullable=false) private LocalTime exitTime;
+ @Column(name="visit_date",nullable=false) private LocalDate visitDate; @Column(name="entry_time") private LocalTime entryTime; @Column(name="exit_time") private LocalTime exitTime;
  @Column(name="extra_hours",nullable=false) private int extraHours; @Column(name="required_hours",nullable=false) private int requiredHours; private String reason;
  @Enumerated(EnumType.STRING) @Column(nullable=false) private IssueStatus status=IssueStatus.PENDING;
  @Column(name="created_at",nullable=false) private LocalDateTime createdAt=LocalDateTime.now(); @Column(name="completed_at") private LocalDateTime completedAt;

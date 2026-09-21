@@ -35,6 +35,8 @@ export class ApiService {
 
   preview(x: any) { return this.h.post<any>(`${this.a}/issues/preview`, x); }
   createIssue(x: any) { return this.h.post<any>(`${this.a}/issues`, x); }
+  createRushIssue(x: any) { return this.h.post<any>(`${this.a}/issues/rush`, x); }
+  finalizeRushIssue(id: number, barcodes: string[]) { return this.h.post<any>(`${this.a}/issues/${id}/rush-finalize`, { barcodes }); }
   issues() { return this.h.get<any[]>(`${this.a}/issues`); }
   complete(id: number) { return this.h.post(`${this.a}/issues/${id}/complete`, {}); }
   cancelIssue(id: number) { return this.h.post(`${this.a}/issues/${id}/cancel`, {}); }

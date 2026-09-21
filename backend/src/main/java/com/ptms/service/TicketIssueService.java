@@ -90,6 +90,42 @@ public class TicketIssueService {
     return dto(ir.save(i));
   }
 
+  public IssueResponse createRush(RushIssueRequest q) {
+    hasParkingPass(PersonType.EMPLOYEE, q.employeeReference());
+    if (cs.combinationsFor(q.requiredHours()).isEmpty()) throw new BusinessRuleException("Required hours cannot be covered by configured ticket types");
+    TicketIssue i = new TicketIssue();
+    i.setRequestNumber("RUSH-" + UUID.randomUUID().toString().substring(0, 8).toUpperCase());
+    i.setPersonType(PersonType.EMPLOYEE);
+    i.setPersonReference(q.employeeReference());
+    i.setVisitDate(q.visitDate());
+    i.setEntryTime(null);
+    i.setExitTime(null);
+    i.setExtraHours(0);
+    i.setRequiredHours(q.requiredHours());
+    i.setReason(q.reason() == null || q.reason().isBlank() ? "Rush hour – inventory pending" : q.reason().trim());
+    return dto(ir.save(i));
+  }
+
+  public IssueResponse finalizeRush(Long id, FinalizeRushIssueRequest q) {
+    TicketIssue i = ir.findById(id).orElseThrow(() -> new ResourceNotFoundException("Rush request not found"));
+    if (i.getStatus() != IssueStatus.PENDING || !i.getItems().isEmpty()) throw new BusinessRuleException("Only an unallocated rush request can be finalized");
+    List<String> barcodes = q.barcodes().stream().map(String::trim).filter(x -> !x.isBlank()).toList();
+    if (new HashSet<>(barcodes.stream().map(String::toLowerCase).toList()).size() != barcodes.size()) throw new BusinessRuleException("Duplicate barcode in request");
+    List<ParkingTicket> tickets = barcodes.stream().map(b -> tr.findByBarcodeIgnoreCase(b).orElseThrow(() -> new ResourceNotFoundException("Barcode not found: " + b))).toList();
+    if (tickets.stream().anyMatch(t -> t.getStatus() != TicketStatus.AVAILABLE)) throw new BusinessRuleException("All tickets must be available");
+    if (tickets.stream().anyMatch(t -> ir.countByTicketIdAndStatus(t.getId(), IssueStatus.PENDING) > 0)) throw new BusinessRuleException("One or more tickets are already assigned to another pending request");
+    if (tickets.stream().anyMatch(t -> t.getExpiryDate() != null && t.getExpiryDate().isBefore(i.getVisitDate()))) throw new BusinessRuleException("Expired ticket cannot be issued");
+    List<Integer> actual = tickets.stream().map(ParkingTicket::getDurationHours).sorted().toList();
+    boolean valid = cs.combinationsFor(i.getRequiredHours()).stream().map(x -> x.stream().sorted().toList()).anyMatch(actual::equals);
+    if (!valid) throw new BusinessRuleException("Ticket types do not cover the required " + i.getRequiredHours() + " hour(s)");
+    tickets.forEach(i::addTicket);
+    LocalDateTime now = LocalDateTime.now();
+    tickets.forEach(t -> { t.setStatus(TicketStatus.ISSUED); t.setIssuedAt(now); t.setIssuedToReference(i.getPersonReference()); });
+    i.setStatus(IssueStatus.COMPLETED);
+    i.setCompletedAt(now);
+    return dto(ir.save(i));
+  }
+
   public IssueResponse update(Long id, UpdateIssueRequest q, boolean canManageClosed) {
     TicketIssue i = ir.findById(id).orElseThrow();
     ensureClosedAccess(i, canManageClosed, "change");
@@ -107,6 +143,7 @@ public class TicketIssueService {
   public IssueResponse complete(Long id) {
     TicketIssue i = ir.findById(id).orElseThrow();
     if (i.getStatus() != IssueStatus.PENDING) throw new BusinessRuleException("Only pending requests can be completed");
+    if (i.getItems().isEmpty()) throw new BusinessRuleException("Assign physical tickets before completing this rush request");
     LocalDateTime now = LocalDateTime.now();
     for (TicketIssueItem x : i.getItems()) {
       ParkingTicket t = x.getTicket();
