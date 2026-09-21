@@ -36,6 +36,11 @@ public class TicketIssueController {
     return s.finalizeRush(id, q);
   }
 
+  @PutMapping("/{id}/rush-hours")
+  public IssueResponse updateRushHours(@PathVariable Long id, @Valid @RequestBody UpdateRushHoursRequest q) {
+    return s.updateRushHours(id, q.requiredHours());
+  }
+
   @PostMapping("/rush-batch/finalize")
   public List<IssueResponse> finalizeRushBatch(@Valid @RequestBody FinalizeRushBatchRequest q) {
     return s.finalizeRushBatch(q);

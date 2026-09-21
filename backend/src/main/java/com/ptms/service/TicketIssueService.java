@@ -128,6 +128,14 @@ public class TicketIssueService {
     return dto(ir.save(i));
   }
 
+  public IssueResponse updateRushHours(Long id, int requiredHours) {
+    TicketIssue i = ir.findById(id).orElseThrow(() -> new ResourceNotFoundException("Rush request not found"));
+    if (!"QUICK".equals(i.getIssueMode()) || i.getStatus() != IssueStatus.PENDING || !i.getItems().isEmpty()) throw new BusinessRuleException("Only an unallocated pending quick request can be changed");
+    if (cs.combinationsFor(requiredHours).isEmpty()) throw new BusinessRuleException("Required hours cannot be covered by configured ticket types");
+    i.setRequiredHours(requiredHours);
+    return dto(ir.save(i));
+  }
+
   public List<IssueResponse> finalizeRushBatch(FinalizeRushBatchRequest q) {
     List<TicketIssue> batch=q.assignments().keySet().stream().map(id->ir.findById(id).orElseThrow(()->new ResourceNotFoundException("Rush request not found: "+id))).toList();
     Set<String> references=batch.stream().map(TicketIssue::getRushBatchReference).collect(java.util.stream.Collectors.toSet());

@@ -29,8 +29,8 @@ export class ApiService {
   saveTicket(x: any) { return x.id ? this.h.put(`${this.a}/tickets/${x.id}`, x) : this.h.post(`${this.a}/tickets`, x); }
   deleteTicket(id: number) { return this.h.delete(`${this.a}/tickets/${id}`); }
   remaining() { return this.h.get<any[]>(`${this.a}/tickets/remaining`); }
-  bulk(hours: number, issueDate: string, expiry: string, barcodes: string[], startingTicketNumber?: number | null) {
-    return this.h.post<any[]>(`${this.a}/tickets/bulk-scan`, { durationHours: hours, stockIssueDate: issueDate || null, expiryDate: expiry || null, startingTicketNumber: startingTicketNumber || null, barcodes });
+  bulk(hours: number, issueDate: string, expiry: string, barcodes: string[], startingTicketNumber?: number | null, physicalTicketNumber?: string | null) {
+    return this.h.post<any[]>(`${this.a}/tickets/bulk-scan`, { durationHours: hours, stockIssueDate: issueDate || null, expiryDate: expiry || null, startingTicketNumber: startingTicketNumber || null, physicalTicketNumber: physicalTicketNumber || null, barcodes });
   }
   bulkTickets(rows: any[]) { return this.h.post<any[]>(`${this.a}/tickets/bulk`, rows); }
 
@@ -39,6 +39,7 @@ export class ApiService {
   createRushIssue(x: any) { return this.h.post<any>(`${this.a}/issues/rush`, x); }
   finalizeRushIssue(id: number, barcodes: string[]) { return this.h.post<any>(`${this.a}/issues/${id}/rush-finalize`, { barcodes }); }
   finalizeRushBatch(assignments: Record<number, string[]>) { return this.h.post<any[]>(`${this.a}/issues/rush-batch/finalize`, { assignments }); }
+  updateRushHours(id: number, requiredHours: number) { return this.h.put<any>(`${this.a}/issues/${id}/rush-hours`, { requiredHours }); }
   issues() { return this.h.get<any[]>(`${this.a}/issues`); }
   complete(id: number) { return this.h.post(`${this.a}/issues/${id}/complete`, {}); }
   cancelIssue(id: number) { return this.h.post(`${this.a}/issues/${id}/cancel`, {}); }

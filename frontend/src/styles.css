@@ -1036,3 +1036,10 @@ input,select,textarea{max-width:100%}
   .register-table-count{align-self:flex-start}
   .live-fifo-queue-card{margin-top:14px}
 }
+
+.rush-batch-actions .rush-best-action{margin-left:auto;background:linear-gradient(135deg,#7c3aed,#4f46e5);border-color:#4f46e5;box-shadow:0 8px 20px rgba(79,70,229,.25)}
+.rush-hours-edit{display:flex;gap:6px;align-items:center}.rush-hours-edit input{width:74px;text-align:center;font-weight:800}
+.ticket-number-inline{display:inline-grid;place-items:center;min-width:28px;height:28px;padding:0 5px;border:2px solid #dc2626;border-radius:50%;color:#dc2626;background:#fff;font-weight:900;line-height:1}
+.invalid-ticket-note{display:block;color:#b42318;font-weight:700;margin:5px 0}
+.rush-ticket-picker{width:min(900px,94vw)}.rush-picker-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(155px,1fr));gap:10px;max-height:55vh;overflow:auto;padding:18px}
+.rush-picker-ticket{position:relative;display:grid;grid-template-columns:auto 1fr auto;align-items:center;gap:8px;text-align:left;padding:12px;border:1px solid #d8dee9;border-radius:12px;background:#fff;color:#182230}.rush-picker-ticket small{grid-column:1/-1;color:#667085}.rush-picker-ticket.selected{border:2px solid #2563eb;background:#eff6ff;box-shadow:0 0 0 3px rgba(37,99,235,.12)}.valid-selection{color:#067647;font-weight:800}
