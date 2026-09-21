@@ -303,9 +303,13 @@ section > h1::after{
 .person-detail-grid div{min-width:0}
 .person-detail-grid span{display:block;color:#7b8791;font-size:9px;font-weight:800;letter-spacing:.55px;text-transform:uppercase;margin-bottom:2px}
 .person-detail-grid b{display:block;color:#263849;font-size:11.5px;overflow-wrap:anywhere}
+.selected-person-card-wide{min-height:82px;padding:15px 17px;background:linear-gradient(135deg,#f9fbfd,#f2f7fb)}
+.selected-person-card-wide .person-detail-grid{grid-template-columns:repeat(4,minmax(0,1fr));gap:10px 18px}
+.selected-person-card-wide .person-detail-grid>div{padding-left:10px;border-left:3px solid #d7e5f1}
 .empty-person-card{display:grid;place-items:center;color:var(--muted);font-size:11px;text-align:center;border-style:dashed;background:#fcfcfc}
 @media(max-width:1180px){.person-picker-layout{grid-template-columns:1fr}.coverage-result{white-space:normal}}
 @media(max-width:640px){.person-type-options{align-items:stretch}.radio-option{flex:1;justify-content:center}.requirement-actions{align-items:stretch}.requirement-actions .btn,.coverage-result{width:100%}}
+@media(max-width:760px){.selected-person-card-wide .person-detail-grid{grid-template-columns:repeat(2,minmax(0,1fr))}}
 
 
 /* Clear form actions and parking pass control */
@@ -634,8 +638,29 @@ section > h1::after{
 .availability-bar{width:72%;min-height:4px;border-radius:4px 4px 0 0;transition:height .25s ease}
 .availability-label{font-size:11px;font-weight:850;color:#26394b;padding-top:4px}
 .availability-bar-wrap small{font-size:8.5px;color:#7a8792}
+.dashboard-availability-feature{position:relative;overflow:hidden;margin:18px 0 20px;padding:24px;border-radius:18px;background:linear-gradient(145deg,#fff 0%,#f4f9fd 58%,#eef7f3 100%);box-shadow:0 12px 32px rgba(27,61,91,.1)}
+.dashboard-availability-feature::before{content:"";position:absolute;inset:0 0 auto;height:5px;background:linear-gradient(90deg,#4f9c25,#2ca77b,#2388c9)}
+.dashboard-availability-feature.inventory-low::before{background:linear-gradient(90deg,#e2a22d,#f1c453)}
+.dashboard-availability-feature.inventory-critical::before{background:linear-gradient(90deg,#c93434,#ed7777)}
+.dashboard-availability-head{display:flex;align-items:center;justify-content:space-between;gap:24px;margin-bottom:8px}
+.dashboard-availability-title{display:flex;align-items:center;gap:13px;min-width:0}
+.dashboard-availability-icon{width:48px;height:48px;flex:0 0 48px;display:grid;place-items:center;border-radius:14px;background:linear-gradient(145deg,#174a96,#2388c9);box-shadow:0 7px 16px rgba(23,74,150,.2);color:#fff;font-size:25px;font-weight:900}
+.dashboard-section-kicker{display:block;margin-bottom:3px;color:#2388c9;font-size:8px;font-weight:900;letter-spacing:1.15px}
+.dashboard-availability-title h3{margin:0;color:#1d3448;font-size:18px}
+.dashboard-availability-title small{display:block;margin-top:4px;color:#70808e;font-size:10px}
+.dashboard-availability-summary{display:flex;align-items:center;gap:10px;flex:0 0 auto}
+.dashboard-availability-summary>span{min-width:92px;padding:8px 12px;border:1px solid #dbe6ee;border-radius:10px;background:rgba(255,255,255,.78);text-align:center}
+.dashboard-availability-summary strong,.dashboard-availability-summary small{display:block}
+.dashboard-availability-summary strong{color:#1d3448;font-size:16px;line-height:1.15;text-transform:capitalize}
+.dashboard-availability-summary small{margin-top:2px;color:#7a8792;font-size:8px;font-weight:750;letter-spacing:.25px}
+.dashboard-availability-summary .health-good strong{color:#4f9120}.dashboard-availability-summary .health-low strong{color:#a56b14}.dashboard-availability-summary .health-critical strong{color:#b82e2e}
+.dashboard-availability-feature .availability-legend{width:max-content;margin:4px 0 6px auto;padding:6px 10px;border:1px solid #e0e8ee;border-radius:999px;background:rgba(255,255,255,.8)}
+.dashboard-availability-feature .ticket-availability-chart{height:260px;padding:22px 16px 8px;border:1px solid #e0e9ef;border-radius:14px;background:rgba(255,255,255,.72);box-shadow:inset 0 1px 0 #fff}
+.dashboard-availability-feature .availability-track{border-color:#e3eaf0;background:linear-gradient(to top,#edf2f5,#fafcfd)}
 @media(max-width:850px){.admin-alert-items{grid-template-columns:1fr}.ticket-availability-chart{overflow-x:auto;justify-content:flex-start}.availability-bar-wrap{min-width:58px}}
 @media(max-width:600px){.admin-alert-center{padding:11px}.admin-alert-title{align-items:flex-start}.home-inventory-mini-chart{height:52px}}
+@media(max-width:850px){.dashboard-availability-head{align-items:flex-start;flex-direction:column}.dashboard-availability-summary{width:100%;flex-wrap:wrap}.dashboard-availability-summary .text-action{margin-left:auto}}
+@media(max-width:600px){.dashboard-availability-feature{padding:18px 12px}.dashboard-availability-title{align-items:flex-start}.dashboard-availability-icon{width:40px;height:40px;flex-basis:40px;border-radius:11px}.dashboard-availability-summary>span{flex:1;min-width:105px}.dashboard-availability-summary .text-action{width:100%;margin:0;text-align:center}.dashboard-availability-feature .ticket-availability-chart{height:235px;padding-left:10px;padding-right:10px}}
 
 
 /* Ticket duration emphasis */
