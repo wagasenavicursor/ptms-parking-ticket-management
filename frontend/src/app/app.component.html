@@ -365,6 +365,24 @@
       <section *ngSwitchCase="'reports'">
         <div class="pagehead"><div><h1>Reports</h1><div class="muted">Preview, filter and confirm each report before saving.</div></div></div>
 
+        <div class="card usage-analysis">
+          <div class="usage-analysis-head">
+            <div><span class="usage-kicker">TICKET USAGE</span><h2>Department & Employee Usage</h2><p>Compare completed physical ticket usage for any date range.</p></div>
+            <div class="usage-date-filter"><div><label>Date From</label><input type="date" [(ngModel)]="usageFrom"></div><span>to</span><div><label>Date To</label><input type="date" [(ngModel)]="usageTo"></div></div>
+          </div>
+          <div class="usage-highlights" *ngIf="departmentUsageStats.length || employeeUsageStats.length; else noUsageData">
+            <div class="usage-highlight"><span>Most-used department</span><b>{{mostUsedDepartment.name}}</b><small>{{mostUsedDepartment.tickets}} tickets · {{mostUsedDepartment.employees}} employees</small></div>
+            <div class="usage-highlight"><span>Least-used department</span><b>{{leastUsedDepartment?.name || '—'}}</b><small>{{leastUsedDepartment?.tickets || 0}} tickets · {{leastUsedDepartment?.employees || 0}} employees</small></div>
+            <div class="usage-highlight"><span>Highest-usage employee</span><b>{{mostActiveEmployee.name}}</b><small>{{mostActiveEmployee.tickets}} tickets · {{mostActiveEmployee.department}}</small></div>
+            <div class="usage-highlight"><span>Lowest-usage employee</span><b>{{leastActiveEmployee?.name || '—'}}</b><small>{{leastActiveEmployee?.tickets || 0}} tickets · {{leastActiveEmployee?.department || '—'}}</small></div>
+          </div>
+          <ng-template #noUsageData><div class="usage-empty">No completed employee ticket usage was found in this date range.</div></ng-template>
+          <div class="usage-rankings" *ngIf="departmentUsageStats.length || employeeUsageStats.length">
+            <div><h3>Department ranking</h3><div class="usage-ranking-list"><div *ngFor="let d of departmentUsageStats; let rank=index"><span class="usage-rank">{{rank+1}}</span><span><b>{{d.name}}</b><small>{{d.employees}} employee{{d.employees===1 ? '' : 's'}} · {{d.requests}} request{{d.requests===1 ? '' : 's'}}</small></span><strong>{{d.tickets}}<small>tickets</small></strong></div></div></div>
+            <div><h3>Employee ranking</h3><div class="usage-ranking-list"><div *ngFor="let e of employeeUsageStats; let rank=index"><span class="usage-rank">{{rank+1}}</span><span><b>{{e.name}}</b><small>{{e.department}} · {{e.requests}} request{{e.requests===1 ? '' : 's'}}</small></span><strong>{{e.tickets}}<small>tickets</small></strong></div></div></div>
+          </div>
+        </div>
+
         <div class="reportgrid">
           <div class="reportcard"><b>Daily Issued Tickets</b><p>Completed issuances with date, person and person-type filters.</p><button class="btn secondary" (click)="openReportPreview('daily')">Preview Report</button></div>
           <div class="reportcard"><b>Inventory Summary</b><p>Filter the full ticket inventory by status, duration and expiry range.</p><button class="btn secondary" (click)="openReportPreview('inventory')">Preview Report</button></div>

@@ -21,6 +21,7 @@ export class AppComponent implements OnInit, OnDestroy {
   requirementMessage=''; requirementMessageType:'info'|'success'|'error'='info';
   quickVisitorOpen=false; quickVisitor:any=this.newVisitor();
   registerEdit:any=null; pendingEdit:any=null; reconScans:string[]=[]; recon:any; reportDate=this.date; reportPerson=''; reportFrom=this.date; reportTo=this.date; reportStatus=''; reportDuration=''; reportPersonType=''; reportPreviewKind='';
+  usageFrom=`${this.date.slice(0,7)}-01`; usageTo=this.date;
   settings:any={weekdayStart:'06:00',weekdayEnd:'12:00',weekendStart:'06:00',weekendEnd:'12:30',bufferMinutes:0,ticketTypes:'1,2,4,6,8,12',warning1h:5,warning2h:5,warning4h:5,warning6h:5,warning8h:5,warning12h:5};
   auditLogs:any[]=[]; auditUser=''; auditAction=''; auditEntity=''; auditFrom=''; auditTo=''; auditExpandedId:any=null;
   confirmDialog:any=null; private confirmResolver:((value:boolean)=>void)|null=null;
@@ -41,6 +42,19 @@ export class AppComponent implements OnInit, OnDestroy {
   get pendingIssues(){return this.issues.filter(i=>i.status==='PENDING');}
   get completedIssues(){return this.issues.filter(i=>i.status==='COMPLETED');}
   get cancelledIssues(){return this.issues.filter(i=>i.status==='CANCELLED');} 
+  get usageIssues(){return this.completedIssues.filter(i=>{const d=String(i.visitDate||'').slice(0,10);return (!this.usageFrom||d>=this.usageFrom)&&(!this.usageTo||d<=this.usageTo);});}
+  get employeeUsageStats(){
+    const totals=new Map<string,{name:string;department:string;tickets:number;requests:number}>();
+    for(const i of this.usageIssues.filter(x=>x.personType==='EMPLOYEE')){const e=this.employees.find(x=>String(x.employeeCode)===String(i.personReference));if(!e)continue;const key=String(e.employeeCode);const current=totals.get(key)||{name:e.name||key,department:e.department||'Unassigned',tickets:0,requests:0};current.tickets+=(i.barcodes||[]).length;current.requests++;totals.set(key,current);}
+    return [...totals.values()].sort((a,b)=>b.tickets-a.tickets||b.requests-a.requests||a.name.localeCompare(b.name));
+  }
+  get departmentUsageStats(){
+    const totals=new Map<string,{name:string;tickets:number;employees:Set<string>;requests:number}>();
+    for(const i of this.usageIssues.filter(x=>x.personType==='EMPLOYEE')){const e=this.employees.find(x=>String(x.employeeCode)===String(i.personReference));if(!e)continue;const name=e.department||'Unassigned';const current=totals.get(name)||{name,tickets:0,employees:new Set<string>(),requests:0};current.tickets+=(i.barcodes||[]).length;current.requests++;current.employees.add(String(e.employeeCode));totals.set(name,current);}
+    return [...totals.values()].map(x=>({name:x.name,tickets:x.tickets,employees:x.employees.size,requests:x.requests})).sort((a,b)=>b.tickets-a.tickets||b.requests-a.requests||a.name.localeCompare(b.name));
+  }
+  get mostUsedDepartment(){return this.departmentUsageStats[0]||null;} get leastUsedDepartment(){const x=this.departmentUsageStats;return x.length?x[x.length-1]:null;}
+  get mostActiveEmployee(){return this.employeeUsageStats[0]||null;} get leastActiveEmployee(){const x=this.employeeUsageStats;return x.length?x[x.length-1]:null;}
   get ticketDurationTypes(){const configured=String(this.settings?.ticketTypes||'1,2,4,6,8,12').split(',').map((x:string)=>Number(x.trim())).filter((x:number)=>Number.isFinite(x)&&x>0);return configured.length?[...new Set(configured)].sort((a:number,b:number)=>a-b):[1,2,4,6,8,12];}
   availableCountFor(h:number){return this.remaining.filter(t=>Number(t.durationHours)===Number(h)).length;}
   ticketWarningLimit(h:number){const key='warning'+Number(h)+'h';const v=Number(this.settings?.[key]);return Number.isFinite(v)&&v>=0?v:5;}

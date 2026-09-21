@@ -375,6 +375,9 @@ section > h1::after{
 .employees-home-card .home-card-icon{background:#ccfbf1;color:#0f766e}.employees-home-card .home-card-meta{color:#0f766e}
 .visitors-home-card{background:linear-gradient(145deg,#fff9fc 0%,#fce7f3 100%)}
 .visitors-home-card .home-card-icon{background:#fce7f3;color:#be185d}.visitors-home-card .home-card-meta{color:#be185d}
+.home-card-second-row,.home-card-third-row{border:1px solid #e0e6eb;background:#fff}
+.home-card-second-row .home-card-icon,.home-card-third-row .home-card-icon{background:#f1f4f6;color:#536576}
+.home-card-second-row .home-card-eyebrow,.home-card-second-row .home-card-meta,.home-card-third-row .home-card-eyebrow,.home-card-third-row .home-card-meta{color:#657584}
 .home-card-second-row .home-card-copy b,.home-card-third-row .home-card-copy b{font-size:18px}
 .home-card-second-row .home-card-copy small,.home-card-third-row .home-card-copy small{font-size:12.5px;line-height:1.55}
 .home-card-second-row .home-card-icon{width:48px;height:48px;border-radius:12px;font-size:22px}
@@ -661,6 +664,18 @@ section > h1::after{
 @media(max-width:600px){.admin-alert-center{padding:11px}.admin-alert-title{align-items:flex-start}.home-inventory-mini-chart{height:52px}}
 @media(max-width:850px){.dashboard-availability-head{align-items:flex-start;flex-direction:column}.dashboard-availability-summary{width:100%;flex-wrap:wrap}.dashboard-availability-summary .text-action{margin-left:auto}}
 @media(max-width:600px){.dashboard-availability-feature{padding:18px 12px}.dashboard-availability-title{align-items:flex-start}.dashboard-availability-icon{width:40px;height:40px;flex-basis:40px;border-radius:11px}.dashboard-availability-summary>span{flex:1;min-width:105px}.dashboard-availability-summary .text-action{width:100%;margin:0;text-align:center}.dashboard-availability-feature .ticket-availability-chart{height:235px;padding-left:10px;padding-right:10px}}
+
+/* Report usage analysis */
+.usage-analysis{margin-bottom:20px;padding:22px;border-radius:14px}
+.usage-analysis-head{display:flex;align-items:flex-end;justify-content:space-between;gap:20px;padding-bottom:18px;border-bottom:1px solid #e5eaee}
+.usage-analysis-head h2{margin:3px 0 5px;color:#1d3448;font-size:20px}.usage-analysis-head p{margin:0;color:#73818d;font-size:11px}
+.usage-kicker{color:#174a96;font-size:8.5px;font-weight:900;letter-spacing:1px}
+.usage-date-filter{display:flex;align-items:flex-end;gap:10px}.usage-date-filter>div{min-width:145px}.usage-date-filter label{display:block;margin-bottom:5px;color:#657481;font-size:9px;font-weight:850}.usage-date-filter>span{padding-bottom:11px;color:#8a969f;font-size:10px}
+.usage-highlights{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px;margin:18px 0}
+.usage-highlight{padding:14px;border:1px solid #dde5eb;border-radius:9px;background:#f8fafb}.usage-highlight>span{display:block;color:#74828e;font-size:8.5px;font-weight:850;letter-spacing:.35px;text-transform:uppercase}.usage-highlight>b{display:block;margin:7px 0 4px;color:#20374b;font-size:15px}.usage-highlight>small{display:block;color:#6f7d88;font-size:9.5px}
+.usage-rankings{display:grid;grid-template-columns:1fr 1fr;gap:16px}.usage-rankings h3{margin:0 0 9px;color:#2b4052;font-size:12px}.usage-ranking-list{overflow:hidden;border:1px solid #e0e6eb;border-radius:9px}.usage-ranking-list>div{display:grid;grid-template-columns:30px 1fr auto;align-items:center;gap:9px;padding:10px 12px;border-bottom:1px solid #edf0f2;background:#fff}.usage-ranking-list>div:last-child{border-bottom:0}.usage-rank{width:24px;height:24px;display:grid;place-items:center;border-radius:50%;background:#eef2f5;color:#516575;font-size:9px;font-weight:900}.usage-ranking-list b,.usage-ranking-list small{display:block}.usage-ranking-list b{color:#263b4d;font-size:10.5px}.usage-ranking-list small{margin-top:2px;color:#7a8791;font-size:8.5px}.usage-ranking-list strong{text-align:right;color:#174a96;font-size:15px}.usage-ranking-list strong small{font-size:7.5px;font-weight:750;text-transform:uppercase}.usage-empty{margin-top:18px;padding:18px;border:1px dashed #ccd7df;border-radius:9px;background:#fafbfc;color:#74818c;text-align:center;font-size:11px}
+@media(max-width:900px){.usage-analysis-head{align-items:stretch;flex-direction:column}.usage-date-filter{width:100%}.usage-date-filter>div{flex:1}.usage-highlights{grid-template-columns:repeat(2,minmax(0,1fr))}.usage-rankings{grid-template-columns:1fr}}
+@media(max-width:560px){.usage-date-filter{align-items:stretch;flex-direction:column}.usage-date-filter>span{display:none}.usage-highlights{grid-template-columns:1fr}}
 
 
 /* Ticket duration emphasis */
