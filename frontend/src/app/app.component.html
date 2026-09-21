@@ -659,15 +659,12 @@
   </div>
   <div class="settings-save-row"><button class="btn save-action" (click)="saveSettings()">Save Warning Limits</button><small>0 means warn only when this ticket type reaches zero.</small></div>
 </div><div class="card ticket-number-settings-card">
-  <div class="settings-section-head"><h3>Ticket Number Reset Rules</h3><p>Choose how the handwritten ticket number restarts independently for each duration. Every new cycle starts at 1.</p></div>
-  <div class="ticket-reset-grid">
-    <div class="ticket-reset-item" *ngFor="let rh of [1,2,4,6,8,12]">
-      <span class="hour-chip hour-chip-large" [ngClass]="hourClass(rh)">{{rh}}h</span>
-      <select [ngModel]="ticketResetMode(rh)" (ngModelChange)="setTicketResetMode(rh,$event)">
-        <option value="DAY">Reset each day</option><option value="VALIDITY">Reset by issue-to-valid period</option><option value="MANUAL">Manual reset only</option>
-      </select>
-      <button class="btn sm secondary" [disabled]="ticketResetMode(rh)!=='MANUAL'" (click)="resetTicketNumbers(rh)">Reset to 1 now</button>
-    </div>
+  <div class="settings-section-head"><h3>Ticket Number Reset Rules</h3><p>One numbering rule applies to every ticket duration. Each duration keeps its own sequence and begins at 1 for every new period.</p></div>
+  <div class="ticket-reset-global-form">
+    <div><label>Reset Rule</label><select [ngModel]="ticketResetMode()" (ngModelChange)="setTicketResetMode($event)"><option value="DAY">Reset every day</option><option value="VALIDITY">Reset by ticket Issue Date–Valid Till</option><option value="DAYS">Reset after a number of days</option><option value="DATE_RANGE">Use a fixed start and end date</option><option value="MANUAL">Manual reset only</option></select></div>
+    <div *ngIf="ticketResetMode()==='DAYS'"><label>Number of Days</label><input type="number" min="1" step="1" [(ngModel)]="settings.ticketNumberResetPeriodDays"><small class="field-help">All durations restart at 1 when this many days have passed.</small></div>
+    <ng-container *ngIf="ticketResetMode()==='DATE_RANGE'"><div><label>Period Start Date</label><input type="date" [(ngModel)]="settings.ticketNumberResetStartDate" required></div><div><label>Period End Date</label><input type="date" [(ngModel)]="settings.ticketNumberResetEndDate" required><small class="field-help">Numbering continues throughout this period and resets after the end date.</small></div></ng-container>
+    <div class="manual-reset-control" *ngIf="ticketResetMode()==='MANUAL'"><label>Manual Reset</label><button class="btn secondary" (click)="resetTicketNumbers()">Reset all durations to 1 now</button></div>
   </div>
   <div class="settings-save-row"><button class="btn save-action" (click)="saveSettings()">Save Numbering Rules</button><small>Existing ticket numbers and issue history are never changed.</small></div>
 </div>

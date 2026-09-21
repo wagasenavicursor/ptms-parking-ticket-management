@@ -59,5 +59,5 @@ export class ApiService {
 
   settings() { return this.h.get<any>(`${this.a}/settings`); }
   saveSettings(x: any) { return this.h.put<any>(`${this.a}/settings`, x); }
-  resetTicketNumbers(hours: number) { return this.h.post<any>(`${this.a}/settings/ticket-number-reset/${hours}`, {}); }
+  resetTicketNumbers() { return this.h.post<any>(`${this.a}/settings/ticket-number-reset`, {}); }
 }
