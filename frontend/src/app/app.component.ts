@@ -147,7 +147,7 @@ export class AppComponent implements OnInit, OnDestroy {
   private newRushBatchReference(){return `BATCH-${new Date().toISOString().replace(/[-:TZ.]/g,'').slice(0,14)}`;}
   async startNewRushBatch(){if(this.rushPendingIssues.length&&!(await this.askConfirm('Start New Batch',`Leave the current batch with ${this.rushPendingIssues.length} pending employee(s) and start a separate batch?`,'Start New Batch','default')))return;this.rushBatchReference=this.newRushBatchReference();this.rushBarcodeInputs={};this.rushEmployee='';this.ok('New rush batch started. The previous batch remains available in batch history.');}
   createRushIssue(){if(!this.canUseQuickBatch){this.err='Quick Employee Batch is disabled for your user level';return;}if(!this.rushEmployee){this.err='Select an employee for the rush request';return;}const h=Number(this.rushHours);if(!Number.isInteger(h)||h<1){this.err='Required hours must be a whole number greater than zero';return;}if(this.rushPendingIssues.some(i=>i.personReference===this.rushEmployee)){this.err='This employee is already listed in this rush batch';return;}if(!this.rushBatchReference)this.rushBatchReference=this.newRushBatchReference();this.api.createRushIssue({employeeReference:this.rushEmployee,visitDate:this.date,requiredHours:h,reason:this.rushEmployeeHasPass?this.rushReason:null,batchReference:this.rushBatchReference}).subscribe({next:(saved:any)=>{this.issues=[saved,...this.issues.filter(i=>i.id!==saved.id)];this.rushEmployee='';this.rushReason='';this.refresh();this.ok('Employee added to the rush batch')},error:e=>this.fail(e)});}
-  async saveRushHours(i:any){const h=Number(i.requiredHours);if(!Number.isInteger(h)||h<1){this.err='Requested hours must be a whole number greater than zero';return;}if(!(await this.askConfirm('Change Requested Hours',`Change ${this.employeeName(i.personReference)} to ${h} hour(s)? Any selected tickets will be cleared.`,'Change Hours','success')))return;this.api.updateRushHours(i.id,h).subscribe({next:()=>{delete this.rushBarcodeInputs[i.id];this.refresh();this.ok('Requested hours updated. Select tickets for the new duration.')},error:e=>this.fail(e)});}
+  async saveRushHours(i:any,confirm=true){const h=Number(i.requiredHours);if(!Number.isInteger(h)||h<1){this.err='Requested hours must be a whole number greater than zero';this.refresh();return;}if(confirm&&!(await this.askConfirm('Change Requested Hours',`Change ${this.employeeName(i.personReference)} to ${h} hour(s)? Any selected tickets will be cleared.`,'Change Hours','success')))return;this.api.updateRushHours(i.id,h).subscribe({next:(saved:any)=>{this.issues=this.issues.map(x=>x.id===saved.id?saved:x);delete this.rushBarcodeInputs[i.id];this.ok(`Required hours saved as ${h}. Select tickets for the new duration.`);this.refresh();},error:e=>{this.refresh();this.fail(e)}});}
   async finalizeRushIssue(i:any){const barcodes=this.rushInputBarcodes(i);if(!this.rushSelectionValid(i)){this.err=`Select available tickets that cover exactly ${i.requiredHours} hour(s)`;return;}if(!(await this.askConfirm('Update Employee Inventory',`Issue ${barcodes.length} ticket(s) to ${this.employeeName(i.personReference)} and update inventory?`,'Update Inventory','success')))return;this.api.finalizeRushIssue(i.id,barcodes).subscribe({next:(saved:any)=>{this.issues=this.issues.map(x=>x.id===saved.id?saved:x);this.remaining=this.remaining.filter(t=>!barcodes.some(b=>b.toLowerCase()===String(t.barcode).toLowerCase()));delete this.rushBarcodeInputs[i.id];this.refresh();this.ok(`Inventory updated and ${i.requestNumber} completed`)},error:e=>this.fail(e)});}
   rushInputBarcodes(i:any){return String(this.rushBarcodeInputs[i.id]||'').split(/[\s,]+/).map(x=>x.trim()).filter(Boolean);}
   rushSelectedTickets(i:any){return this.rushInputBarcodes(i).map(b=>this.remaining.find(t=>String(t.barcode).toLowerCase()===b.toLowerCase())).filter(Boolean);}
@@ -195,34 +195,36 @@ export class AppComponent implements OnInit, OnDestroy {
       const wide=bitmap.width/bitmap.height>1.25,columns=wide?3:1;let count=codes.length;
       if(wide)count=Math.max(6,Math.ceil(Math.max(1,count)/3)*3);else count=Math.max(1,count);
       const rows=Math.ceil(count/columns),cellWidth=bitmap.width/columns,cellHeight=bitmap.height/rows;
-      if(!texts.length){
-        this.msg=`Running OCR on ${count} ticket section${count===1?'':'s'}…`;
-        const {createWorker}=await import('tesseract.js'),worker=await createWorker('eng');
-        try{
-          for(let index=0;index<count;index++){
-            const canvas=document.createElement('canvas'),context=canvas.getContext('2d')!;canvas.width=Math.round(cellWidth);canvas.height=Math.round(cellHeight);
-            const col=index%columns,row=Math.floor(index/columns);context.drawImage(bitmap,col*cellWidth,row*cellHeight,cellWidth,cellHeight,0,0,canvas.width,canvas.height);
-            const result=await worker.recognize(canvas);texts.push({rawValue:result.data.text,boundingBox:{x:col*cellWidth,y:row*cellHeight,width:cellWidth,height:cellHeight}});this.msg=`Reading ticket ${index+1} of ${count}…`;
-          }
-        }finally{await worker.terminate();}
-      }
+      this.msg=`Running OCR on ${count} ticket section${count===1?'':'s'}…`;
+      const {createWorker}=await import('tesseract.js'),worker=await createWorker('eng');
+      try{
+        await worker.setParameters({preserve_interword_spaces:'1'} as any);
+        for(let index=0;index<count;index++){
+          const canvas=document.createElement('canvas'),context=canvas.getContext('2d',{willReadFrequently:true})!;canvas.width=Math.round(cellWidth*2);canvas.height=Math.round(cellHeight*2);
+          const col=index%columns,row=Math.floor(index/columns);context.filter='grayscale(1) contrast(1.45)';context.drawImage(bitmap,col*cellWidth,row*cellHeight,cellWidth,cellHeight,0,0,canvas.width,canvas.height);
+          const result=await worker.recognize(canvas);texts.push({rawValue:result.data.text,boundingBox:{x:col*cellWidth,y:row*cellHeight,width:cellWidth,height:cellHeight},ocrBlock:true});this.msg=`Reading ticket ${index+1} of ${count}…`;
+        }
+      }finally{await worker.terminate();}
       const region=(box:any)=>{const x=(box?.x||0)+(box?.width||0)/2,y=(box?.y||0)+(box?.height||0)/2;return Math.min(count-1,Math.floor(y/cellHeight)*columns+Math.min(columns-1,Math.floor(x/cellWidth)));};
       const regionTexts=Array.from({length:count},()=>[] as any[]),regionCodes=Array(count).fill('');
       for(const t of texts)regionTexts[region(t.boundingBox)].push(t);
       for(const c of codes)regionCodes[region(c.boundingBox)]=String(c.rawValue||'').replace(/^OGF-/i,'');
       const detectedNumericCodes=regionCodes.filter((x:string)=>/^\d{7}$/.test(x));
       if(wide&&count===6&&detectedNumericCodes.length===1){const knownIndex=regionCodes.findIndex((x:string)=>/^\d{7}$/.test(x)),first=Number(detectedNumericCodes[0])-knownIndex;for(let n=0;n<count;n++)if(!regionCodes[n])regionCodes[n]=String(first+n);}
-      const allText=texts.map(t=>String(t.rawValue||'')).join(' '),sharedPhysical=(allText.match(/\b\d{6}\b/g)||[]).find(x=>!/^375/.test(x))||'';
+      const normalizedDigits=(value:string)=>value.replace(/[|Il]/g,'1').replace(/(?<=\d)\s+(?=\d)/g,'');
+      const allText=normalizedDigits(texts.map(t=>String(t.rawValue||'')).join(' ')),sharedPhysical=(allText.match(/\b\d{6}\b/g)||[]).find(x=>!/^375/.test(x))||'';
       for(let index=0;index<count;index++){
-        const items=regionTexts[index],raw=items.map(x=>String(x.rawValue||'')).join(' '),numbers=raw.match(/\b\d{1,8}\b/g)||[];
+        const items=regionTexts[index],originalRaw=items.map(x=>String(x.rawValue||'')).join('\n'),raw=normalizedDigits(originalRaw),numbers=raw.match(/\b\d{1,8}\b/g)||[];
         const barcode=regionCodes[index]||(numbers.find(v=>/^\d{7}$/.test(v))||'');
         const physical=numbers.find(v=>/^\d{6}$/.test(v)&&v!==barcode)||sharedPhysical;
-        const dates=raw.match(/20\d{2}[-/.]\d{2}[-/.]\d{2}/g)||[];
+        const dates=(raw.match(/20\d{2}\s*[-/.]\s*\d{2}\s*[-/.]\s*\d{2}/g)||[]).map(x=>x.replace(/\s/g,'').replace(/[/.]/g,'-'));
         const duration=Number((raw.match(/Valid\s*For\s*(\d{1,2})/i)||[])[1])||this.detectedHour(barcode);
         const col=index%columns,row=Math.floor(index/columns),left=col*cellWidth,top=row*cellHeight;
         const handwrittenItem=items.filter(x=>/^\s*\d{1,3}\s*$/.test(String(x.rawValue||''))).filter(x=>{const b=x.boundingBox,cx=(b?.x||0)+(b?.width||0)/2,cy=(b?.y||0)+(b?.height||0)/2;return cx>left+cellWidth*.58&&cy>top+cellHeight*.12&&cy<top+cellHeight*.58;}).sort((a,b)=>(b.boundingBox?.x||0)-(a.boundingBox?.x||0))[0];
-        const handwritten=handwrittenItem?Number(String(handwrittenItem.rawValue).trim()):(wide&&count===6?index+1:null);
-        this.addPhotoRow({barcode,physicalTicketNumber:physical,durationHours:duration,ticketNumber:handwritten,stockIssueDate:dates[0]?.replace(/[/.]/g,'-')||this.stockIssueDate,expiryDate:dates[1]?.replace(/[/.]/g,'-')||this.expiry||null});
+        const standalone=[...originalRaw.matchAll(/^\s*([1-9]\d{0,2})\s*$/gm)].map(m=>Number(m[1])).filter(n=>n!==duration);
+        const circledHint=originalRaw.match(/(?:circled|ticket\s*(?:no|number))\D{0,8}([1-9]\d{0,2})/i);
+        const handwritten=handwrittenItem?Number(String(handwrittenItem.rawValue).trim()):circledHint?Number(circledHint[1]):standalone.at(-1)??(wide&&count===6?index+1:null);
+        this.addPhotoRow({barcode,physicalTicketNumber:physical,durationHours:duration,ticketNumber:handwritten,stockIssueDate:dates[0]||this.stockIssueDate,expiryDate:dates[1]||this.expiry||null});
       }
       const identified=this.photoRows.filter(r=>r.barcode||r.physicalTicketNumber||r.ticketNumber).length;
       this.msg=`Created ${this.photoRows.length} ticket review rows; ${identified} contain automatically identified values. Correct any uncertain or blank fields before saving.`;
