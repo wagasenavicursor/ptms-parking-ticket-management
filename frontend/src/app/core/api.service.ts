@@ -29,9 +29,10 @@ export class ApiService {
   saveTicket(x: any) { return x.id ? this.h.put(`${this.a}/tickets/${x.id}`, x) : this.h.post(`${this.a}/tickets`, x); }
   deleteTicket(id: number) { return this.h.delete(`${this.a}/tickets/${id}`); }
   remaining() { return this.h.get<any[]>(`${this.a}/tickets/remaining`); }
-  bulk(hours: number, expiry: string, barcodes: string[], startingTicketNumber?: number | null) {
-    return this.h.post<any[]>(`${this.a}/tickets/bulk-scan`, { durationHours: hours, expiryDate: expiry || null, startingTicketNumber: startingTicketNumber || null, barcodes });
+  bulk(hours: number, issueDate: string, expiry: string, barcodes: string[], startingTicketNumber?: number | null) {
+    return this.h.post<any[]>(`${this.a}/tickets/bulk-scan`, { durationHours: hours, stockIssueDate: issueDate || null, expiryDate: expiry || null, startingTicketNumber: startingTicketNumber || null, barcodes });
   }
+  bulkTickets(rows: any[]) { return this.h.post<any[]>(`${this.a}/tickets/bulk`, rows); }
 
   preview(x: any) { return this.h.post<any>(`${this.a}/issues/preview`, x); }
   createIssue(x: any) { return this.h.post<any>(`${this.a}/issues`, x); }
@@ -58,4 +59,5 @@ export class ApiService {
 
   settings() { return this.h.get<any>(`${this.a}/settings`); }
   saveSettings(x: any) { return this.h.put<any>(`${this.a}/settings`, x); }
+  resetTicketNumbers(hours: number) { return this.h.post<any>(`${this.a}/settings/ticket-number-reset/${hours}`, {}); }
 }

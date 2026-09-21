@@ -13,5 +13,14 @@ public record SettingsDto(
   @Min(0) int warning4h,
   @Min(0) int warning6h,
   @Min(0) int warning8h,
-  @Min(0) int warning12h
+  @Min(0) int warning12h,
+  @NotBlank String ticketNumberReset1h,
+  @NotBlank String ticketNumberReset2h,
+  @NotBlank String ticketNumberReset4h,
+  @NotBlank String ticketNumberReset6h,
+  @NotBlank String ticketNumberReset8h,
+  @NotBlank String ticketNumberReset12h,
+  @Min(1) int inventoryDefaultDuration,
+  @NotBlank String inventoryDefaultExpiryMode,
+  @NotBlank String inventoryDefaultEntryMode
 ){}

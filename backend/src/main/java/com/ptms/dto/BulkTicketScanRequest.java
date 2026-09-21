@@ -1,1 +1,1 @@
-package com.ptms.dto; import jakarta.validation.constraints.*; import java.time.LocalDate; import java.util.*; public record BulkTicketScanRequest(@Min(1) int durationHours,LocalDate expiryDate,@Min(1) Integer startingTicketNumber,@NotEmpty List<@NotBlank String> barcodes){}
+package com.ptms.dto; import jakarta.validation.constraints.*; import java.time.LocalDate; import java.util.*; public record BulkTicketScanRequest(@Min(1) int durationHours,LocalDate stockIssueDate,LocalDate expiryDate,@Min(1) Integer startingTicketNumber,@NotEmpty List<@NotBlank String> barcodes){}
