@@ -85,7 +85,7 @@ public class TicketIssueService {
     i.setExitTime(q.exitTime());
     i.setExtraHours(q.extraHours() == null ? 0 : q.extraHours());
     i.setRequiredHours(p.requiredHours());
-    i.setReason(q.reason());
+    i.setReason(allowedReason(q.personType(), q.personReference(), q.reason()));
     ts.forEach(i::addTicket);
     return dto(ir.save(i));
   }
@@ -102,7 +102,7 @@ public class TicketIssueService {
     i.setExitTime(null);
     i.setExtraHours(0);
     i.setRequiredHours(q.requiredHours());
-    i.setReason(q.reason() == null || q.reason().isBlank() ? "Rush hour – inventory pending" : q.reason().trim());
+    i.setReason(allowedReason(PersonType.EMPLOYEE, q.employeeReference(), q.reason()));
     return dto(ir.save(i));
   }
 
@@ -180,6 +180,12 @@ public class TicketIssueService {
 
   private boolean isClosed(TicketIssue i) {
     return i.getStatus() == IssueStatus.COMPLETED || i.getStatus() == IssueStatus.CANCELLED;
+  }
+
+  private String allowedReason(PersonType type, String reference, String reason) {
+    if (reason == null || reason.isBlank()) return null;
+    if (type == PersonType.VISITOR) return reason.trim();
+    return er.findByEmployeeCode(reference).filter(Employee::isParkingPass).map(e -> reason.trim()).orElse(null);
   }
 
   private void releaseCompletedTickets(TicketIssue i) {
