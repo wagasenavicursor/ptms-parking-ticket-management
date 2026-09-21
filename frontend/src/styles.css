@@ -355,14 +355,33 @@ section > h1::after{
 .home-card-small .home-card-copy b{font-size:14px}
 .home-card-small .home-card-copy small{font-size:11px}
 .inventory-home-card{border-top:3px solid var(--tiq-blue)}
+.home-page{padding:4px 0 26px}
+.home-card-grid-rich{gap:20px}
+.home-card-hero{grid-column:span 12;border-left:0!important;border-top:5px solid var(--tiq-green)!important;border-radius:16px;background:linear-gradient(135deg,#ffffff 0%,#f4faef 58%,#eaf7e2 100%)!important;box-shadow:0 12px 32px rgba(52,101,29,.10)}
+.home-card-second-row{grid-column:span 4!important;min-height:220px!important;border-radius:14px;border:0;box-shadow:0 9px 25px rgba(15,23,42,.08)}
+.home-card-third-row{grid-column:span 6!important;min-height:178px!important;border-radius:14px;border:0;box-shadow:0 9px 25px rgba(15,23,42,.07)}
+.home-card-second-row:hover,.home-card-third-row:hover{transform:translateY(-5px);box-shadow:0 16px 34px rgba(15,23,42,.13)}
+.inventory-home-card{border-top:0;background:linear-gradient(145deg,#f8fbff 0%,#e4f1ff 100%)}
+.inventory-home-card .home-card-icon{background:#dbeafe;color:#1d4ed8}.inventory-home-card .home-card-eyebrow,.inventory-home-card .home-card-meta{color:#1d4ed8}
+.register-home-card{background:linear-gradient(145deg,#fcfaff 0%,#eee7ff 100%)}
+.register-home-card .home-card-icon{background:#ede9fe;color:#6d28d9}.register-home-card .home-card-eyebrow,.register-home-card .home-card-meta{color:#6d28d9}
+.reports-home-card{background:linear-gradient(145deg,#fffdf7 0%,#fff1c9 100%)}
+.reports-home-card .home-card-icon{background:#fef3c7;color:#b45309}.reports-home-card .home-card-eyebrow,.reports-home-card .home-card-meta{color:#b45309}
+.employees-home-card{background:linear-gradient(145deg,#f7fffd 0%,#dff7f1 100%)}
+.employees-home-card .home-card-icon{background:#ccfbf1;color:#0f766e}.employees-home-card .home-card-meta{color:#0f766e}
+.visitors-home-card{background:linear-gradient(145deg,#fff9fc 0%,#fce7f3 100%)}
+.visitors-home-card .home-card-icon{background:#fce7f3;color:#be185d}.visitors-home-card .home-card-meta{color:#be185d}
+.home-card-second-row .home-card-copy b,.home-card-third-row .home-card-copy b{font-size:18px}
+.home-card-second-row .home-card-copy small,.home-card-third-row .home-card-copy small{font-size:12.5px;line-height:1.55}
+.home-card-second-row .home-card-icon{width:48px;height:48px;border-radius:12px;font-size:22px}
 @media(max-width:1180px){
   .home-card-hero{grid-column:span 12}
-  .home-card-wide,.home-card-medium{grid-column:span 6}
+  .home-card-wide,.home-card-medium,.home-card-second-row{grid-column:span 6!important}
   .home-card-small{grid-column:span 6}
 }
 @media(max-width:760px){
   .home-card-grid-rich{grid-template-columns:1fr}
-  .home-card-hero,.home-card-wide,.home-card-medium,.home-card-small{grid-column:auto;grid-row:auto;min-height:auto}
+  .home-card-hero,.home-card-wide,.home-card-medium,.home-card-small,.home-card-second-row,.home-card-third-row{grid-column:auto!important;grid-row:auto;min-height:auto!important}
   .home-card-hero{padding:20px}
   .home-hero-steps{grid-template-columns:1fr}
   .home-hero-footer{grid-template-columns:1fr 1fr}
@@ -424,6 +443,13 @@ section > h1::after{
   .home-people-heading{display:block}
   .home-people-heading small{display:block;margin-top:2px}
 }
+
+/* Simplified Home layout: one hero, three action cards, two people cards */
+.home-card-grid-rich .home-card-hero{grid-column:span 12}
+.home-card-grid-rich .home-card-second-row{grid-column:span 4}
+.home-card-grid-rich .home-card-third-row{grid-column:span 6}
+@media(max-width:1180px){.home-card-grid-rich .home-card-second-row{grid-column:span 6}.home-card-grid-rich .home-card-third-row{grid-column:span 6}}
+@media(max-width:760px){.home-card-grid-rich .home-card-hero,.home-card-grid-rich .home-card-second-row,.home-card-grid-rich .home-card-third-row{grid-column:1/-1}}
 
 
 /* Report preview workflow */
