@@ -4,19 +4,18 @@ import { FormsModule } from '@angular/forms';
 import { Subscription } from 'rxjs';
 import { ApiService } from './core/api.service';
 import { BarcodeScannerService } from './core/barcode-scanner.service';
+import { SearchSelectComponent, SearchSelectOption } from './core/search-select.component';
 
 type Page = 'home' | 'dashboard' | 'employees' | 'visitors' | 'departments' | 'teams' | 'inventory' | 'issue' | 'register' | 'remaining' | 'reconcile' | 'reports' | 'settings' | 'audit';
 type UserRole = 'SUPER_USER' | 'ADMIN' | 'SECURITY';
 type NavItem = { p: Page; t: string };
 
-@Component({selector:'app-root',standalone:true,imports:[CommonModule,FormsModule],templateUrl:'./app.component.html'})
+@Component({selector:'app-root',standalone:true,imports:[CommonModule,FormsModule,SearchSelectComponent],templateUrl:'./app.component.html'})
 export class AppComponent implements OnInit, OnDestroy {
   @Input() currentUser: any = null;
   page: Page = 'home';
   dashboard:any={}; employees:any[]=[]; visitors:any[]=[]; tickets:any[]=[]; issues:any[]=[]; remaining:any[]=[]; departments:any[]=[]; teams:any[]=[];
   msg=''; err=''; employee:any=this.newEmployee(); visitor:any=this.newVisitor(); ticket:any=this.newTicket(); department:any=this.newDepartment(); team:any=this.newTeam();
-  employeeSearch=''; visitorSearch=''; departmentSearch=''; teamSearch='';
-  employeeDepartmentSearch=''; employeeTeamSearch=''; visitorDepartmentSearch=''; teamDepartmentSearch=''; quickVisitorDepartmentSearch=''; reportPersonSearch='';
   hours=1; expiry=''; ticketExpiryMode:'NONE'|'DATE'='NONE'; bulkExpiryMode:'NONE'|'DATE'='NONE'; inventoryScans:string[]=[]; ticketSearch=''; hourFilter=''; statusFilter='';
   ptype='EMPLOYEE'; search=''; person=''; date=new Date().toISOString().slice(0,10); durationMode:'HOURS'|'TIME'='HOURS'; manualHours:any=1; entry='08:00'; exit='17:00'; extra:any=''; reason=''; required=0; combos:number[][]=[]; combo:number[]=[]; issueScans:string[]=[]; barcodeMode:'SCAN'|'MANUAL'='SCAN'; manualBarcode='';
   requirementMessage=''; requirementMessageType:'info'|'success'|'error'='info';
@@ -35,15 +34,10 @@ export class AppComponent implements OnInit, OnDestroy {
   get cancelledRegisterIssues(){return this.registerIssues.filter(i=>i.status==='CANCELLED');}
   get registeredTicketCount(){return this.registerIssues.reduce((n:number,i:any)=>n+(Array.isArray(i.barcodes)?i.barcodes.length:0),0);}
   get activeDepartments(){return this.departments.filter(d=>d.enabled!==false);} get activeTeams(){return this.teams.filter(t=>t.enabled!==false);}
-  contains(value:any,query:string){return !query.trim()||String(value??'').toLowerCase().includes(query.trim().toLowerCase());}
-  matchesFields(item:any,query:string,fields:string[]){return !query.trim()||fields.some(field=>this.contains(item?.[field],query));}
-  get filteredEmployees(){return this.employees.filter(e=>this.matchesFields(e,this.employeeSearch,['employeeCode','name','vehicleNumber','department','team']));}
-  get filteredVisitors(){return this.visitors.filter(v=>this.matchesFields(v,this.visitorSearch,['visitorCode','name','nic','vehicleNumber','hostDepartment']));}
-  get filteredDepartments(){return this.departments.filter(d=>this.matchesFields(d,this.departmentSearch,['name','description']));}
-  get filteredTeams(){return this.teams.filter(t=>this.matchesFields(t,this.teamSearch,['name','department','description']));}
-  filteredDepartmentOptions(query:string){return this.activeDepartments.filter(d=>this.matchesFields(d,query,['name','description']));}
-  filteredTeamOptions(query:string){return this.activeTeams.filter(t=>this.matchesFields(t,query,['name','department','description']));}
-  get reportPeople(){const people=[...this.employees.map(e=>({id:e.employeeCode,label:`${e.name} — ${e.employeeCode}`,search:`${e.name} ${e.employeeCode} ${e.vehicleNumber||''} ${e.department||''} ${e.team||''}`})),...this.visitors.map(v=>({id:v.visitorCode,label:`${v.name} — ${v.visitorCode}`,search:`${v.name} ${v.visitorCode} ${v.nic||''} ${v.vehicleNumber||''} ${v.hostDepartment||''}`}))];return people.filter(p=>this.contains(p.search,this.reportPersonSearch));}
+  get departmentOptions():SearchSelectOption[]{return this.activeDepartments.map(d=>({value:d.name,label:d.name,search:d.description||''}));}
+  get teamOptions():SearchSelectOption[]{return this.activeTeams.map(t=>({value:t.name,label:t.department?`${t.name} — ${t.department}`:t.name,search:`${t.department||''} ${t.description||''}`}));}
+  get peopleOptions():SearchSelectOption[]{return this.people.map((p:any)=>({value:p.id,label:`${p.name} — ${p.id}`,search:`${p.vehicle||''} ${p.department||''} ${p.team||''} ${p.nic||''}`}));}
+  get reportPeopleOptions():SearchSelectOption[]{return[...this.employees.map(e=>({value:e.employeeCode,label:`${e.name} — ${e.employeeCode}`,search:`${e.vehicleNumber||''} ${e.department||''} ${e.team||''}`})),...this.visitors.map(v=>({value:v.visitorCode,label:`${v.name} — ${v.visitorCode}`,search:`${v.nic||''} ${v.vehicleNumber||''} ${v.hostDepartment||''}`}))];}
   get pendingIssues(){return this.issues.filter(i=>i.status==='PENDING');}
   get completedIssues(){return this.issues.filter(i=>i.status==='COMPLETED');}
   get cancelledIssues(){return this.issues.filter(i=>i.status==='CANCELLED');} 

@@ -938,9 +938,3 @@ input,select,textarea{max-width:100%}
   .register-table-count{align-self:flex-start}
   .live-fifo-queue-card{margin-top:14px}
 }
-.list-search-bar{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin:14px 0 10px;padding:12px 14px;background:#f8fafc;border:1px solid #dbe5ef;border-radius:12px}
-.list-search-bar .selection-search{min-width:280px;max-width:560px;flex:1}
-.selection-search.search-active{border-color:#f59e0b!important;background:#fff8e6!important;box-shadow:0 0 0 3px rgba(245,158,11,.16)!important;font-weight:700;color:#7c2d12}
-.search-query{display:inline-flex;align-items:center;width:max-content;max-width:100%;margin-top:5px;padding:4px 9px;border-radius:999px;background:#fff1bf;color:#7c4a03;font-size:12px;font-weight:800;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-.list-search-bar .search-query{margin-top:0}
-@media(max-width:700px){.list-search-bar .selection-search{min-width:100%;width:100%}.search-query{white-space:normal}}
