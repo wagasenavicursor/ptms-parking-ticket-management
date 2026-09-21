@@ -7,7 +7,7 @@ import { AppComponent } from './app.component';
 
 @Component({selector:'ptms-shell',standalone:true,imports:[CommonModule,FormsModule,AppComponent],templateUrl:'./shell.component.html',styleUrls:['./shell.component.css']})
 export class ShellComponent {
-  user:any=null; username=''; password=''; rememberMe=false; email=''; loginError=''; message=''; userError=''; userMessage=''; forgot=false; users:any[]=[]; userRoleFilter='ALL'; manage=false; editing:any=this.blank(); loading=false; loadingText='Loading ParkingTiq...'; confirmDialog:any=null; private confirmResolver:((value:boolean)=>void)|null=null;
+  user:any=null; username=''; password=''; rememberMe=false; email=''; loginError=''; message=''; userError=''; userMessage=''; forgot=false; users:any[]=[]; userRoleFilter='ALL'; userSearch=''; manage=false; editing:any=this.blank(); loading=false; loadingText='Loading ParkingTiq...'; confirmDialog:any=null; private confirmResolver:((value:boolean)=>void)|null=null;
   constructor(private h:HttpClient){
     try{
       const remembered=localStorage.getItem('parkingtiq.rememberedUsername');
@@ -21,7 +21,7 @@ export class ShellComponent {
     if(this.confirmDialog){event.preventDefault();this.resolveConfirm(false);return;}
     if(this.manage){event.preventDefault();this.manage=false;return;}
   }
-  get filteredUsers(){return this.userRoleFilter==='ALL'?this.users:this.users.filter(u=>u.role===this.userRoleFilter);}
+  get filteredUsers(){const q=this.userSearch.trim().toLowerCase();return this.users.filter(u=>(this.userRoleFilter==='ALL'||u.role===this.userRoleFilter)&&(!q||`${u.fullName||''} ${u.username||''} ${u.email||''} ${u.role||''}`.toLowerCase().includes(q)));}
   roleCount(role:string){return role==='ALL'?this.users.length:this.users.filter(u=>u.role===role).length;}
   blank(){return{fullName:'',username:'',email:'',role:'SECURITY',enabled:true,password:'',profileImage:''}}
   busy(text:string){this.loadingText=text;this.loading=true}

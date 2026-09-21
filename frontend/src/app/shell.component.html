@@ -93,7 +93,8 @@
       <button class="primary save-user" (click)="saveUser()">Save User</button>
       <button class="secondary-user" (click)="editing=blank()">Clear</button>
     </div>
-    <div class="user-filter-heading"><div><b>Filter Users</b><small>Select a role to filter the user table.</small></div><span>{{filteredUsers.length}} of {{users.length}} users shown</span></div>
+    <div class="user-filter-heading"><div><b>Filter Users</b><small>Search any part of a name, username or email, then optionally filter by role.</small></div><span>{{filteredUsers.length}} of {{users.length}} users shown</span></div>
+    <div class="list-search-bar"><input class="selection-search" [class.search-active]="userSearch.trim()" [(ngModel)]="userSearch" placeholder="Search users by name, username or email"><span class="search-query" *ngIf="userSearch">Filtering by “{{userSearch}}” · {{filteredUsers.length}} result(s)</span></div>
     <div class="rolecards user-role-filters">
       <button type="button" [class.active]="userRoleFilter==='ALL'" (click)="userRoleFilter='ALL'"><span class="filter-role-icon all-users">◉</span><span><b>All Users</b><small>Show every user account.</small></span><strong>{{roleCount('ALL')}}</strong></button>
       <button type="button" [class.active]="userRoleFilter==='SUPER_USER'" (click)="userRoleFilter='SUPER_USER'"><span class="filter-role-icon super-users">★</span><span><b>Super User</b><small>Full access including major settings and users.</small></span><strong>{{roleCount('SUPER_USER')}}</strong></button>
