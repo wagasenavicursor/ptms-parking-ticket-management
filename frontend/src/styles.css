@@ -1043,3 +1043,19 @@ input,select,textarea{max-width:100%}
 .invalid-ticket-note{display:block;color:#b42318;font-weight:700;margin:5px 0}
 .rush-ticket-picker{width:min(900px,94vw)}.rush-picker-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(155px,1fr));gap:10px;max-height:55vh;overflow:auto;padding:18px}
 .rush-picker-ticket{position:relative;display:grid;grid-template-columns:auto 1fr auto;align-items:center;gap:8px;text-align:left;padding:12px;border:1px solid #d8dee9;border-radius:12px;background:#fff;color:#182230}.rush-picker-ticket small{grid-column:1/-1;color:#667085}.rush-picker-ticket.selected{border:2px solid #2563eb;background:#eff6ff;box-shadow:0 0 0 3px rgba(37,99,235,.12)}.valid-selection{color:#067647;font-weight:800}
+
+/* Quick batch alignment and compact actions */
+.rush-allocation-item{grid-template-columns:minmax(190px,1fr) 155px minmax(320px,2fr) auto auto!important;align-items:center!important;min-height:132px}
+.rush-hours-edit{display:grid!important;grid-template-columns:70px auto;gap:7px;align-items:center}.rush-hours-edit input{width:70px!important;min-width:70px}.rush-hours-edit .btn{white-space:nowrap;padding:8px 10px}
+.rush-ticket-allocation{align-self:stretch;align-content:center}.rush-ticket-allocation>.btn{justify-self:start;width:auto!important;min-width:0;padding:6px 10px;font-size:9px}.rush-selected-ticket{min-width:118px}.issue-mode-selector.single-option{grid-template-columns:minmax(220px,1fr) minmax(0,1fr)}
+@media(max-width:1250px){.rush-allocation-item{grid-template-columns:minmax(180px,1fr) 145px minmax(260px,1.6fr)!important}.rush-allocation-item>.btn{width:100%}.rush-allocation-item>.btn:nth-last-child(2){grid-column:1/3}.rush-allocation-item>.btn:last-child{grid-column:3/4}}
+@media(max-width:760px){.rush-allocation-item{grid-template-columns:1fr!important}.rush-allocation-item>.btn:nth-last-child(2),.rush-allocation-item>.btn:last-child{grid-column:auto}.rush-hours-edit{justify-content:start}}
+
+/* Role permission settings */
+.feature-permission-table{display:grid;border:1px solid #dce4eb;border-radius:10px;overflow:hidden;margin:14px 0}.permission-head,.feature-permission-table label{display:grid;grid-template-columns:minmax(220px,1fr) 140px 140px;align-items:center;gap:12px;padding:11px 14px}.permission-head{background:#f4f7fa;color:#536575;font-size:10px;text-transform:uppercase}.permission-head b:not(:first-child){text-align:center}.feature-permission-table label{margin:0;border-top:1px solid #e8edf1}.feature-permission-table label span{font-weight:750}.feature-permission-table input{width:18px;height:18px;justify-self:center}
+.inventory-entry-disabled>.msg.info+.card{display:none}
+@media(max-width:640px){.permission-head,.feature-permission-table label{grid-template-columns:1fr 82px 72px;padding:10px 9px;font-size:10px}}
+
+/* Home remaining inventory card */
+.remaining-home-card{background:#f8fafc}.remaining-home-card .home-card-icon{background:#e8eef5;color:#36566f}.home-card-grid-rich .home-card-third-row{grid-column:span 4}
+@media(max-width:1180px){.home-card-grid-rich .home-card-third-row{grid-column:span 6}}@media(max-width:760px){.home-card-grid-rich .home-card-third-row{grid-column:1/-1}}

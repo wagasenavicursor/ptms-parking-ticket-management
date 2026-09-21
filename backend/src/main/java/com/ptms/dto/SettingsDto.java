@@ -25,5 +25,13 @@ public record SettingsDto(
   @NotBlank String defaultPersonType,
   @NotBlank String defaultDurationMode,
   @NotBlank String defaultBarcodeMode,
-  @Min(1) int defaultRushHours
+  @Min(1) int defaultRushHours,
+  boolean quickBatchSecurityEnabled,
+  boolean quickBatchAdminEnabled,
+  boolean inventoryPhotoSecurityEnabled,
+  boolean inventoryPhotoAdminEnabled,
+  boolean inventoryScannerSecurityEnabled,
+  boolean inventoryScannerAdminEnabled,
+  boolean inventoryManualSecurityEnabled,
+  boolean inventoryManualAdminEnabled
 ){}
