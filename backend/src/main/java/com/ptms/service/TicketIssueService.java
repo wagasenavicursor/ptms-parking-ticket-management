@@ -95,6 +95,8 @@ public class TicketIssueService {
     if (cs.combinationsFor(q.requiredHours()).isEmpty()) throw new BusinessRuleException("Required hours cannot be covered by configured ticket types");
     TicketIssue i = new TicketIssue();
     i.setRequestNumber("RUSH-" + UUID.randomUUID().toString().substring(0, 8).toUpperCase());
+    i.setIssueMode("QUICK");
+    i.setRushBatchReference(q.batchReference() == null || q.batchReference().isBlank() ? "BATCH-" + LocalDate.now() + "-" + UUID.randomUUID().toString().substring(0, 6).toUpperCase() : q.batchReference().trim());
     i.setPersonType(PersonType.EMPLOYEE);
     i.setPersonReference(q.employeeReference());
     i.setVisitDate(q.visitDate());
@@ -124,6 +126,14 @@ public class TicketIssueService {
     i.setStatus(IssueStatus.COMPLETED);
     i.setCompletedAt(now);
     return dto(ir.save(i));
+  }
+
+  public List<IssueResponse> finalizeRushBatch(FinalizeRushBatchRequest q) {
+    List<TicketIssue> batch=q.assignments().keySet().stream().map(id->ir.findById(id).orElseThrow(()->new ResourceNotFoundException("Rush request not found: "+id))).toList();
+    Set<String> references=batch.stream().map(TicketIssue::getRushBatchReference).collect(java.util.stream.Collectors.toSet());
+    if(references.size()!=1||references.contains(null))throw new BusinessRuleException("All requests must belong to the same rush batch");
+    Set<String> all=new HashSet<>();for(List<String> values:q.assignments().values())for(String b:values)if(!all.add(b.trim().toLowerCase()))throw new BusinessRuleException("A physical ticket cannot be assigned to more than one employee");
+    List<IssueResponse> out=new ArrayList<>();for(TicketIssue i:batch)out.add(finalizeRush(i.getId(),new FinalizeRushIssueRequest(q.assignments().get(i.getId()))));return out;
   }
 
   public IssueResponse update(Long id, UpdateIssueRequest q, boolean canManageClosed) {
@@ -207,6 +217,8 @@ public class TicketIssueService {
     return new IssueResponse(
       i.getId(),
       i.getRequestNumber(),
+      i.getIssueMode(),
+      i.getRushBatchReference(),
       i.getPersonType(),
       i.getPersonReference(),
       i.getVisitDate(),

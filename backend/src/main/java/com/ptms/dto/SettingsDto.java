@@ -20,5 +20,10 @@ public record SettingsDto(
   String ticketNumberResetEndDate,
   @Min(1) int inventoryDefaultDuration,
   @NotBlank String inventoryDefaultExpiryMode,
-  @NotBlank String inventoryDefaultEntryMode
+  @NotBlank String inventoryDefaultEntryMode,
+  @NotBlank String defaultIssueMode,
+  @NotBlank String defaultPersonType,
+  @NotBlank String defaultDurationMode,
+  @NotBlank String defaultBarcodeMode,
+  @Min(1) int defaultRushHours
 ){}

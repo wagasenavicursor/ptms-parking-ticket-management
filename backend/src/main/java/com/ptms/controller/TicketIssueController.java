@@ -36,6 +36,11 @@ public class TicketIssueController {
     return s.finalizeRush(id, q);
   }
 
+  @PostMapping("/rush-batch/finalize")
+  public List<IssueResponse> finalizeRushBatch(@Valid @RequestBody FinalizeRushBatchRequest q) {
+    return s.finalizeRushBatch(q);
+  }
+
   @PutMapping("/{id}")
   public IssueResponse update(@PathVariable Long id, @Valid @RequestBody UpdateIssueRequest q, HttpSession session) {
     return s.update(id, q, canManageClosed(session));

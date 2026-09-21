@@ -7,5 +7,6 @@ public record RushIssueRequest(
   @NotBlank String employeeReference,
   @NotNull LocalDate visitDate,
   @Min(1) int requiredHours,
-  String reason
+  String reason,
+  String batchReference
 ) {}
