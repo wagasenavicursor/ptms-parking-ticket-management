@@ -169,6 +169,27 @@
           </div>
         </div>
 
+        <div class="dashboard-remaining-section">
+          <div class="dashboard-remaining-head">
+            <div><span class="dashboard-section-kicker">PHYSICAL STOCK</span><h2>Remaining Inventory</h2><p>Available physical tickets currently ready to issue.</p></div>
+            <button class="text-action" (click)="nav('remaining')">View full inventory →</button>
+          </div>
+          <div class="grid cards remaining-inventory-grid dashboard-remaining-grid">
+            <div class="card remaining-inventory-card" *ngFor="let h of ticketDurationTypes" [ngClass]="'inventory-'+inventoryHealth(availableFor(h).length,h)">
+              <div class="remaining-card-head"><span class="hour-chip hour-chip-large" [ngClass]="hourClass(h)">{{h}}h</span><b>Parking Tickets</b></div>
+              <div class="remaining-ticket-count"><div class="metric">{{availableFor(h).length}}</div><span>tickets available</span></div>
+              <div class="remaining-ticket-list" *ngIf="availableTicketObjectsFor(h).length; else noDashboardTickets">
+                <div class="barcode-ticket" *ngFor="let t of availableTicketObjectsFor(h) | slice:0:4">
+                  <span class="ogf-token-label">ONE GALLE FACE · TIQRI 01</span><span class="ticket-number-stamp">{{t.ticketNumber}}</span>
+                  <b>{{ticketDisplayId(t)}}</b><small>{{t.barcode}}</small>
+                </div>
+              </div>
+              <div class="dashboard-more-tickets" *ngIf="availableTicketObjectsFor(h).length>4">+ {{availableTicketObjectsFor(h).length-4}} more</div>
+              <ng-template #noDashboardTickets><div class="remaining-empty">No tickets</div></ng-template>
+            </div>
+          </div>
+        </div>
+
       </section>
 
       <section *ngSwitchCase="'employees'"><div class="pagehead"><div><h1>Employees</h1><div class="muted">Select department and team from configured reference lists · Double-click a row to edit</div></div></div><div class="msg info" *ngIf="!canManageEmployees()">Security users can view employee records only. Add, edit and delete actions are disabled.</div><div class="card" *ngIf="canManageEmployees()" [class.edit-mode]="!!employee.id"><h3><span class="pass-p" *ngIf="employee.id && employee.parkingPass" title="Parking Pass">P</span>{{employee.id ? 'Edit Employee' : 'Add Employee'}}</h3><div class="form"><div><label>Employee ID</label><input [(ngModel)]="employee.employeeCode"></div><div><label>Full Name</label><input [(ngModel)]="employee.name"></div><div><label>Vehicle</label><input [(ngModel)]="employee.vehicleNumber"></div><div><label>Department</label><app-search-select [(value)]="employee.department" [options]="departmentOptions" placeholder="Type to search departments" ariaLabel="Department"></app-search-select></div><div><label>Team</label><app-search-select [(value)]="employee.team" [options]="teamOptions" placeholder="Type to search teams" ariaLabel="Team"></app-search-select></div><div><label>Default Entry</label><input type="time" [(ngModel)]="employee.defaultEntryTime"></div><label class="full parking-pass-option"><input type="checkbox" [(ngModel)]="employee.parkingPass"><span class="parking-pass-check"></span><span><b>Existing Parking Pass</b><small>Employee already has an active parking pass.</small></span></label></div><button class="btn save-action" (click)="saveEmployee()">Save</button> <button class="btn secondary" (click)="cancelEmployee()">New</button></div><div class="table tall-table" style="max-height:420px;overflow:auto"><table><tr><th>ID</th><th>Name</th><th>Vehicle</th><th>Team</th><th>Department</th><th>Pass</th><th *ngIf="canManageEmployees()"></th></tr><tr [class.clickrow]="canManageEmployees()" *ngFor="let e of employees" [attr.tabindex]="canManageEmployees() ? 0 : null" [attr.role]="canManageEmployees() ? 'button' : null" (dblclick)="canManageEmployees() && editEmployee(e)" (keydown.enter)="canManageEmployees() && editEmployee(e)" (keydown.space)="$event.preventDefault();canManageEmployees() && editEmployee(e)" [attr.aria-label]="canManageEmployees() ? 'Edit employee '+e.name : null"><td>{{e.employeeCode}}</td><td><b>{{e.name}}</b></td><td>{{e.vehicleNumber}}</td><td>{{e.team}}</td><td>{{e.department}}</td><td><span class="pass-p" *ngIf="e.parkingPass" title="Parking Pass">P</span><span *ngIf="!e.parkingPass">—</span></td><td *ngIf="canManageEmployees()"><button class="btn sm danger" (click)="$event.stopPropagation();deleteEmployee(e)">Delete</button></td></tr></table></div></section>
