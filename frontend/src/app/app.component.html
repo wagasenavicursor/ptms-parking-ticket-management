@@ -244,10 +244,7 @@
     <div class="rush-queue-title"><b>Employees and selected physical tickets</b><span>Changing required hours saves automatically and clears tickets that no longer match.</span></div>
     <div class="rush-queue-list">
       <div class="rush-queue-item rush-allocation-item" *ngFor="let i of rushPendingIssues">
-        <div class="rush-employee-head">
-          <span class="rush-person"><b><span class="pass-p" *ngIf="employeeHasParkingPass(i.personReference,i.personType)" title="Parking Pass">P</span>{{employeeName(i.personReference)}}</b><small>{{i.requestNumber}} | {{i.personReference}}</small></span>
-          <span class="rush-row-actions"><button type="button" class="btn sm success" [disabled]="!rushSelectionValid(i)" (click)="finalizeRushIssue(i)">Update This Employee</button><button type="button" class="btn sm secondary" (click)="cancelIssue(i)">Cancel</button></span>
-        </div>
+        <span class="rush-person"><b><span class="pass-p" *ngIf="employeeHasParkingPass(i.personReference,i.personType)" title="Parking Pass">P</span>{{employeeName(i.personReference)}}</b><small>{{i.requestNumber}} | {{i.personReference}}</small></span>
         <div class="rush-selection-controls">
           <label class="rush-hours-edit"><span>Required hours</span><input type="number" min="1" step="1" [(ngModel)]="i.requiredHours" (change)="saveRushHours(i,false)"></label>
           <button type="button" class="btn sm secondary rush-existing-action" (click)="openRushTicketPicker(i)">Select Existing Tickets</button>
@@ -258,6 +255,7 @@
           <label class="rush-barcode-field"><span>Ticket barcode(s)</span><input [(ngModel)]="rushBarcodeInputs[i.id]" placeholder="Scan or enter barcode(s), separated by commas"></label>
           <small *ngIf="rushInputBarcodes(i).length && !rushSelectionValid(i)" class="invalid-ticket-note">Unknown or incomplete ticket selection is hidden above.</small>
         </div>
+        <span class="rush-row-actions"><button type="button" class="btn sm success" [disabled]="!rushSelectionValid(i)" (click)="finalizeRushIssue(i)">Update This Employee</button><button type="button" class="btn sm secondary" (click)="cancelIssue(i)">Cancel</button></span>
       </div>
     </div>
   </div>
