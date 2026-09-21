@@ -306,6 +306,9 @@ section > h1::after{
 .selected-person-card-wide{min-height:82px;padding:15px 17px;background:linear-gradient(135deg,#f9fbfd,#f2f7fb)}
 .selected-person-card-wide .person-detail-grid{grid-template-columns:repeat(4,minmax(0,1fr));gap:10px 18px}
 .selected-person-card-wide .person-detail-grid>div{padding-left:10px;border-left:3px solid #d7e5f1}
+.selected-person-card.parking-pass-highlight{border-color:#acd196;background:linear-gradient(135deg,#fbfff8,#eef8e8);box-shadow:inset 4px 0 0 #67a842}
+.parking-pass-badge{display:inline-flex;align-items:center;padding:3px 7px;border:1px solid #b8d9a8;border-radius:999px;background:#e6f4de;color:#39751c;font-size:8px;font-weight:900;letter-spacing:.25px;text-transform:uppercase;vertical-align:middle}
+.selected-person-title .parking-pass-badge{margin-left:7px}
 .empty-person-card{display:grid;place-items:center;color:var(--muted);font-size:11px;text-align:center;border-style:dashed;background:#fcfcfc}
 @media(max-width:1180px){.person-picker-layout{grid-template-columns:1fr}.coverage-result{white-space:normal}}
 @media(max-width:640px){.person-type-options{align-items:stretch}.radio-option{flex:1;justify-content:center}.requirement-actions{align-items:stretch}.requirement-actions .btn,.coverage-result{width:100%}}
@@ -816,6 +819,7 @@ button.physical-ticket.pending-fifo-ticket:disabled{opacity:1;cursor:not-allowed
 .pending-fifo-ticket .ticket-pending-info{grid-column:2;grid-row:2;width:100%;min-width:0;margin-top:5px}
 .pending-fifo-ticket .ticket-pending-info small{max-width:100%;overflow-wrap:anywhere}
 .scan-physical-ticket.pending-fifo-ticket .ticket-action{display:none}
+.physical-ticket.pass-holder-ticket{border-color:#96c47e!important;box-shadow:inset 4px 0 0 #67a842,0 2px 7px rgba(57,117,28,.09)!important}
 @media(max-width:900px){.warning-limit-grid{grid-template-columns:repeat(2,minmax(0,1fr))}}
 @media(max-width:560px){.warning-limit-grid{grid-template-columns:1fr}.warning-limit-item{grid-template-columns:auto 1fr 64px}.warning-limit-item input{width:64px}.settings-save-row{align-items:flex-start;flex-direction:column}}
 
@@ -964,6 +968,9 @@ input,select,textarea{max-width:100%}
 @media(max-width:1000px){.rush-entry-grid{grid-template-columns:1fr 110px}.rush-entry-grid>div:nth-child(3){grid-column:1/-1}.rush-entry-grid>.btn{grid-column:1/-1}.rush-queue-item{grid-template-columns:1fr 80px}.rush-queue-item input{grid-column:1/-1}.rush-queue-item .btn{width:100%}}
 @media(max-width:600px){.rush-hour-head{flex-direction:column}.rush-entry-grid{grid-template-columns:1fr}.rush-entry-grid>div:nth-child(3),.rush-entry-grid>.btn{grid-column:auto}.rush-queue-item{grid-template-columns:1fr}.rush-hours{text-align:left}}
 .live-fifo-queue-card{margin-top:18px}
+.parking-pass-record{box-shadow:inset 4px 0 0 #67a842}
+tr.parking-pass-record td{background:#f3faef!important}
+button.parking-pass-record,.admin-alert-item.parking-pass-record,.rush-queue-item.parking-pass-record{border-color:#acd196!important;background:#f3faef!important}
 .live-fifo-queue-card>h3{margin-bottom:4px}
 .live-fifo-queue-card .queue-hint{margin-bottom:13px}
 
