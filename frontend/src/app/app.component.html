@@ -31,10 +31,19 @@
         ><kbd>Alt</kbd> + <kbd>←</kbd> <em>or</em> <kbd>Esc</kbd></span
       >
     </div>
-    <div *ngIf="msg && page !== 'inventory'" class="msg">{{ msg }}</div>
-    <div *ngIf="err && page !== 'issue' && page !== 'inventory'" class="msg err">{{ err }}</div>
+    <ng-template #pageMessages>
+      <div class="page-message-stack" *ngIf="msg || (err && page !== 'issue')">
+        <div *ngIf="msg" class="page-message page-message-success" role="status">
+          <span class="page-message-icon">✓</span><span><b>Completed</b><small>{{ msg }}</small></span>
+        </div>
+        <div *ngIf="err && page !== 'issue'" class="page-message page-message-error" role="alert">
+          <span class="page-message-icon">!</span><span><b>Action required</b><small>{{ err }}</small></span>
+        </div>
+      </div>
+    </ng-template>
     <ng-container [ngSwitch]="page">
       <section *ngSwitchCase="'home'" class="home-page">
+        <ng-container *ngTemplateOutlet="pageMessages"></ng-container>
         <div class="home-card-grid home-card-grid-rich">
           <div
             class="home-card primary-home home-card-hero"
@@ -261,6 +270,8 @@
             </button>
           </div>
         </div>
+
+        <ng-container *ngTemplateOutlet="pageMessages"></ng-container>
 
         <div
           class="admin-alert-center dashboard-alert-center"
@@ -705,6 +716,7 @@
             </div>
           </div>
         </div>
+        <ng-container *ngTemplateOutlet="pageMessages"></ng-container>
         <div class="msg info" *ngIf="!canManageEmployees()">
           Security users can view employee records only. Add, edit and delete
           actions are disabled.
@@ -831,6 +843,7 @@
             </div>
           </div>
         </div>
+        <ng-container *ngTemplateOutlet="pageMessages"></ng-container>
         <div class="card" [class.edit-mode]="!!visitor.id">
           <h3>{{ visitor.id ? "Edit Visitor" : "Add Visitor" }}</h3>
           <div class="form">
@@ -905,6 +918,7 @@
             </div>
           </div>
         </div>
+        <ng-container *ngTemplateOutlet="pageMessages"></ng-container>
         <div class="card" [class.edit-mode]="!!department.id">
           <h3>{{ department.id ? "Edit Department" : "Add Department" }}</h3>
           <div class="form">
@@ -978,6 +992,7 @@
             </div>
           </div>
         </div>
+        <ng-container *ngTemplateOutlet="pageMessages"></ng-container>
         <div class="card" [class.edit-mode]="!!team.id">
           <h3>{{ team.id ? "Edit Team" : "Add Team" }}</h3>
           <div class="form">
@@ -1060,8 +1075,7 @@
             </div>
           </div>
         </div>
-        <div *ngIf="msg" class="msg page-status-message">{{ msg }}</div>
-        <div *ngIf="err" class="msg err page-status-message">{{ err }}</div>
+        <ng-container *ngTemplateOutlet="pageMessages"></ng-container>
         <div class="inventory-mode-tabs">
           <button
             *ngIf="canUseInventoryEntry('PHOTO')"
@@ -1556,6 +1570,7 @@
             </div>
           </div>
         </div>
+        <ng-container *ngTemplateOutlet="pageMessages"></ng-container>
         <div
           class="issue-mode-selector"
           [class.single-option]="!canUseQuickBatch"
@@ -2498,6 +2513,8 @@
           </div>
         </div>
 
+        <ng-container *ngTemplateOutlet="pageMessages"></ng-container>
+
         <div class="register-summary-grid">
           <div class="card register-summary-card">
             <span class="register-summary-icon all">▧</span>
@@ -2790,6 +2807,7 @@
             ＋ Add Tickets
           </button>
         </div>
+        <ng-container *ngTemplateOutlet="pageMessages"></ng-container>
         <div class="grid cards remaining-inventory-grid">
           <div
             class="card remaining-inventory-card"
@@ -2897,6 +2915,8 @@
             </div>
           </div>
         </div>
+
+        <ng-container *ngTemplateOutlet="pageMessages"></ng-container>
 
         <div class="card recon-remaining-card">
           <div class="panel-head">
@@ -3030,6 +3050,8 @@
             </div>
           </div>
         </div>
+
+        <ng-container *ngTemplateOutlet="pageMessages"></ng-container>
 
         <div class="card usage-analysis">
           <div class="usage-analysis-head">
@@ -3375,6 +3397,8 @@
           </button>
         </div>
 
+        <ng-container *ngTemplateOutlet="pageMessages"></ng-container>
+
         <div class="card audit-filter-card">
           <div class="audit-filter-head">
             <div>
@@ -3583,6 +3607,7 @@
             </div>
           </div>
         </div>
+        <ng-container *ngTemplateOutlet="pageMessages"></ng-container>
         <div class="card theme-settings-card">
           <div class="settings-section-head"><h3>Display Theme</h3><p>Choose a comfortable application appearance. Color is the current ParkingTiq theme; Light and Dark use restrained professional palettes.</p></div>
           <div class="theme-choice-grid">
