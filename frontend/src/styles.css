@@ -1075,3 +1075,15 @@ input,select,textarea{max-width:100%}
 /* Dashboard remaining physical inventory */
 .dashboard-remaining-section{margin-top:22px;padding-top:20px;border-top:1px solid #dde5eb}.dashboard-remaining-head{display:flex;align-items:flex-end;justify-content:space-between;gap:16px;margin-bottom:13px}.dashboard-remaining-head h2{margin:3px 0 2px;color:#193249;font-size:20px}.dashboard-remaining-head p{margin:0;color:#71808c;font-size:10px}.dashboard-remaining-grid{grid-template-columns:repeat(3,minmax(0,1fr))}.dashboard-remaining-grid .remaining-inventory-card{min-height:190px;padding:15px}.dashboard-remaining-grid .barcode-ticket{min-width:105px}.dashboard-more-tickets{margin-top:9px;color:#526b80;font-size:9px;font-weight:800}
 @media(max-width:1100px){.dashboard-remaining-grid{grid-template-columns:repeat(2,minmax(0,1fr))}}@media(max-width:680px){.dashboard-remaining-head{align-items:flex-start;flex-direction:column}.dashboard-remaining-grid{grid-template-columns:1fr}}
+
+/* Dense ticket stock and dashboard workflow refinements */
+.home-card-grid-rich .home-card-second-row{grid-column:span 3!important}
+.dashboard-batch-history{margin:22px 0 0}
+.dashboard-more-tickets{display:inline-flex;align-items:center;margin-top:9px;padding:3px 0;border:0;background:transparent;color:#174a96;font-size:9px;font-weight:850;cursor:pointer}
+.dashboard-more-tickets:hover{text-decoration:underline}
+.barcode-ticket{min-width:94px;gap:3px;padding:7px 10px 7px 13px}
+.barcode-ticket:before{left:6px;top:6px;bottom:6px}
+.barcode-ticket b{font-size:9.5px}.barcode-ticket b:after{width:66px;height:10px;margin-top:3px}.barcode-ticket small{font-size:7.5px}.barcode-ticket .ogf-token-label{font-size:5.8px}.barcode-ticket .ticket-number-stamp{top:5px;right:5px;width:21px;height:21px;font-size:10px}
+.ticket-photo-selected{display:grid;gap:10px}.photo-actions{display:flex;justify-content:flex-end;gap:8px;flex-wrap:wrap}
+@media(max-width:1180px){.home-card-grid-rich .home-card-second-row{grid-column:span 6!important}}
+@media(max-width:760px){.home-card-grid-rich .home-card-second-row{grid-column:1/-1!important}.photo-actions .btn{width:100%}}
