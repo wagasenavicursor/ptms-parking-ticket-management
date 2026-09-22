@@ -720,7 +720,18 @@ export class AppComponent implements OnInit, OnDestroy {
 
   canAccess(p: Page) {
     if (p === "audit") return this.role === "SUPER_USER";
-    return this.role === "SECURITY" ? this.securityPages.has(p) : true;
+    if (this.role === "SUPER_USER") return true;
+    const configurable = this.navItems.some((item) => item.p === p);
+    if (!configurable) return this.role === "SECURITY" ? this.securityPages.has(p) : true;
+    const rolePermissions = Array.isArray(this.currentUser?.roleNavigationPermissions)
+      ? this.currentUser.roleNavigationPermissions
+      : this.role === "SECURITY"
+        ? [...this.securityPages]
+        : this.navItems.map((item) => item.p);
+    const userPermissions = Array.isArray(this.currentUser?.navigationPermissions)
+      ? this.currentUser.navigationPermissions
+      : rolePermissions;
+    return rolePermissions.includes(p) && userPermissions.includes(p);
   }
   canManageEmployees() {
     return this.role !== "SECURITY";

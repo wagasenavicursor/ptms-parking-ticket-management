@@ -1,6 +1,7 @@
 package com.ptms.controller;
 
 import com.ptms.service.AuthService;
+import com.ptms.service.NavigationPermissionService;
 import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
@@ -17,9 +18,11 @@ import java.util.Map;
 public class AuthController {
     private static final int REMEMBER_ME_SECONDS = 30 * 24 * 60 * 60;
     private final AuthService service;
+    private final NavigationPermissionService navigationPermissions;
 
-    public AuthController(AuthService service) {
+    public AuthController(AuthService service, NavigationPermissionService navigationPermissions) {
         this.service = service;
+        this.navigationPermissions = navigationPermissions;
     }
 
     @PostMapping("/auth/login")
@@ -83,8 +86,18 @@ public class AuthController {
     }
 
     @DeleteMapping("/users/{id}")
-    public void delete(@PathVariable Long id) {
-        service.delete(id);
+    public void delete(@PathVariable Long id, HttpSession session) {
+        service.delete(id, String.valueOf(session.getAttribute("username")));
+    }
+
+    @GetMapping("/users/navigation-defaults")
+    public Map<String, List<String>> navigationDefaults() {
+        return navigationPermissions.defaults();
+    }
+
+    @PutMapping("/users/navigation-defaults")
+    public Map<String, List<String>> saveNavigationDefaults(@RequestBody Map<String, Object> request) {
+        return navigationPermissions.save(request);
     }
 
     private void addSessionCookie(HttpServletResponse response, HttpServletRequest request, String value, int maxAge) {

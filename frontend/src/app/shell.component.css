@@ -102,6 +102,29 @@
 @media(max-width:600px){.login-card{padding:30px 24px}.accountbar{height:auto;padding:8px;flex-wrap:wrap}.account-actions>span:last-of-type{display:none}.spinner-loader{padding:24px 18px}.spinner-frame{width:150px;height:150px}.utable{max-height:320px;min-height:180px}}
 @media(prefers-reduced-motion:reduce){.loader-bar i{animation:none}}
 
+/* Professional user administration */
+.manage{overflow-y:auto}
+.account-editor{margin-top:12px;border:1px solid #dce2e8;border-radius:7px;background:#f8fafb;padding:15px}
+.account-editor.edit-mode{border-color:#d9c776;background:#fffdf5}
+.section-heading{display:flex;justify-content:space-between;align-items:end;margin-bottom:12px}
+.section-heading span{display:block;color:#174a96;font-size:9px;font-weight:850;letter-spacing:1px}
+.section-heading h3{margin:3px 0 0;font-size:16px;color:#1b2f41}.section-heading small{color:#74818c}
+.account-editor .userform{margin:0;padding:0;border:0;background:transparent;grid-template-columns:repeat(3,minmax(0,1fr))}
+.account-editor .userform label{display:block}.account-editor .userform label>span{display:block;font-size:10px;font-weight:800;color:#506170;text-transform:uppercase;letter-spacing:.35px;margin-bottom:5px}
+.account-editor .userform input,.account-editor .userform select{width:100%;box-sizing:border-box}
+.account-options{display:flex;align-items:center;gap:22px;margin-top:13px;padding-top:12px;border-top:1px solid #e3e8ec;flex-wrap:wrap}
+.account-options .profile-upload{margin-right:auto}.toggle-line{display:flex;align-items:center;gap:7px;font-size:12px;font-weight:700;color:#34495a}
+.editor-actions{display:flex;gap:9px;margin-top:13px}.editor-actions .primary{min-width:150px}
+.role-access-settings{margin-top:12px;border:1px solid #dce2e8;border-radius:7px;background:#fff;overflow:hidden}
+.role-access-settings summary{list-style:none;display:flex;justify-content:space-between;align-items:center;padding:12px 14px;cursor:pointer;background:#f5f8fa}.role-access-settings summary::-webkit-details-marker{display:none}
+.role-access-settings summary b,.role-access-settings summary small{display:block}.role-access-settings summary small{font-weight:400;color:#6d7984;margin-top:2px}.role-access-settings summary strong{color:#174a96;font-size:11px}
+.role-permission-columns{display:grid;grid-template-columns:1fr 1fr;gap:16px;padding:14px}.role-permission-columns>div{border:1px solid #e2e7eb;border-radius:6px;padding:12px}.role-permission-columns h4{margin:0 0 10px;color:#1b2f41}
+.permission-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:7px 12px}.permission-grid.compact{grid-template-columns:repeat(5,minmax(0,1fr));margin-top:12px;padding:11px;border:1px solid #dce4eb;border-radius:5px;background:#fff}
+.permission-grid label{font-size:11px;color:#435363;display:flex;align-items:center;gap:6px}.permission-grid input{accent-color:#174a96}.default-access-actions{display:flex;justify-content:flex-end;padding:0 14px 14px}
+.user-table-scroll{max-height:438px;min-height:0;overflow:auto;flex:0 0 auto}
+@media(max-width:850px){.account-editor .userform{grid-template-columns:1fr 1fr}.permission-grid.compact{grid-template-columns:repeat(2,1fr)}}
+@media(max-width:600px){.account-editor .userform,.role-permission-columns{grid-template-columns:1fr}.section-heading{display:block}.section-heading small{display:block;margin-top:5px}.permission-grid.compact{grid-template-columns:1fr}.editor-actions>*{flex:1}}
+
 .save-user{min-width:122px}.secondary-user{border:1px solid #b9c7d5;border-radius:4px;padding:10px 15px;min-height:40px;background:#fff;color:#174a96;font-weight:700;cursor:pointer}.secondary-user:hover{background:#edf3fb}
 
 

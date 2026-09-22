@@ -83,16 +83,34 @@
       <div><h2 id="user-management-title">User Management</h2><p>Manage accounts, email addresses, roles and account status. Double-click, Enter or Space on a user row to edit.</p></div>
       <button class="modal-close" aria-label="Close user management" title="Close" (click)="manage=false">×</button>
     </div>
-<div class="alert user-alert" *ngIf="userError">{{userError}}</div><div class="success user-success" *ngIf="userMessage">{{userMessage}}</div><div class="userform" [class.edit-mode]="!!editing.id">
-      <input placeholder="Full name" [(ngModel)]="editing.fullName">
-      <input placeholder="Username" [(ngModel)]="editing.username">
-      <input type="email" placeholder="Email" [(ngModel)]="editing.email">
-      <select [(ngModel)]="editing.role"><option>SUPER_USER</option><option>ADMIN</option><option>SECURITY</option></select>
-      <input type="password" placeholder="New/default password" [(ngModel)]="editing.password"><div class="profile-upload"><div class="avatar-preview"><img *ngIf="editing.profileImage" [src]="editing.profileImage" alt="Profile preview"><span *ngIf="!editing.profileImage">👤</span></div><label class="profile-file">Profile picture<input type="file" accept="image/*" (change)="profileSelected($event)"></label><button type="button" *ngIf="editing.profileImage" (click)="removeProfileImage()">Remove</button></div>
-      <label><input type="checkbox" [(ngModel)]="editing.enabled"> Enabled</label>
-      <button class="primary save-user" (click)="saveUser()">Save User</button>
-      <button class="secondary-user" (click)="editing=blank()">Clear</button>
-    </div>
+    <div class="alert user-alert" *ngIf="userError">{{userError}}</div><div class="success user-success" *ngIf="userMessage">{{userMessage}}</div>
+    <section class="account-editor" [class.edit-mode]="!!editing.id">
+      <div class="section-heading"><div><span>{{editing.id ? 'EDIT ACCOUNT' : 'NEW ACCOUNT'}}</span><h3>{{editing.id ? 'Update user details' : 'Create a user account'}}</h3></div><small>Fields marked * are required.</small></div>
+      <div class="userform">
+        <label><span>Full name *</span><input placeholder="Enter full name" [(ngModel)]="editing.fullName"></label>
+        <label><span>Username *</span><input placeholder="Enter a unique username" [(ngModel)]="editing.username"></label>
+        <label><span>Email *</span><input type="email" placeholder="name@company.com" [(ngModel)]="editing.email"></label>
+        <label><span>Role *</span><select [(ngModel)]="editing.role"><option>SUPER_USER</option><option>ADMIN</option><option>SECURITY</option></select></label>
+        <label><span>{{editing.id ? 'New password' : 'Password *'}}</span><input type="password" placeholder="{{editing.id ? 'Leave blank to keep current' : 'Enter password'}}" [(ngModel)]="editing.password"></label>
+        <label><span>{{editing.id ? 'Confirm new password' : 'Confirm password *'}}</span><input type="password" placeholder="Repeat password" [(ngModel)]="editing.passwordConfirm"></label>
+      </div>
+      <div class="account-options">
+        <div class="profile-upload"><div class="avatar-preview"><img *ngIf="editing.profileImage" [src]="editing.profileImage" alt="Profile preview"><span *ngIf="!editing.profileImage">👤</span></div><label class="profile-file">Profile picture<input type="file" accept="image/*" (change)="profileSelected($event)"></label><button type="button" *ngIf="editing.profileImage" (click)="removeProfileImage()">Remove</button></div>
+        <label class="toggle-line"><input type="checkbox" [(ngModel)]="editing.enabled"> Account enabled</label>
+        <label class="toggle-line" *ngIf="editing.role!=='SUPER_USER'"><input type="checkbox" [(ngModel)]="editing.useCustomPermissions"> Customize menu access for this user</label>
+      </div>
+      <div class="permission-grid compact" *ngIf="editing.role!=='SUPER_USER' && editing.useCustomPermissions">
+        <label *ngFor="let item of permissionItems"><input type="checkbox" [checked]="hasPermission(editing.navigationPermissions,item.key)" [disabled]="item.key==='home'" (change)="permissionChanged('USER',item.key,$event)"> {{item.label}}</label>
+      </div>
+      <div class="editor-actions"><button class="primary save-user" (click)="saveUser()">{{editing.id ? 'Update User' : 'Create User'}}</button><button class="secondary-user" (click)="editing=blank();userError='';userMessage=''">Clear</button></div>
+    </section>
+    <details class="role-access-settings">
+      <summary><span><b>Default Menu Access</b><small>Set which left-menu items Admin and Security accounts inherit.</small></span><strong>Configure</strong></summary>
+      <div class="role-permission-columns">
+        <div *ngFor="let scope of ['ADMIN','SECURITY']"><h4>{{scope==='ADMIN' ? 'Admin users' : 'Security users'}}</h4><div class="permission-grid"><label *ngFor="let item of permissionItems"><input type="checkbox" [checked]="hasPermission(navigationDefaults[scope],item.key)" [disabled]="item.key==='home'" (change)="permissionChanged($any(scope),item.key,$event)"> {{item.label}}</label></div></div>
+      </div>
+      <div class="default-access-actions"><button class="primary" (click)="saveNavigationDefaults()">Save Default Access</button></div>
+    </details>
     <div class="user-filter-heading"><div><b>Filter Users</b><small>Select a role to filter the user table.</small></div><span>{{filteredUsers.length}} of {{users.length}} users shown</span></div>
     <div class="rolecards user-role-filters">
       <button type="button" [class.active]="userRoleFilter==='ALL'" (click)="userRoleFilter='ALL'"><span class="filter-role-icon all-users">◉</span><span><b>All Users</b><small>Show every user account.</small></span><strong>{{roleCount('ALL')}}</strong></button>
@@ -100,7 +118,7 @@
       <button type="button" [class.active]="userRoleFilter==='ADMIN'" (click)="userRoleFilter='ADMIN'"><span class="filter-role-icon admin-users">⚙</span><span><b>Admin</b><small>Administration, employees, reports and operations.</small></span><strong>{{roleCount('ADMIN')}}</strong></button>
       <button type="button" [class.active]="userRoleFilter==='SECURITY'" (click)="userRoleFilter='SECURITY'"><span class="filter-role-icon security-users">◆</span><span><b>Security</b><small>Visitors, inventory, ticket issuing and reports.</small></span><strong>{{roleCount('SECURITY')}}</strong></button>
     </div>
-    <div class="utable user-table-scroll" style="max-height:55vh;min-height:320px;overflow:auto">
+    <div class="utable user-table-scroll">
       <table>
         <tr><th>Profile</th><th>User</th><th>Email</th><th>Role</th><th>Status</th><th></th></tr>
         <tr *ngFor="let u of filteredUsers" tabindex="0" role="button" (dblclick)="edit(u)" (keydown.enter)="edit(u)" (keydown.space)="$event.preventDefault();edit(u)" title="Double-click, Enter or Space to edit" [attr.aria-label]="'Edit user '+u.fullName">
@@ -108,7 +126,7 @@
           <td>{{u.email}}</td>
           <td><span class="role">{{u.role.replace('_',' ')}}</span></td>
           <td>{{u.enabled ? 'Active' : 'Disabled'}}</td>
-          <td><button [disabled]="u.role==='SUPER_USER'" (click)="$event.stopPropagation();remove(u)">Delete</button></td>
+          <td><button [disabled]="u.id===user.id" [title]="u.id===user.id ? 'You cannot delete the signed-in account' : 'Delete user'" (click)="$event.stopPropagation();remove(u)">Delete</button></td>
         </tr>
       </table>
     </div>
