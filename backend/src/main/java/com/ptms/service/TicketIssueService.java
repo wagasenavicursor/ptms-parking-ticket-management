@@ -93,6 +93,7 @@ public class TicketIssueService {
   public IssueResponse createRush(RushIssueRequest q) {
     hasParkingPass(PersonType.EMPLOYEE, q.employeeReference());
     if (cs.combinationsFor(q.requiredHours()).isEmpty()) throw new BusinessRuleException("Required hours cannot be covered by configured ticket types");
+    if (ir.existsByIssueModeAndPersonReferenceAndVisitDate("QUICK", q.employeeReference(), q.visitDate())) throw new BusinessRuleException("This employee is already included in a quick ticket batch for " + q.visitDate());
     TicketIssue i = new TicketIssue();
     i.setRequestNumber("RUSH-" + UUID.randomUUID().toString().substring(0, 8).toUpperCase());
     i.setIssueMode("QUICK");
@@ -142,6 +143,32 @@ public class TicketIssueService {
     if(references.size()!=1||references.contains(null))throw new BusinessRuleException("All requests must belong to the same rush batch");
     Set<String> all=new HashSet<>();for(List<String> values:q.assignments().values())for(String b:values)if(!all.add(b.trim().toLowerCase()))throw new BusinessRuleException("A physical ticket cannot be assigned to more than one employee");
     List<IssueResponse> out=new ArrayList<>();for(TicketIssue i:batch)out.add(finalizeRush(i.getId(),new FinalizeRushIssueRequest(q.assignments().get(i.getId()))));return out;
+  }
+
+  public List<IssueResponse> cancelRushBatch(String reference) {
+    List<TicketIssue> batch = rushBatch(reference);
+    ensureRushBatchHasNoIssuedTickets(batch, "cancelled");
+    LocalDateTime now = LocalDateTime.now();
+    batch.stream().filter(i -> i.getStatus() == IssueStatus.PENDING).forEach(i -> { i.setStatus(IssueStatus.CANCELLED); i.setCompletedAt(now); });
+    return ir.saveAll(batch).stream().map(this::dto).toList();
+  }
+
+  public void deleteRushBatch(String reference) {
+    List<TicketIssue> batch = rushBatch(reference);
+    ensureRushBatchHasNoIssuedTickets(batch, "deleted");
+    ir.deleteAll(batch);
+  }
+
+  private List<TicketIssue> rushBatch(String reference) {
+    if (reference == null || reference.isBlank()) throw new BusinessRuleException("Batch reference is required");
+    List<TicketIssue> batch = ir.findByRushBatchReferenceOrderByCreatedAtAsc(reference.trim());
+    if (batch.isEmpty()) throw new ResourceNotFoundException("Quick ticket batch not found");
+    return batch;
+  }
+
+  private void ensureRushBatchHasNoIssuedTickets(List<TicketIssue> batch, String action) {
+    if (batch.stream().anyMatch(i -> !"QUICK".equals(i.getIssueMode()))) throw new BusinessRuleException("Only quick ticket batches can be " + action);
+    if (batch.stream().anyMatch(i -> i.getStatus() == IssueStatus.COMPLETED || !i.getItems().isEmpty())) throw new BusinessRuleException("This batch cannot be " + action + " because one or more employees already received tickets");
   }
 
   public IssueResponse update(Long id, UpdateIssueRequest q, boolean canManageClosed) {

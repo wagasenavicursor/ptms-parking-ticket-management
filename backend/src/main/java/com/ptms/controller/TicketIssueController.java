@@ -46,6 +46,16 @@ public class TicketIssueController {
     return s.finalizeRushBatch(q);
   }
 
+  @PostMapping("/rush-batch/{reference}/cancel")
+  public List<IssueResponse> cancelRushBatch(@PathVariable String reference) {
+    return s.cancelRushBatch(reference);
+  }
+
+  @DeleteMapping("/rush-batch/{reference}")
+  public void deleteRushBatch(@PathVariable String reference) {
+    s.deleteRushBatch(reference);
+  }
+
   @PutMapping("/{id}")
   public IssueResponse update(@PathVariable Long id, @Valid @RequestBody UpdateIssueRequest q, HttpSession session) {
     return s.update(id, q, canManageClosed(session));

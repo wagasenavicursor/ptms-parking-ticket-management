@@ -39,6 +39,8 @@ export class ApiService {
   createRushIssue(x: any) { return this.h.post<any>(`${this.a}/issues/rush`, x); }
   finalizeRushIssue(id: number, barcodes: string[]) { return this.h.post<any>(`${this.a}/issues/${id}/rush-finalize`, { barcodes }); }
   finalizeRushBatch(assignments: Record<number, string[]>) { return this.h.post<any[]>(`${this.a}/issues/rush-batch/finalize`, { assignments }); }
+  cancelRushBatch(reference: string) { return this.h.post<any[]>(`${this.a}/issues/rush-batch/${encodeURIComponent(reference)}/cancel`, {}); }
+  deleteRushBatch(reference: string) { return this.h.delete(`${this.a}/issues/rush-batch/${encodeURIComponent(reference)}`); }
   updateRushHours(id: number, requiredHours: number) { return this.h.put<any>(`${this.a}/issues/${id}/rush-hours`, { requiredHours }); }
   issues() { return this.h.get<any[]>(`${this.a}/issues`); }
   complete(id: number) { return this.h.post(`${this.a}/issues/${id}/complete`, {}); }
