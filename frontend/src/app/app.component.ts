@@ -51,8 +51,14 @@ export class AppComponent implements OnInit, OnDestroy {
   remaining: any[] = [];
   departments: any[] = [];
   teams: any[] = [];
-  msg = "";
-  err = "";
+  private _msg = "";
+  private _err = "";
+  messagePage: Page | "GLOBAL" | null = null;
+  errorPage: Page | "GLOBAL" | null = null;
+  get msg() { return this._msg; }
+  set msg(value: string) { this._msg = value || ""; this.messagePage = this._msg ? this.page : null; }
+  get err() { return this._err; }
+  set err(value: string) { this._err = value || ""; this.errorPage = this._err ? this.page : null; }
   employee: any = this.newEmployee();
   visitor: any = this.newVisitor();
   ticket: any = this.newTicket();
@@ -732,6 +738,19 @@ export class AppComponent implements OnInit, OnDestroy {
       ? this.currentUser.navigationPermissions
       : rolePermissions;
     return rolePermissions.includes(p) && userPermissions.includes(p);
+  }
+  isPageMessageVisible(type: "message" | "error") {
+    const value = type === "message" ? this._msg : this._err;
+    const scope = type === "message" ? this.messagePage : this.errorPage;
+    return !!value && (scope === "GLOBAL" || scope === this.page);
+  }
+  dismissPageMessage(type: "message" | "error") {
+    if (type === "message") this.msg = "";
+    else this.err = "";
+  }
+  showGlobalMessage(message: string, error = false) {
+    if (error) { this._err = message; this.errorPage = "GLOBAL"; }
+    else { this._msg = message; this.messagePage = "GLOBAL"; }
   }
   canManageEmployees() {
     return this.role !== "SECURITY";

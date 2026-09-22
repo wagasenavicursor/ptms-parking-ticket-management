@@ -32,12 +32,12 @@
       >
     </div>
     <ng-template #pageMessages>
-      <div class="page-message-stack" *ngIf="msg || (err && page !== 'issue')">
-        <div *ngIf="msg" class="page-message page-message-success" role="status">
-          <span class="page-message-icon">✓</span><span><b>Completed</b><small>{{ msg }}</small></span>
+      <div class="page-message-stack" *ngIf="isPageMessageVisible('message') || (isPageMessageVisible('error') && (page !== 'issue' || errorPage === 'GLOBAL'))">
+        <div *ngIf="isPageMessageVisible('message')" class="page-message page-message-success" role="status">
+          <span class="page-message-icon">✓</span><span class="page-message-copy"><b>Completed</b><small>{{ msg }}</small></span><button type="button" class="page-message-close" aria-label="Dismiss message" title="Dismiss" (click)="dismissPageMessage('message')">×</button>
         </div>
-        <div *ngIf="err && page !== 'issue'" class="page-message page-message-error" role="alert">
-          <span class="page-message-icon">!</span><span><b>Action required</b><small>{{ err }}</small></span>
+        <div *ngIf="isPageMessageVisible('error') && (page !== 'issue' || errorPage === 'GLOBAL')" class="page-message page-message-error" role="alert">
+          <span class="page-message-icon">!</span><span class="page-message-copy"><b>Action required</b><small>{{ err }}</small></span><button type="button" class="page-message-close" aria-label="Dismiss error" title="Dismiss" (click)="dismissPageMessage('error')">×</button>
         </div>
       </div>
     </ng-template>
