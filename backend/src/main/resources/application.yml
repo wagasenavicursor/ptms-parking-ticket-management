@@ -11,18 +11,6 @@ spring:
       ddl-auto: validate
   flyway:
     enabled: true
-  servlet:
-    multipart:
-      max-file-size: 12MB
-      max-request-size: 12MB
 server:
   servlet:
     context-path: /ptms
-azure:
-  document-intelligence:
-    endpoint: ${AZURE_DOCUMENT_INTELLIGENCE_ENDPOINT:}
-    key: ${AZURE_DOCUMENT_INTELLIGENCE_KEY:}
-    model-id: ${AZURE_DOCUMENT_INTELLIGENCE_MODEL_ID:prebuilt-layout}
-    api-version: ${AZURE_DOCUMENT_INTELLIGENCE_API_VERSION:2024-11-30}
-    poll-interval-ms: ${AZURE_DOCUMENT_INTELLIGENCE_POLL_INTERVAL_MS:750}
-    timeout-seconds: ${AZURE_DOCUMENT_INTELLIGENCE_TIMEOUT_SECONDS:45}

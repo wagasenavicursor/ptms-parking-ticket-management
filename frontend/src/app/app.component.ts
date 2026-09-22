@@ -1,7 +1,7 @@
 import { Component, HostListener, Input, OnDestroy, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { firstValueFrom, Subscription } from 'rxjs';
+import { Subscription } from 'rxjs';
 import { ApiService } from './core/api.service';
 import { BarcodeScannerService } from './core/barcode-scanner.service';
 import { SearchSelectComponent, SearchSelectOption } from './core/search-select.component';
@@ -196,17 +196,6 @@ export class AppComponent implements OnInit, OnDestroy {
     const file=input.files?.[0];if(!file)return;this.photoReading=true;this.photoRows=[];
     if(this.photoPreview)URL.revokeObjectURL(this.photoPreview);this.photoPreview=URL.createObjectURL(file);
     try{
-      let azureFallbackMessage='';
-      try{
-        this.msg='Reading ticket photo with Azure Document Intelligence…';
-        const cloud=await firstValueFrom(this.api.recognizeTicketPhoto(file));
-        if(cloud?.succeeded&&Array.isArray(cloud.tickets)&&cloud.tickets.length){
-          for(const row of cloud.tickets)this.addPhotoRow({barcode:row.barcode||'',physicalTicketNumber:row.physicalTicketNumber||'',durationHours:Number(row.durationHours)||Number(this.hours),ticketNumber:row.ticketNumber??null,stockIssueDate:row.stockIssueDate||this.stockIssueDate,expiryDate:row.expiryDate||this.expiry||null,recognitionConfidence:row.confidence});
-          this.msg=`${cloud.message} Review every detected value against the hard copy before saving.`;
-          return;
-        }
-        azureFallbackMessage=cloud?.message||'Azure did not return ticket records; browser OCR was used.';
-      }catch{azureFallbackMessage='Azure recognition was unavailable; browser OCR was used.';}
       const bitmap=await createImageBitmap(file),BarcodeDetectorCtor=(window as any).BarcodeDetector,TextDetectorCtor=(window as any).TextDetector;
       let codes:any[]=[],texts:any[]=[];
       if(BarcodeDetectorCtor)try{codes=await new BarcodeDetectorCtor({formats:['code_128','code_39','ean_13','ean_8','itf','codabar','upc_a','upc_e']}).detect(bitmap);}catch{codes=[];}
@@ -254,7 +243,7 @@ export class AppComponent implements OnInit, OnDestroy {
         this.addPhotoRow({barcode,physicalTicketNumber:physical,durationHours:duration,ticketNumber:handwritten,stockIssueDate:dates[0]||this.stockIssueDate,expiryDate:dates[1]||this.expiry||null});
       }
       const identified=this.photoRows.filter(r=>r.barcode||r.physicalTicketNumber||r.ticketNumber).length;
-      this.msg=`${azureFallbackMessage} Created ${this.photoRows.length} ticket review rows; ${identified} contain automatically identified values. Correct any uncertain or blank fields before saving.`;
+      this.msg=`Created ${this.photoRows.length} ticket review rows; ${identified} contain automatically identified values. Correct any uncertain or blank fields before saving.`;
     }catch(e){this.addPhotoRow();this.err='The photo could not be read automatically. An editable row was created so you can enter the identifiable details.';}
     finally{this.photoReading=false;input.value='';}
   }
