@@ -39,7 +39,7 @@ public class TicketIssueService {
       if (q.entryTime() == null || q.exitTime() == null) throw new BusinessRuleException("Entry and exit time are required when using time range mode");
       h = ds.requiredTicketHours(q.personType(), pass, q.visitDate(), q.entryTime(), q.exitTime(), q.extraHours());
     }
-    List<List<Integer>> available = cs.combinationsFor(h).stream().filter(this::inventoryCanSupply).toList();
+    List<List<Integer>> available = cs.combinationsFor(h).stream().filter(c -> inventoryCanSupply(c, q.visitDate())).toList();
     if (h > 0 && available.isEmpty()) throw new BusinessRuleException("No available ticket combination can cover " + h + " hour(s) with current inventory");
     return new IssuePreviewResponse(h, available);
   }
@@ -52,10 +52,13 @@ public class TicketIssueService {
     return false;
   }
 
-  private boolean inventoryCanSupply(List<Integer> combo) {
+  private boolean inventoryCanSupply(List<Integer> combo, LocalDate visitDate) {
     Map<Integer, Long> need = new HashMap<>();
     combo.forEach(x -> need.merge(x, 1L, Long::sum));
-    return need.entrySet().stream().allMatch(e -> tr.countByStatusAndDurationHours(TicketStatus.AVAILABLE, e.getKey()) >= e.getValue());
+    Map<Integer, Long> usable = tr.findByStatusOrderByDurationHoursAscTicketNumberAsc(TicketStatus.AVAILABLE).stream()
+      .filter(t -> t.getExpiryDate() == null || !t.getExpiryDate().isBefore(visitDate))
+      .collect(java.util.stream.Collectors.groupingBy(ParkingTicket::getDurationHours, java.util.stream.Collectors.counting()));
+    return need.entrySet().stream().allMatch(e -> usable.getOrDefault(e.getKey(), 0L) >= e.getValue());
   }
 
   public IssueResponse create(CreateIssueRequest q) {

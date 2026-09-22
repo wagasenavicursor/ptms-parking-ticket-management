@@ -572,6 +572,11 @@ section > h1::after{
 .confirm-success .theme-confirm-icon{background:#edf7e7;color:#4f9120;box-shadow:inset 0 0 0 1px rgba(103,181,44,.12)}
 .confirm-success .theme-confirm-primary{background:#67b52c!important;border-color:#67b52c!important;box-shadow:0 3px 8px rgba(103,181,44,.18)}
 .confirm-success .theme-confirm-primary:hover{background:#4f9120!important}
+.issue-error-dialog .theme-confirm-accent{background:linear-gradient(90deg,#c93434 0 72%,#174a96 72% 100%)}
+.issue-error-dialog .theme-confirm-icon{background:#fff0f0;color:#bd2c2c;box-shadow:inset 0 0 0 1px rgba(201,52,52,.1)}
+.issue-error-dialog .theme-confirm-eyebrow{color:#b72d2d}
+.issue-error-dialog .theme-confirm-actions{justify-content:flex-end}
+.issue-error-dialog .theme-confirm-primary{background:#174a96!important;border-color:#174a96!important}
 @keyframes confirmPop{from{opacity:0;transform:translateY(8px) scale(.985)}to{opacity:1;transform:translateY(0) scale(1)}}
 @media(max-width:520px){
   .theme-confirm-backdrop{padding:14px}
