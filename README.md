@@ -36,6 +36,17 @@ The deployable file is `backend/target/ptms.war`.
 ## Barcode scanner
 Use a USB HID keyboard scanner with no prefix and Enter/Carriage Return suffix. Scanner support is available in inventory, issue-ticket workflow, and reconciliation.
 
+## Local ticket-photo recognition
+Bulk ticket photos are processed entirely on the PTMS server; images are not sent to an external AI service. The recognition pipeline uses OpenCV to detect and crop each physical ticket, ZXing to read printed barcodes, and Tess4J/Tesseract to read printed and handwritten text. If server recognition cannot complete, the existing in-browser OCR is used as a fallback.
+
+Tess4J includes English recognition data by default. To use a separately installed or tuned Tesseract data folder, set:
+
+```bash
+export PTMS_TESSDATA_PATH="/path/to/tessdata"
+```
+
+On Windows, install the current Microsoft Visual C++ Redistributable required by Tess4J's native libraries. Recognition remains assistive: guards must review and may correct every detected barcode, printed physical number, circled ticket number, duration, issue date, and valid-till date before saving.
+
 ## Git workflow
 - `main`: stable
 - `developer`: integration branch
