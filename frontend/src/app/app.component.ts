@@ -2768,6 +2768,79 @@ export class AppComponent implements OnInit, OnDestroy {
             );
             return canvas;
           };
+          const circledNumberCrop = () => {
+            const probe = document.createElement("canvas"),
+              probeContext = probe.getContext("2d", {
+                willReadFrequently: true,
+              })!;
+            probe.width = Math.max(1, Math.round(cellWidth));
+            probe.height = Math.max(1, Math.round(cellHeight));
+            probeContext.drawImage(
+              bitmap,
+              col * cellWidth,
+              row * cellHeight,
+              cellWidth,
+              cellHeight,
+              0,
+              0,
+              probe.width,
+              probe.height,
+            );
+            const pixels = probeContext.getImageData(
+              0,
+              0,
+              probe.width,
+              probe.height,
+            ).data;
+            let minX = probe.width,
+              minY = probe.height,
+              maxX = -1,
+              maxY = -1,
+              coloured = 0;
+            for (let y = Math.floor(probe.height * 0.08); y < probe.height * 0.68; y++)
+              for (let x = Math.floor(probe.width * 0.43); x < probe.width; x++) {
+                const offset = (y * probe.width + x) * 4,
+                  red = pixels[offset],
+                  green = pixels[offset + 1],
+                  blue = pixels[offset + 2],
+                  high = Math.max(red, green, blue),
+                  low = Math.min(red, green, blue);
+                if (high - low > 48 && high > 70) {
+                  minX = Math.min(minX, x);
+                  minY = Math.min(minY, y);
+                  maxX = Math.max(maxX, x);
+                  maxY = Math.max(maxY, y);
+                  coloured++;
+                }
+              }
+            if (coloured < 18 || maxX <= minX || maxY <= minY)
+              return crop(0.55, 0.16, 0.45, 0.42, 4);
+            const width = maxX - minX + 1,
+              height = maxY - minY + 1,
+              innerX = minX + width * 0.15,
+              innerY = minY + height * 0.15,
+              innerWidth = width * 0.7,
+              innerHeight = height * 0.7,
+              canvas = document.createElement("canvas"),
+              context = canvas.getContext("2d", {
+                willReadFrequently: true,
+              })!;
+            canvas.width = Math.max(160, Math.round(innerWidth * 6));
+            canvas.height = Math.max(160, Math.round(innerHeight * 6));
+            context.filter = "grayscale(1) contrast(2.2)";
+            context.drawImage(
+              probe,
+              innerX,
+              innerY,
+              innerWidth,
+              innerHeight,
+              0,
+              0,
+              canvas.width,
+              canvas.height,
+            );
+            return canvas;
+          };
           await worker.setParameters({
             preserve_interword_spaces: "1",
             tessedit_pageseg_mode: "6",
@@ -2798,7 +2871,7 @@ export class AppComponent implements OnInit, OnDestroy {
             tessedit_char_whitelist: "0123456789",
           } as any);
           ocrHints[index].circled = (
-            await worker.recognize(crop(0.55, 0.16, 0.45, 0.42, 4))
+            await worker.recognize(circledNumberCrop())
           ).data.text;
         }
       } finally {

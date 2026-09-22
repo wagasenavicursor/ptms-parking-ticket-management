@@ -28,7 +28,9 @@ import nu.pattern.OpenCV;
 import org.opencv.core.Mat;
 import org.opencv.core.MatOfByte;
 import org.opencv.core.MatOfPoint;
+import org.opencv.core.Core;
 import org.opencv.core.Rect;
+import org.opencv.core.Scalar;
 import org.opencv.core.Size;
 import org.opencv.imgcodecs.Imgcodecs;
 import org.opencv.imgproc.Imgproc;
@@ -126,9 +128,10 @@ public class LocalTicketPhotoRecognitionService {
       Integer duration = integer(DURATION, text);
       List<LocalDate> dates = dates(text);
 
+      Integer ticketNumber = recognizeCircledNumber(crop, duration);
       BufferedImage topRight = bufferedRegion(prepared, .52, .08, .46, .48);
       String ticketText = ocr(topRight, ITessAPI.TessPageSegMode.PSM_SINGLE_WORD, "0123456789").replaceAll("[^0-9]", "");
-      Integer ticketNumber = SMALL_NUMBER.matcher(ticketText).matches() ? Integer.valueOf(ticketText) : null;
+      if (ticketNumber == null) ticketNumber = SMALL_NUMBER.matcher(ticketText).matches() ? Integer.valueOf(ticketText) : null;
       if (ticketNumber != null && ticketNumber.equals(duration)) ticketNumber = null;
 
       BufferedImage top = bufferedRegion(prepared, .35, 0, .65, .30);
@@ -153,6 +156,94 @@ public class LocalTicketPhotoRecognitionService {
     Imgproc.adaptiveThreshold(normalized, binary, 255, Imgproc.ADAPTIVE_THRESH_GAUSSIAN_C, Imgproc.THRESH_BINARY, 31, 12);
     gray.release(); scaled.release(); normalized.release();
     return binary;
+  }
+
+  /** Finds the handwritten sequence number inside a coloured or drawn circle before OCR. */
+  private Integer recognizeCircledNumber(Mat ticket, Integer duration) throws Exception {
+    List<Rect> candidates = circleCandidates(ticket);
+    for (Rect candidate : candidates) {
+      Rect inner = inner(candidate, ticket.cols(), ticket.rows(), .70);
+      Mat region = new Mat(ticket, inner).clone();
+      try {
+        Mat gray = new Mat(), scaled = new Mat(), contrast = new Mat(), binary = new Mat();
+        try {
+          Imgproc.cvtColor(region, gray, Imgproc.COLOR_BGR2GRAY);
+          double scale = Math.max(4d, 280d / Math.max(1, Math.max(gray.cols(), gray.rows())));
+          Imgproc.resize(gray, scaled, new Size(), scale, scale, Imgproc.INTER_CUBIC);
+          Imgproc.createCLAHE(3.0, new Size(5, 5)).apply(scaled, contrast);
+          Imgproc.GaussianBlur(contrast, contrast, new Size(3, 3), 0);
+          Imgproc.threshold(contrast, binary, 0, 255, Imgproc.THRESH_BINARY + Imgproc.THRESH_OTSU);
+          Integer value = ocrSmallNumber(buffered(binary), duration);
+          if (value == null) value = ocrSmallNumber(buffered(contrast), duration);
+          if (value != null) return value;
+        } finally {
+          gray.release(); scaled.release(); contrast.release(); binary.release();
+        }
+      } finally { region.release(); }
+    }
+    return null;
+  }
+
+  private Integer ocrSmallNumber(BufferedImage image, Integer duration) throws Exception {
+    for (int mode : new int[]{ITessAPI.TessPageSegMode.PSM_SINGLE_CHAR, ITessAPI.TessPageSegMode.PSM_SINGLE_WORD, ITessAPI.TessPageSegMode.PSM_SINGLE_LINE}) {
+      String digits = ocr(image, mode, "0123456789").replaceAll("[^0-9]", "");
+      if (SMALL_NUMBER.matcher(digits).matches()) {
+        Integer value = Integer.valueOf(digits);
+        if (!value.equals(duration)) return value;
+      }
+    }
+    return null;
+  }
+
+  private List<Rect> circleCandidates(Mat ticket) {
+    List<Rect> result = new ArrayList<>();
+    Mat gray = new Mat(), blurred = new Mat(), circles = new Mat();
+    try {
+      Imgproc.cvtColor(ticket, gray, Imgproc.COLOR_BGR2GRAY);
+      Imgproc.medianBlur(gray, blurred, 7);
+      int minDimension = Math.min(ticket.cols(), ticket.rows());
+      Imgproc.HoughCircles(blurred, circles, Imgproc.HOUGH_GRADIENT, 1.2,
+          Math.max(12, minDimension * .07), 120, 25,
+          Math.max(8, (int)(minDimension * .025)), Math.max(14, (int)(minDimension * .18)));
+      for (int i = 0; i < circles.cols(); i++) {
+        double[] circle = circles.get(0, i);
+        if (circle == null || circle.length < 3) continue;
+        int x=(int)Math.round(circle[0]), y=(int)Math.round(circle[1]), r=(int)Math.round(circle[2]);
+        if (x < ticket.cols()*.43 || y < ticket.rows()*.08 || y > ticket.rows()*.68) continue;
+        result.add(clamp(new Rect(x-r,y-r,r*2,r*2),ticket.cols(),ticket.rows()));
+      }
+    } finally { gray.release(); blurred.release(); circles.release(); }
+
+    // Hand-drawn red/blue circles can be incomplete, so also locate saturated ink contours.
+    Mat hsv = new Mat(), colour = new Mat(), hierarchy = new Mat();
+    List<MatOfPoint> contours = new ArrayList<>();
+    try {
+      Imgproc.cvtColor(ticket, hsv, Imgproc.COLOR_BGR2HSV);
+      Core.inRange(hsv, new Scalar(0, 65, 35), new Scalar(180, 255, 255), colour);
+      Mat kernel = Imgproc.getStructuringElement(Imgproc.MORPH_ELLIPSE, new Size(9,9));
+      Imgproc.morphologyEx(colour, colour, Imgproc.MORPH_CLOSE, kernel); kernel.release();
+      Imgproc.findContours(colour, contours, hierarchy, Imgproc.RETR_EXTERNAL, Imgproc.CHAIN_APPROX_SIMPLE);
+      double area = ticket.cols()*(double)ticket.rows();
+      for (MatOfPoint contour : contours) {
+        Rect rect=Imgproc.boundingRect(contour); double ratio=rect.width/(double)Math.max(1,rect.height);
+        if(rect.x>ticket.cols()*.43&&rect.y<ticket.rows()*.68&&rect.area()>area*.0015&&rect.area()<area*.09&&ratio>.45&&ratio<1.8)
+          result.add(padded(rect,ticket.cols(),ticket.rows()));
+      }
+    } finally { contours.forEach(Mat::release); hsv.release(); colour.release(); hierarchy.release(); }
+    result.sort(Comparator.comparingDouble(r -> Math.abs((r.x+r.width/2d)/ticket.cols()-.72)+Math.abs((r.y+r.height/2d)/ticket.rows()-.31)));
+    List<Rect> unique=new ArrayList<>();
+    for(Rect r:result)if(unique.stream().noneMatch(x->overlap(r,x)>.55))unique.add(r);
+    return unique.stream().limit(6).toList();
+  }
+
+  private static Rect inner(Rect value,int width,int height,double factor){
+    int w=Math.max(1,(int)(value.width*factor)),h=Math.max(1,(int)(value.height*factor));
+    return clamp(new Rect(value.x+(value.width-w)/2,value.y+(value.height-h)/2,w,h),width,height);
+  }
+
+  private static Rect clamp(Rect value,int width,int height){
+    int x=Math.max(0,value.x),y=Math.max(0,value.y);
+    return new Rect(x,y,Math.max(1,Math.min(width-x,value.width)),Math.max(1,Math.min(height-y,value.height)));
   }
 
   private String decodeBarcode(BufferedImage image) {
