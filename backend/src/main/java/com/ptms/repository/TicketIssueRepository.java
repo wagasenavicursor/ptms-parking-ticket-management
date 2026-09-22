@@ -12,6 +12,7 @@ public interface TicketIssueRepository extends JpaRepository<TicketIssue, Long> 
   List<TicketIssue> findByStatusOrderByCreatedAtAsc(IssueStatus s);
   List<TicketIssue> findByRushBatchReferenceOrderByCreatedAtAsc(String rushBatchReference);
   boolean existsByIssueModeAndPersonReferenceAndVisitDate(String issueMode, String personReference, LocalDate visitDate);
+  boolean existsByIssueModeAndPersonReferenceAndVisitDateAndStatusNot(String issueMode, String personReference, LocalDate visitDate, IssueStatus status);
 
   @Query("select count(i) from TicketIssue i join i.items item where item.ticket.id = :ticketId and i.status = :status")
   long countByTicketIdAndStatus(@Param("ticketId") Long ticketId, @Param("status") IssueStatus status);

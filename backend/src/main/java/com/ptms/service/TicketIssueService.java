@@ -63,7 +63,7 @@ public class TicketIssueService {
 
   public IssueResponse create(CreateIssueRequest q) {
     IssuePreviewResponse p = preview(new IssuePreviewRequest(q.personType(), q.personReference(), q.visitDate(), q.entryTime(), q.exitTime(), q.extraHours(), q.manualHours()));
-    if (q.selectedCombination().stream().mapToInt(Integer::intValue).sum() != p.requiredHours() || !p.combinations().contains(q.selectedCombination())) throw new BusinessRuleException("Invalid or unavailable ticket combination");
+    if (q.selectedCombination().stream().mapToInt(Integer::intValue).sum() != p.requiredHours()) throw new BusinessRuleException("Selected tickets must total exactly " + p.requiredHours() + " hour(s)");
     if (new HashSet<>(q.barcodes().stream().map(String::toLowerCase).toList()).size() != q.barcodes().size()) throw new BusinessRuleException("Duplicate barcode in request");
     if (q.barcodes().size() != q.selectedCombination().size()) throw new BusinessRuleException("Barcode count mismatch");
 
@@ -96,7 +96,7 @@ public class TicketIssueService {
   public IssueResponse createRush(RushIssueRequest q) {
     hasParkingPass(PersonType.EMPLOYEE, q.employeeReference());
     if (cs.combinationsFor(q.requiredHours()).isEmpty()) throw new BusinessRuleException("Required hours cannot be covered by configured ticket types");
-    if (ir.existsByIssueModeAndPersonReferenceAndVisitDate("QUICK", q.employeeReference(), q.visitDate())) throw new BusinessRuleException("This employee is already included in a quick ticket batch for " + q.visitDate());
+    if (ir.existsByIssueModeAndPersonReferenceAndVisitDateAndStatusNot("QUICK", q.employeeReference(), q.visitDate(), IssueStatus.CANCELLED)) throw new BusinessRuleException("This employee is already included in a quick ticket batch for " + q.visitDate());
     TicketIssue i = new TicketIssue();
     i.setRequestNumber("RUSH-" + UUID.randomUUID().toString().substring(0, 8).toUpperCase());
     i.setIssueMode("QUICK");

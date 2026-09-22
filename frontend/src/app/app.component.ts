@@ -1,305 +1,3277 @@
-import { Component, HostListener, Input, OnDestroy, OnInit } from '@angular/core';
-import { CommonModule } from '@angular/common';
-import { FormsModule } from '@angular/forms';
-import { firstValueFrom, Subscription } from 'rxjs';
-import { ApiService } from './core/api.service';
-import { BarcodeScannerService } from './core/barcode-scanner.service';
-import { SearchSelectComponent, SearchSelectOption } from './core/search-select.component';
+import {
+  Component,
+  HostListener,
+  Input,
+  OnDestroy,
+  OnInit,
+} from "@angular/core";
+import { CommonModule } from "@angular/common";
+import { FormsModule } from "@angular/forms";
+import { firstValueFrom, Subscription } from "rxjs";
+import { ApiService } from "./core/api.service";
+import { BarcodeScannerService } from "./core/barcode-scanner.service";
+import {
+  SearchSelectComponent,
+  SearchSelectOption,
+} from "./core/search-select.component";
 
-type Page = 'home' | 'dashboard' | 'employees' | 'visitors' | 'departments' | 'teams' | 'inventory' | 'issue' | 'register' | 'remaining' | 'reconcile' | 'reports' | 'settings' | 'audit';
-type UserRole = 'SUPER_USER' | 'ADMIN' | 'SECURITY';
-type NavItem = { p: Page; t: string };
+type Page =
+  | "home"
+  | "dashboard"
+  | "employees"
+  | "visitors"
+  | "departments"
+  | "teams"
+  | "inventory"
+  | "issue"
+  | "register"
+  | "remaining"
+  | "reconcile"
+  | "reports"
+  | "settings"
+  | "audit";
+type UserRole = "SUPER_USER" | "ADMIN" | "SECURITY";
+type NavItem = { p: Page; t: string; icon: string; tone: string };
 
-@Component({selector:'app-root',standalone:true,imports:[CommonModule,FormsModule,SearchSelectComponent],templateUrl:'./app.component.html'})
+@Component({
+  selector: "app-root",
+  standalone: true,
+  imports: [CommonModule, FormsModule, SearchSelectComponent],
+  templateUrl: "./app.component.html",
+})
 export class AppComponent implements OnInit, OnDestroy {
   @Input() currentUser: any = null;
-  page: Page = 'home';
-  dashboard:any={}; employees:any[]=[]; visitors:any[]=[]; tickets:any[]=[]; issues:any[]=[]; remaining:any[]=[]; departments:any[]=[]; teams:any[]=[];
-  msg=''; err=''; employee:any=this.newEmployee(); visitor:any=this.newVisitor(); ticket:any=this.newTicket(); department:any=this.newDepartment(); team:any=this.newTeam();
-  hours=1; stockIssueDate=''; expiry=''; bulkTicketNumber:any=''; bulkPhysicalTicketNumber=''; ticketExpiryMode:'NONE'|'DATE'='NONE'; bulkExpiryMode:'NONE'|'DATE'='NONE'; inventoryScans:string[]=[]; ticketSearch=''; hourFilter=''; statusFilter=''; inventoryEntryMode:'PHOTO'|'SCANNER'|'MANUAL'='PHOTO'; photoPreview=''; photoReading=false; photoRows:any[]=[]; photoFile:File|null=null;
-  ptype='EMPLOYEE'; search=''; person=''; date=new Date().toISOString().slice(0,10); durationMode:'HOURS'|'TIME'='HOURS'; manualHours:any=1; entry='08:00'; exit='17:00'; extra:any=''; reason=''; required=0; combos:number[][]=[]; combo:number[]=[]; issueScans:string[]=[]; barcodeMode:'SCAN'|'MANUAL'='SCAN'; manualBarcode=''; normalTicketChoiceMode:'BEST'|'DIFFERENT'='BEST';
-  requirementMessage=''; requirementMessageType:'info'|'success'|'error'='info';
-  quickVisitorOpen=false; quickVisitor:any=this.newVisitor();
-  issueMode:'NORMAL'|'QUICK'='NORMAL'; rushEmployee=''; rushHours:any=1; rushReason=''; rushBarcodeInputs:Record<number,string>={}; rushBatchReference=''; rushTicketPickerIssue:any=null; rushReviewMode=false;
-  registerEdit:any=null; registerEmployee=''; registerDate=''; pendingEdit:any=null; reconScans:string[]=[]; recon:any; reportDate=this.date; reportPerson=''; reportFrom=this.date; reportTo=this.date; reportStatus=''; reportDuration=''; reportPersonType=''; reportPreviewKind='';
-  usageFrom=`${this.date.slice(0,7)}-01`; usageTo=this.date;
-  settings:any={weekdayStart:'06:00',weekdayEnd:'12:00',weekendStart:'06:00',weekendEnd:'12:30',bufferMinutes:0,ticketTypes:'1,2,4,6,8,12',warning1h:5,warning2h:5,warning4h:5,warning6h:5,warning8h:5,warning12h:5,ticketNumberResetMode:'DAY',ticketNumberResetPeriodDays:7,ticketNumberResetStartDate:'',ticketNumberResetEndDate:'',inventoryDefaultDuration:1,inventoryDefaultExpiryMode:'NONE',inventoryDefaultEntryMode:'PHOTO',defaultIssueMode:'NORMAL',defaultPersonType:'EMPLOYEE',defaultDurationMode:'HOURS',defaultBarcodeMode:'SCAN',defaultRushHours:1,quickBatchSecurityEnabled:true,quickBatchAdminEnabled:true,inventoryPhotoSecurityEnabled:true,inventoryPhotoAdminEnabled:true,inventoryScannerSecurityEnabled:true,inventoryScannerAdminEnabled:true,inventoryManualSecurityEnabled:true,inventoryManualAdminEnabled:true};
-  private inventoryDefaultsLoaded=false;
-  private refreshVersion=0;
-  private issueButtonRefreshTimer:any=null;
-  auditLogs:any[]=[]; auditUser=''; auditAction=''; auditEntity=''; auditFrom=''; auditTo=''; auditExpandedId:any=null;
-  confirmDialog:any=null; expandedTicket:any=null; private confirmResolver:((value:boolean)=>void)|null=null;
-  readonly criticalTicketThreshold=2; readonly staleIssueMinutes=120;
-  sub?:Subscription; alertRefreshTimer:any=null;
-  private readonly navItems:NavItem[]=[{p:'home',t:'⌂ Home'},{p:'dashboard',t:'▦ Dashboard'},{p:'register',t:'▧ Issued Tickets Register'},{p:'employees',t:'♙ Employees'},{p:'visitors',t:'♧ Visitors'},{p:'inventory',t:'▤ Ticket Inventory'},{p:'remaining',t:'◇ Remaining Inventory'},{p:'reports',t:'▣ Reports'},{p:'settings',t:'⚙ Settings'}];
-  private readonly securityPages=new Set<Page>(['home','dashboard','employees','visitors','inventory','issue','register','remaining','reports']);
-  constructor(private api:ApiService,private scanner:BarcodeScannerService){}
-  get role():UserRole{return (this.currentUser?.role||'SECURITY') as UserRole;} get visibleNavItems(){return this.navItems.filter(n=>this.canAccess(n.p));} get registerIssues(){return this.issues.filter(i=>this.isClosedIssue(i)).sort((a,b)=>String(this.issueDisplayReference(a)||'').localeCompare(String(this.issueDisplayReference(b)||''),undefined,{numeric:true})||String(a.personReference||'').localeCompare(String(b.personReference||''),undefined,{numeric:true}));} get filteredRegisterIssues(){return this.registerIssues.filter(i=>(!this.registerEmployee||i.personType==='EMPLOYEE'&&String(i.personReference)===String(this.registerEmployee))&&(!this.registerDate||String(i.visitDate||'').slice(0,10)===this.registerDate));}
-  get issueErrorMessage(){return this.err||(this.requirementMessageType==='error'?this.requirementMessage:'');}
-  dismissIssueError(){this.err='';if(this.requirementMessageType==='error'){this.requirementMessage='';this.requirementMessageType='info';}}
-  get completedRegisterIssues(){return this.registerIssues.filter(i=>i.status==='COMPLETED');}
-  get cancelledRegisterIssues(){return this.registerIssues.filter(i=>i.status==='CANCELLED');}
-  get registeredTicketCount(){return this.registerIssues.reduce((n:number,i:any)=>n+(Array.isArray(i.barcodes)?i.barcodes.length:0),0);}
-  get activeDepartments(){return this.departments.filter(d=>d.enabled!==false);} get activeTeams(){return this.teams.filter(t=>t.enabled!==false);}
-  get departmentOptions():SearchSelectOption[]{return this.activeDepartments.map(d=>({value:d.name,label:d.name,search:d.description||''}));}
-  get teamOptions():SearchSelectOption[]{return this.activeTeams.map(t=>({value:t.name,label:t.department?`${t.name} — ${t.department}`:t.name,search:`${t.department||''} ${t.description||''}`}));}
-  employeeHasTicketForDate(reference:any,date=this.date){return this.personHasTicketForDate('EMPLOYEE',reference,date);}
-  personHasTicketForDate(type:string,reference:any,date=this.date){const selected=String(date||'').slice(0,10);return this.issues.some(i=>i.personType===type&&String(i.personReference)===String(reference)&&String(i.visitDate||'').slice(0,10)===selected&&i.status!=='CANCELLED');}
-  employeeInBulkForDate(reference:any,date=this.date){return this.issues.some(i=>i.personType==='EMPLOYEE'&&i.issueMode==='QUICK'&&String(i.personReference)===String(reference)&&i.visitDate===date&&i.status!=='CANCELLED');}
-  private employeeSelectionRank(employee:any){const reference=employee.employeeCode??employee.id;if(employee.parkingPass)return 2;return this.employeeHasTicketForDate(reference)?1:0;}
-  private sortEmployeesForSelection(a:any,b:any){return this.employeeSelectionRank(a)-this.employeeSelectionRank(b)||String(a.name||'').localeCompare(String(b.name||''),undefined,{sensitivity:'base'})||String(a.employeeCode||a.id||'').localeCompare(String(b.employeeCode||b.id||''));}
-  get peopleOptions():SearchSelectOption[]{const people=[...this.people];if(this.ptype==='EMPLOYEE')people.sort((a:any,b:any)=>this.sortEmployeesForSelection(a,b));else people.sort((a:any,b:any)=>Number(this.personHasTicketForDate('VISITOR',a.id))-Number(this.personHasTicketForDate('VISITOR',b.id))||String(a.name||'').localeCompare(String(b.name||''),undefined,{sensitivity:'base'}));return people.map((p:any)=>{const used=this.personHasTicketForDate(this.ptype,p.id);const bulk=this.ptype==='EMPLOYEE'&&used&&this.employeeInBulkForDate(p.id);return{value:p.id,label:`${p.name} | ${p.vehicle||'No vehicle'}`,search:`${p.id||''} ${p.vehicle||''} ${p.department||''} ${p.team||''} ${p.nic||''}`,badge:p.parkingPass?'P':'',warning:used,warningLabel:bulk?'Added to batch':used?'Ticket issued today':'',warningTone:bulk?'batch':used?'issued':undefined};});}
-  get rushEmployeeOptions():SearchSelectOption[]{return [...this.employees].sort((a,b)=>this.sortEmployeesForSelection(a,b)).map(e=>{const used=this.employeeHasTicketForDate(e.employeeCode),bulk=this.employeeInBulkForDate(e.employeeCode);return{value:e.employeeCode,label:`${e.name} | ${e.vehicleNumber||'No vehicle'}`,search:`${e.employeeCode||''} ${e.department||''} ${e.team||''}`,badge:e.parkingPass?'P':'',warning:used,warningLabel:bulk?'Added to batch':used?'Ticket issued today':'',warningTone:bulk?'batch':used?'issued':undefined,disabled:bulk};});}
-  get registerEmployeeOptions():SearchSelectOption[]{return [...this.employees].sort((a,b)=>String(a.name).localeCompare(String(b.name))).map(e=>({value:e.employeeCode,label:`${e.name} | ${e.vehicleNumber||'No vehicle'}`,search:`${e.employeeCode} ${e.department||''}`}));}
-  get reportPeopleOptions():SearchSelectOption[]{return[...this.employees.map(e=>({value:e.employeeCode,label:`${e.name} — ${e.employeeCode}`,search:`${e.vehicleNumber||''} ${e.department||''} ${e.team||''}`})),...this.visitors.map(v=>({value:v.visitorCode,label:`${v.name} — ${v.visitorCode}`,search:`${v.nic||''} ${v.vehicleNumber||''} ${v.hostDepartment||''}`}))];}
-  get pendingIssues(){return this.issues.filter(i=>i.status==='PENDING');}
-  get rushPendingIssues(){return this.pendingIssues.filter(i=>i.issueMode==='QUICK'&&i.personType==='EMPLOYEE'&&i.rushBatchReference===this.rushBatchReference);}
-  get currentRushBatchIssues(){return this.issues.filter(i=>i.issueMode==='QUICK'&&i.rushBatchReference===this.rushBatchReference);}
-  get rushVisibleIssues(){if(!this.rushReviewMode&&!this.currentRushBatchIssues.some(i=>i.status==='PENDING'))return[];return this.currentRushBatchIssues.filter(i=>i.status!=='CANCELLED').sort((a,b)=>Number(a.id)-Number(b.id));}
-  get currentRushBatchCompleted(){const active=this.currentRushBatchIssues.filter(i=>i.status!=='CANCELLED');return active.length>0&&!this.currentRushBatchIssues.some(i=>i.status==='PENDING')&&active.every(i=>i.status==='COMPLETED');}
-  get currentRushBatchReadOnly(){return this.currentRushBatchIssues.length>0&&!this.currentRushBatchIssues.some(i=>i.status==='PENDING');}
-  get rushBatches(){const groups=new Map<string,any>();for(const i of this.issues.filter(x=>x.issueMode==='QUICK'&&x.rushBatchReference)){const key=i.rushBatchReference;const g=groups.get(key)||{reference:key,createdAt:i.createdAt,status:'PENDING',issues:[]};g.issues.push(i);groups.set(key,g);}for(const g of groups.values()){const active=g.issues.filter((i:any)=>i.status!=='CANCELLED');g.status=g.issues.some((i:any)=>i.status==='PENDING')?'PENDING':active.length&&active.every((i:any)=>i.status==='COMPLETED')?'COMPLETED':g.issues.every((i:any)=>i.status==='CANCELLED')?'CANCELLED':'INCOMPLETE';}return [...groups.values()].sort((a,b)=>String(b.createdAt).localeCompare(String(a.createdAt)));}
-  get completedIssues(){return this.issues.filter(i=>i.status==='COMPLETED');}
-  get cancelledIssues(){return this.issues.filter(i=>i.status==='CANCELLED');} 
-  get usageIssues(){return this.completedIssues.filter(i=>{const d=String(i.visitDate||'').slice(0,10);return (!this.usageFrom||d>=this.usageFrom)&&(!this.usageTo||d<=this.usageTo);});}
-  get employeeUsageStats(){
-    const totals=new Map<string,{name:string;department:string;tickets:number;requests:number}>();
-    for(const i of this.usageIssues.filter(x=>x.personType==='EMPLOYEE')){const e=this.employees.find(x=>String(x.employeeCode)===String(i.personReference));if(!e)continue;const key=String(e.employeeCode);const current=totals.get(key)||{name:e.name||key,department:e.department||'Unassigned',tickets:0,requests:0};current.tickets+=(i.barcodes||[]).length;current.requests++;totals.set(key,current);}
-    return [...totals.values()].sort((a,b)=>b.tickets-a.tickets||b.requests-a.requests||a.name.localeCompare(b.name));
+  page: Page = "home";
+  dashboard: any = {};
+  employees: any[] = [];
+  visitors: any[] = [];
+  tickets: any[] = [];
+  issues: any[] = [];
+  remaining: any[] = [];
+  departments: any[] = [];
+  teams: any[] = [];
+  msg = "";
+  err = "";
+  employee: any = this.newEmployee();
+  visitor: any = this.newVisitor();
+  ticket: any = this.newTicket();
+  department: any = this.newDepartment();
+  team: any = this.newTeam();
+  hours = 1;
+  stockIssueDate = "";
+  expiry = "";
+  bulkTicketNumber: any = "";
+  bulkPhysicalTicketNumber = "";
+  ticketExpiryMode: "NONE" | "DATE" = "NONE";
+  bulkExpiryMode: "NONE" | "DATE" = "NONE";
+  inventoryScans: string[] = [];
+  ticketSearch = "";
+  hourFilter = "";
+  statusFilter = "";
+  inventoryEntryMode: "PHOTO" | "SCANNER" | "MANUAL" = "PHOTO";
+  photoPreview = "";
+  photoReading = false;
+  photoRows: any[] = [];
+  photoFile: File | null = null;
+  ptype = "EMPLOYEE";
+  search = "";
+  person = "";
+  date = new Date().toISOString().slice(0, 10);
+  durationMode: "HOURS" | "TIME" = "HOURS";
+  manualHours: any = 1;
+  entry = "08:00";
+  exit = "17:00";
+  extra: any = "";
+  reason = "";
+  required = 0;
+  combos: number[][] = [];
+  combo: number[] = [];
+  issueScans: string[] = [];
+  barcodeMode: "SCAN" | "MANUAL" = "SCAN";
+  manualBarcode = "";
+  normalTicketChoiceMode: "BEST" | "DIFFERENT" = "BEST";
+  requirementMessage = "";
+  requirementMessageType: "info" | "success" | "error" = "info";
+  quickVisitorOpen = false;
+  quickVisitor: any = this.newVisitor();
+  issueMode: "NORMAL" | "QUICK" = "NORMAL";
+  rushEmployee = "";
+  rushHours: any = 1;
+  rushReason = "";
+  rushBarcodeInputs: Record<number, string> = {};
+  rushBatchReference = "";
+  rushTicketPickerIssue: any = null;
+  rushReviewMode = false;
+  registerEdit: any = null;
+  registerEmployee = "";
+  registerDate = "";
+  registerStatus = "";
+  registerHours: any = "";
+  pendingEdit: any = null;
+  reconScans: string[] = [];
+  recon: any;
+  reportDate = this.date;
+  reportPerson = "";
+  reportFrom = this.date;
+  reportTo = this.date;
+  reportStatus = "";
+  reportDuration = "";
+  reportPersonType = "";
+  reportPreviewKind = "";
+  usageFrom = `${this.date.slice(0, 7)}-01`;
+  usageTo = this.date;
+  settings: any = {
+    weekdayStart: "06:00",
+    weekdayEnd: "12:00",
+    weekendStart: "06:00",
+    weekendEnd: "12:30",
+    bufferMinutes: 0,
+    ticketTypes: "1,2,4,6,8,12",
+    warning1h: 5,
+    warning2h: 5,
+    warning4h: 5,
+    warning6h: 5,
+    warning8h: 5,
+    warning12h: 5,
+    ticketNumberResetMode: "DAY",
+    ticketNumberResetPeriodDays: 7,
+    ticketNumberResetStartDate: "",
+    ticketNumberResetEndDate: "",
+    inventoryDefaultDuration: 1,
+    inventoryDefaultExpiryMode: "NONE",
+    inventoryDefaultEntryMode: "PHOTO",
+    defaultIssueMode: "NORMAL",
+    defaultPersonType: "EMPLOYEE",
+    defaultDurationMode: "HOURS",
+    defaultBarcodeMode: "SCAN",
+    defaultRushHours: 1,
+    quickBatchSecurityEnabled: true,
+    quickBatchAdminEnabled: true,
+    inventoryPhotoSecurityEnabled: true,
+    inventoryPhotoAdminEnabled: true,
+    inventoryScannerSecurityEnabled: true,
+    inventoryScannerAdminEnabled: true,
+    inventoryManualSecurityEnabled: true,
+    inventoryManualAdminEnabled: true,
+  };
+  private inventoryDefaultsLoaded = false;
+  private refreshVersion = 0;
+  private issueButtonRefreshTimer: any = null;
+  auditLogs: any[] = [];
+  auditUser = "";
+  auditAction = "";
+  auditEntity = "";
+  auditFrom = "";
+  auditTo = "";
+  auditExpandedId: any = null;
+  confirmDialog: any = null;
+  expandedTicket: any = null;
+  private confirmResolver: ((value: boolean) => void) | null = null;
+  readonly criticalTicketThreshold = 2;
+  readonly staleIssueMinutes = 120;
+  sub?: Subscription;
+  alertRefreshTimer: any = null;
+  private readonly navItems: NavItem[] = [
+    { p: "home", t: "Home", icon: "⌂", tone: "blue" },
+    { p: "dashboard", t: "Dashboard", icon: "▦", tone: "indigo" },
+    { p: "issue", t: "Issue Parking Tickets", icon: "＋", tone: "green" },
+    { p: "register", t: "Issued Tickets Register", icon: "▧", tone: "cyan" },
+    { p: "employees", t: "Employees", icon: "♙", tone: "violet" },
+    { p: "visitors", t: "Visitors", icon: "♧", tone: "orange" },
+    { p: "inventory", t: "Ticket Inventory", icon: "▤", tone: "teal" },
+    { p: "remaining", t: "Remaining Inventory", icon: "◇", tone: "amber" },
+    { p: "reports", t: "Reports", icon: "▣", tone: "rose" },
+    { p: "settings", t: "Settings", icon: "⚙", tone: "slate" },
+  ];
+  private readonly securityPages = new Set<Page>([
+    "home",
+    "dashboard",
+    "employees",
+    "visitors",
+    "inventory",
+    "issue",
+    "register",
+    "remaining",
+    "reports",
+  ]);
+  constructor(
+    private api: ApiService,
+    private scanner: BarcodeScannerService,
+  ) {}
+  get role(): UserRole {
+    return (this.currentUser?.role || "SECURITY") as UserRole;
   }
-  get departmentUsageStats(){
-    const totals=new Map<string,{name:string;tickets:number;employees:Set<string>;requests:number}>();
-    for(const i of this.usageIssues.filter(x=>x.personType==='EMPLOYEE')){const e=this.employees.find(x=>String(x.employeeCode)===String(i.personReference));if(!e)continue;const name=e.department||'Unassigned';const current=totals.get(name)||{name,tickets:0,employees:new Set<string>(),requests:0};current.tickets+=(i.barcodes||[]).length;current.requests++;current.employees.add(String(e.employeeCode));totals.set(name,current);}
-    return [...totals.values()].map(x=>({name:x.name,tickets:x.tickets,employees:x.employees.size,requests:x.requests})).sort((a,b)=>b.tickets-a.tickets||b.requests-a.requests||a.name.localeCompare(b.name));
+  get visibleNavItems() {
+    return this.navItems.filter((n) => this.canAccess(n.p));
   }
-  get mostUsedDepartment(){return this.departmentUsageStats[0]||null;} get leastUsedDepartment(){const x=this.departmentUsageStats;return x.length?x[x.length-1]:null;}
-  get mostActiveEmployee(){return this.employeeUsageStats[0]||null;} get leastActiveEmployee(){const x=this.employeeUsageStats;return x.length?x[x.length-1]:null;}
-  get ticketDurationTypes(){const configured=String(this.settings?.ticketTypes||'1,2,4,6,8,12').split(',').map((x:string)=>Number(x.trim())).filter((x:number)=>Number.isFinite(x)&&x>0);return configured.length?[...new Set(configured)].sort((a:number,b:number)=>a-b):[1,2,4,6,8,12];}
-  availableCountFor(h:number){return this.remaining.filter(t=>Number(t.durationHours)===Number(h)).length;}
-  ticketWarningLimit(h:number){const key='warning'+Number(h)+'h';const v=Number(this.settings?.[key]);return Number.isFinite(v)&&v>=0?v:5;}
-  setTicketWarningLimit(h:number,value:any){const key='warning'+Number(h)+'h';const v=Number(value);this.settings[key]=Number.isFinite(v)?Math.max(0,Math.floor(v)):0;}
+  get registerIssues() {
+    return this.issues
+      .filter((i) => this.isClosedIssue(i))
+      .sort(
+        (a, b) =>
+          String(this.issueDisplayReference(a) || "").localeCompare(
+            String(this.issueDisplayReference(b) || ""),
+            undefined,
+            { numeric: true },
+          ) ||
+          String(a.personReference || "").localeCompare(
+            String(b.personReference || ""),
+            undefined,
+            { numeric: true },
+          ),
+      );
+  }
+  get filteredRegisterIssues() {
+    return this.registerIssues.filter(
+      (i) =>
+        (!this.registerEmployee ||
+          (i.personType === "EMPLOYEE" &&
+            String(i.personReference) === String(this.registerEmployee))) &&
+        (!this.registerDate ||
+          String(i.visitDate || "").slice(0, 10) === this.registerDate) &&
+        (!this.registerStatus || i.status === this.registerStatus) &&
+        (this.registerHours === "" ||
+          Number(i.requiredHours) === Number(this.registerHours)),
+    );
+  }
+  get issueErrorMessage() {
+    return (
+      this.err ||
+      (this.requirementMessageType === "error" ? this.requirementMessage : "")
+    );
+  }
+  get issueErrorLocation() {
+    return /barcode|ticket|combination|available|expired|fifo/.test(
+      this.issueErrorMessage.toLowerCase(),
+    )
+      ? "tickets"
+      : "requirement";
+  }
+  dismissIssueError() {
+    this.err = "";
+    if (this.requirementMessageType === "error") {
+      this.requirementMessage = "";
+      this.requirementMessageType = "info";
+    }
+  }
+  get completedRegisterIssues() {
+    return this.registerIssues.filter((i) => i.status === "COMPLETED");
+  }
+  get cancelledRegisterIssues() {
+    return this.registerIssues.filter((i) => i.status === "CANCELLED");
+  }
+  get registeredTicketCount() {
+    return this.registerIssues.reduce(
+      (n: number, i: any) =>
+        n + (Array.isArray(i.barcodes) ? i.barcodes.length : 0),
+      0,
+    );
+  }
+  get activeDepartments() {
+    return this.departments.filter((d) => d.enabled !== false);
+  }
+  get activeTeams() {
+    return this.teams.filter((t) => t.enabled !== false);
+  }
+  get departmentOptions(): SearchSelectOption[] {
+    return this.activeDepartments.map((d) => ({
+      value: d.name,
+      label: d.name,
+      search: d.description || "",
+    }));
+  }
+  get teamOptions(): SearchSelectOption[] {
+    return this.activeTeams.map((t) => ({
+      value: t.name,
+      label: t.department ? `${t.name} — ${t.department}` : t.name,
+      search: `${t.department || ""} ${t.description || ""}`,
+    }));
+  }
+  employeeHasTicketForDate(reference: any, date = this.date) {
+    return this.personHasTicketForDate("EMPLOYEE", reference, date);
+  }
+  personHasTicketForDate(type: string, reference: any, date = this.date) {
+    const selected = String(date || "").slice(0, 10);
+    return this.issues.some(
+      (i) =>
+        i.personType === type &&
+        String(i.personReference) === String(reference) &&
+        String(i.visitDate || "").slice(0, 10) === selected &&
+        i.status !== "CANCELLED",
+    );
+  }
+  personHasCancelledTicketForDate(
+    type: string,
+    reference: any,
+    date = this.date,
+  ) {
+    const selected = String(date || "").slice(0, 10);
+    return (
+      !this.personHasTicketForDate(type, reference, date) &&
+      this.issues.some(
+        (i) =>
+          i.personType === type &&
+          String(i.personReference) === String(reference) &&
+          String(i.visitDate || "").slice(0, 10) === selected &&
+          i.status === "CANCELLED",
+      )
+    );
+  }
+  employeeInBulkForDate(reference: any, date = this.date) {
+    return this.issues.some(
+      (i) =>
+        i.personType === "EMPLOYEE" &&
+        i.issueMode === "QUICK" &&
+        String(i.personReference) === String(reference) &&
+        i.visitDate === date &&
+        i.status !== "CANCELLED",
+    );
+  }
+  private employeeSelectionRank(employee: any) {
+    const reference = employee.employeeCode ?? employee.id;
+    if (employee.parkingPass) return 2;
+    return this.employeeHasTicketForDate(reference) ? 1 : 0;
+  }
+  private sortEmployeesForSelection(a: any, b: any) {
+    return (
+      this.employeeSelectionRank(a) - this.employeeSelectionRank(b) ||
+      String(a.name || "").localeCompare(String(b.name || ""), undefined, {
+        sensitivity: "base",
+      }) ||
+      String(a.employeeCode || a.id || "").localeCompare(
+        String(b.employeeCode || b.id || ""),
+      )
+    );
+  }
+  get peopleOptions(): SearchSelectOption[] {
+    const people = [...this.people];
+    if (this.ptype === "EMPLOYEE")
+      people.sort((a: any, b: any) => this.sortEmployeesForSelection(a, b));
+    else
+      people.sort(
+        (a: any, b: any) =>
+          Number(this.personHasTicketForDate("VISITOR", a.id)) -
+            Number(this.personHasTicketForDate("VISITOR", b.id)) ||
+          String(a.name || "").localeCompare(String(b.name || ""), undefined, {
+            sensitivity: "base",
+          }),
+      );
+    return people.map((p: any) => {
+      const used = this.personHasTicketForDate(this.ptype, p.id),
+        cancelled = this.personHasCancelledTicketForDate(this.ptype, p.id);
+      const bulk =
+        this.ptype === "EMPLOYEE" && used && this.employeeInBulkForDate(p.id);
+      return {
+        value: p.id,
+        label: `${p.name} | ${p.vehicle || "No vehicle"}`,
+        search: `${p.id || ""} ${p.vehicle || ""} ${p.department || ""} ${p.team || ""} ${p.nic || ""}`,
+        badge: p.parkingPass ? "P" : "",
+        warning: used || cancelled,
+        warningLabel: bulk
+          ? "Added to batch"
+          : used
+            ? "Ticket issued today"
+            : cancelled
+              ? "Previous request cancelled"
+              : "",
+        warningTone: bulk
+          ? "batch"
+          : used
+            ? "issued"
+            : cancelled
+              ? "cancelled"
+              : undefined,
+      };
+    });
+  }
+  get rushEmployeeOptions(): SearchSelectOption[] {
+    return [...this.employees]
+      .sort((a, b) => this.sortEmployeesForSelection(a, b))
+      .map((e) => {
+        const used = this.employeeHasTicketForDate(e.employeeCode),
+          bulk = this.employeeInBulkForDate(e.employeeCode),
+          cancelled = this.personHasCancelledTicketForDate(
+            "EMPLOYEE",
+            e.employeeCode,
+          );
+        return {
+          value: e.employeeCode,
+          label: `${e.name} | ${e.vehicleNumber || "No vehicle"}`,
+          search: `${e.employeeCode || ""} ${e.department || ""} ${e.team || ""}`,
+          badge: e.parkingPass ? "P" : "",
+          warning: used || cancelled,
+          warningLabel: bulk
+            ? "Added to batch"
+            : used
+              ? "Ticket issued today"
+              : cancelled
+                ? "Previous request cancelled"
+                : "",
+          warningTone: bulk
+            ? "batch"
+            : used
+              ? "issued"
+              : cancelled
+                ? "cancelled"
+                : undefined,
+          disabled: bulk,
+        };
+      });
+  }
+  get registerEmployeeOptions(): SearchSelectOption[] {
+    return [...this.employees]
+      .sort((a, b) => String(a.name).localeCompare(String(b.name)))
+      .map((e) => ({
+        value: e.employeeCode,
+        label: `${e.name} | ${e.vehicleNumber || "No vehicle"}`,
+        search: `${e.employeeCode} ${e.department || ""}`,
+      }));
+  }
+  get reportPeopleOptions(): SearchSelectOption[] {
+    return [
+      ...this.employees.map((e) => ({
+        value: e.employeeCode,
+        label: `${e.name} — ${e.employeeCode}`,
+        search: `${e.vehicleNumber || ""} ${e.department || ""} ${e.team || ""}`,
+      })),
+      ...this.visitors.map((v) => ({
+        value: v.visitorCode,
+        label: `${v.name} — ${v.visitorCode}`,
+        search: `${v.nic || ""} ${v.vehicleNumber || ""} ${v.hostDepartment || ""}`,
+      })),
+    ];
+  }
+  get pendingIssues() {
+    return this.issues.filter((i) => i.status === "PENDING");
+  }
+  get rushPendingIssues() {
+    return this.pendingIssues.filter(
+      (i) =>
+        i.issueMode === "QUICK" &&
+        i.personType === "EMPLOYEE" &&
+        i.rushBatchReference === this.rushBatchReference,
+    );
+  }
+  get currentRushBatchIssues() {
+    return this.issues.filter(
+      (i) =>
+        i.issueMode === "QUICK" &&
+        i.rushBatchReference === this.rushBatchReference,
+    );
+  }
+  get rushVisibleIssues() {
+    if (
+      !this.rushReviewMode &&
+      !this.currentRushBatchIssues.some((i) => i.status === "PENDING")
+    )
+      return [];
+    return this.currentRushBatchIssues
+      .filter((i) => this.rushReviewMode || i.status !== "CANCELLED")
+      .sort((a, b) => Number(a.id) - Number(b.id));
+  }
+  get currentRushBatchCompleted() {
+    const active = this.currentRushBatchIssues.filter(
+      (i) => i.status !== "CANCELLED",
+    );
+    return (
+      active.length > 0 &&
+      !this.currentRushBatchIssues.some((i) => i.status === "PENDING") &&
+      active.every((i) => i.status === "COMPLETED")
+    );
+  }
+  get currentRushBatchReadOnly() {
+    return (
+      this.currentRushBatchIssues.length > 0 &&
+      !this.currentRushBatchIssues.some((i) => i.status === "PENDING")
+    );
+  }
+  get rushBatches() {
+    const groups = new Map<string, any>();
+    for (const i of this.issues.filter(
+      (x) => x.issueMode === "QUICK" && x.rushBatchReference,
+    )) {
+      const key = i.rushBatchReference;
+      const g = groups.get(key) || {
+        reference: key,
+        createdAt: i.createdAt,
+        status: "PENDING",
+        issues: [],
+      };
+      g.issues.push(i);
+      groups.set(key, g);
+    }
+    for (const g of groups.values()) {
+      const active = g.issues.filter((i: any) => i.status !== "CANCELLED");
+      g.status = g.issues.some((i: any) => i.status === "PENDING")
+        ? "PENDING"
+        : active.length && active.every((i: any) => i.status === "COMPLETED")
+          ? "COMPLETED"
+          : g.issues.every((i: any) => i.status === "CANCELLED")
+            ? "CANCELLED"
+            : "INCOMPLETE";
+    }
+    return [...groups.values()].sort((a, b) =>
+      String(b.createdAt).localeCompare(String(a.createdAt)),
+    );
+  }
+  get completedIssues() {
+    return this.issues.filter((i) => i.status === "COMPLETED");
+  }
+  get cancelledIssues() {
+    return this.issues.filter((i) => i.status === "CANCELLED");
+  }
+  get usageIssues() {
+    return this.completedIssues.filter((i) => {
+      const d = String(i.visitDate || "").slice(0, 10);
+      return (
+        (!this.usageFrom || d >= this.usageFrom) &&
+        (!this.usageTo || d <= this.usageTo)
+      );
+    });
+  }
+  get employeeUsageStats() {
+    const totals = new Map<
+      string,
+      { name: string; department: string; tickets: number; requests: number }
+    >();
+    for (const i of this.usageIssues.filter(
+      (x) => x.personType === "EMPLOYEE",
+    )) {
+      const e = this.employees.find(
+        (x) => String(x.employeeCode) === String(i.personReference),
+      );
+      if (!e) continue;
+      const key = String(e.employeeCode);
+      const current = totals.get(key) || {
+        name: e.name || key,
+        department: e.department || "Unassigned",
+        tickets: 0,
+        requests: 0,
+      };
+      current.tickets += (i.barcodes || []).length;
+      current.requests++;
+      totals.set(key, current);
+    }
+    return [...totals.values()].sort(
+      (a, b) =>
+        b.tickets - a.tickets ||
+        b.requests - a.requests ||
+        a.name.localeCompare(b.name),
+    );
+  }
+  get departmentUsageStats() {
+    const totals = new Map<
+      string,
+      {
+        name: string;
+        tickets: number;
+        employees: Set<string>;
+        requests: number;
+      }
+    >();
+    for (const i of this.usageIssues.filter(
+      (x) => x.personType === "EMPLOYEE",
+    )) {
+      const e = this.employees.find(
+        (x) => String(x.employeeCode) === String(i.personReference),
+      );
+      if (!e) continue;
+      const name = e.department || "Unassigned";
+      const current = totals.get(name) || {
+        name,
+        tickets: 0,
+        employees: new Set<string>(),
+        requests: 0,
+      };
+      current.tickets += (i.barcodes || []).length;
+      current.requests++;
+      current.employees.add(String(e.employeeCode));
+      totals.set(name, current);
+    }
+    return [...totals.values()]
+      .map((x) => ({
+        name: x.name,
+        tickets: x.tickets,
+        employees: x.employees.size,
+        requests: x.requests,
+      }))
+      .sort(
+        (a, b) =>
+          b.tickets - a.tickets ||
+          b.requests - a.requests ||
+          a.name.localeCompare(b.name),
+      );
+  }
+  get mostUsedDepartment() {
+    return this.departmentUsageStats[0] || null;
+  }
+  get leastUsedDepartment() {
+    const x = this.departmentUsageStats;
+    return x.length ? x[x.length - 1] : null;
+  }
+  get mostActiveEmployee() {
+    return this.employeeUsageStats[0] || null;
+  }
+  get leastActiveEmployee() {
+    const x = this.employeeUsageStats;
+    return x.length ? x[x.length - 1] : null;
+  }
+  get ticketDurationTypes() {
+    const configured = String(this.settings?.ticketTypes || "1,2,4,6,8,12")
+      .split(",")
+      .map((x: string) => Number(x.trim()))
+      .filter((x: number) => Number.isFinite(x) && x > 0);
+    return configured.length
+      ? [...new Set(configured)].sort((a: number, b: number) => a - b)
+      : [1, 2, 4, 6, 8, 12];
+  }
+  availableCountFor(h: number) {
+    return this.remaining.filter((t) => Number(t.durationHours) === Number(h))
+      .length;
+  }
+  ticketWarningLimit(h: number) {
+    const key = "warning" + Number(h) + "h";
+    const v = Number(this.settings?.[key]);
+    return Number.isFinite(v) && v >= 0 ? v : 5;
+  }
+  setTicketWarningLimit(h: number, value: any) {
+    const key = "warning" + Number(h) + "h";
+    const v = Number(value);
+    this.settings[key] = Number.isFinite(v) ? Math.max(0, Math.floor(v)) : 0;
+  }
 
-  criticalThresholdFor(h:number){const w=this.ticketWarningLimit(h);return w<=0?0:Math.min(this.criticalTicketThreshold,w);}
-  inventoryHealth(count:number,h:number){return count<=this.criticalThresholdFor(h)?'critical':count<=this.ticketWarningLimit(h)?'low':'good';}
-  inventoryHealthLabel(count:number,h:number){return count<=this.criticalThresholdFor(h)?'Critical':count<=this.ticketWarningLimit(h)?'Low':'Healthy';}
-  get inventoryBuckets(){const values=this.ticketDurationTypes.map(h=>({hours:h,count:this.availableCountFor(h)}));const max=Math.max(1,...values.map(x=>x.count));return values.map(x=>({...x,status:this.inventoryHealth(x.count,x.hours),height:x.count?Math.max(12,Math.round(x.count/max*100)):5}));}
-  get lowInventoryBuckets(){return this.inventoryBuckets.filter(x=>x.status!=='good');}
-  get overallInventoryHealth(){return this.inventoryBuckets.some(x=>x.status==='critical')?'critical':this.inventoryBuckets.some(x=>x.status==='low')?'low':'good';}
-  pendingAgeMinutes(i:any){if(!i?.createdAt)return 0;const created=new Date(i.createdAt).getTime();return Number.isFinite(created)?Math.max(0,Math.floor((Date.now()-created)/60000)):0;}
-  pendingAgeText(i:any){const mins=this.pendingAgeMinutes(i);if(mins<60)return `${mins}m`;const hours=Math.floor(mins/60),rem=mins%60;return rem?`${hours}h ${rem}m`:`${hours}h`;}
-  get stalePendingIssues(){return this.pendingIssues.filter(i=>this.pendingAgeMinutes(i)>=this.staleIssueMinutes);}
-  get canSeeAdminAlerts(){return this.role==='ADMIN'||this.role==='SUPER_USER';}
-  get hasAdminAlerts(){return this.canSeeAdminAlerts&&(this.lowInventoryBuckets.length>0||this.stalePendingIssues.length>0);}
-  get adminAlertCount(){return this.hasAdminAlerts?this.lowInventoryBuckets.length+this.stalePendingIssues.length:0;}
+  criticalThresholdFor(h: number) {
+    const w = this.ticketWarningLimit(h);
+    return w <= 0 ? 0 : Math.min(this.criticalTicketThreshold, w);
+  }
+  inventoryHealth(count: number, h: number) {
+    return count <= this.criticalThresholdFor(h)
+      ? "critical"
+      : count <= this.ticketWarningLimit(h)
+        ? "low"
+        : "good";
+  }
+  inventoryHealthLabel(count: number, h: number) {
+    return count <= this.criticalThresholdFor(h)
+      ? "Critical"
+      : count <= this.ticketWarningLimit(h)
+        ? "Low"
+        : "Healthy";
+  }
+  get inventoryBuckets() {
+    const values = this.ticketDurationTypes.map((h) => ({
+      hours: h,
+      count: this.availableCountFor(h),
+    }));
+    const max = Math.max(1, ...values.map((x) => x.count));
+    return values.map((x) => ({
+      ...x,
+      status: this.inventoryHealth(x.count, x.hours),
+      height: x.count ? Math.max(12, Math.round((x.count / max) * 100)) : 5,
+    }));
+  }
+  get lowInventoryBuckets() {
+    return this.inventoryBuckets.filter((x) => x.status !== "good");
+  }
+  get overallInventoryHealth() {
+    return this.inventoryBuckets.some((x) => x.status === "critical")
+      ? "critical"
+      : this.inventoryBuckets.some((x) => x.status === "low")
+        ? "low"
+        : "good";
+  }
+  pendingAgeMinutes(i: any) {
+    if (!i?.createdAt) return 0;
+    const created = new Date(i.createdAt).getTime();
+    return Number.isFinite(created)
+      ? Math.max(0, Math.floor((Date.now() - created) / 60000))
+      : 0;
+  }
+  pendingAgeText(i: any) {
+    const mins = this.pendingAgeMinutes(i);
+    if (mins < 60) return `${mins}m`;
+    const hours = Math.floor(mins / 60),
+      rem = mins % 60;
+    return rem ? `${hours}h ${rem}m` : `${hours}h`;
+  }
+  get stalePendingIssues() {
+    return this.pendingIssues.filter(
+      (i) => this.pendingAgeMinutes(i) >= this.staleIssueMinutes,
+    );
+  }
+  get canSeeAdminAlerts() {
+    return this.role === "ADMIN" || this.role === "SUPER_USER";
+  }
+  get hasAdminAlerts() {
+    return (
+      this.canSeeAdminAlerts &&
+      (this.lowInventoryBuckets.length > 0 ||
+        this.stalePendingIssues.length > 0)
+    );
+  }
+  get adminAlertCount() {
+    return this.hasAdminAlerts
+      ? this.lowInventoryBuckets.length + this.stalePendingIssues.length
+      : 0;
+  }
 
-  canAccess(p:Page){if(p==='audit')return this.role==='SUPER_USER';return this.role==='SECURITY'?this.securityPages.has(p):true;} canManageEmployees(){return this.role!=='SECURITY';} canManageVisitors(){return true;} canManageInventory(){return true;} canIssueTickets(){return true;} canGenerateReports(){return true;} canManageSettings(){return this.role==='SUPER_USER'||this.role==='ADMIN';} canManageClosedIssues(){return this.role==='SUPER_USER'||this.role==='ADMIN';} canManageReferenceData(){return this.role==='SUPER_USER'||this.role==='ADMIN';}
-  get canUseQuickBatch(){return this.role==='SUPER_USER'||(this.role==='ADMIN'?this.settings.quickBatchAdminEnabled!==false:this.settings.quickBatchSecurityEnabled!==false);}
-  canUseInventoryEntry(mode:'PHOTO'|'SCANNER'|'MANUAL'){if(this.role==='SUPER_USER')return true;const suffix=this.role==='ADMIN'?'AdminEnabled':'SecurityEnabled';const prefix=mode==='PHOTO'?'inventoryPhoto':mode==='SCANNER'?'inventoryScanner':'inventoryManual';return this.settings[prefix+suffix]!==false;}
-  get hasInventoryEntryPermission(){return (['PHOTO','SCANNER','MANUAL'] as const).some(m=>this.canUseInventoryEntry(m));}
-  private ensureAllowedFeatureModes(){if(!this.canUseQuickBatch&&this.issueMode==='QUICK')this.issueMode='NORMAL';if(!this.canUseInventoryEntry(this.inventoryEntryMode)){const allowed=(['PHOTO','SCANNER','MANUAL'] as const).find(m=>this.canUseInventoryEntry(m));if(allowed)this.inventoryEntryMode=allowed;}}
-  isClosedIssue(i:any){return i?.status==='COMPLETED'||i?.status==='CANCELLED';}
-  newEmployee(){return{employeeCode:'',name:'',vehicleNumber:'',department:'',team:'',parkingPass:false,defaultEntryTime:'08:00'}} newVisitor(){return{name:'',nic:'',vehicleNumber:'',hostDepartment:''}} newTicket(){return{barcode:'',physicalTicketNumber:'',durationHours:1,ticketNumber:null,stockIssueDate:'',status:'AVAILABLE',expiryDate:''}} newDepartment(){return{name:'',description:'',enabled:true}} newTeam(){return{name:'',department:'',description:'',enabled:true}}
-  ngOnInit(){this.sub=this.scanner.scanned$.subscribe(x=>this.route(x));history.replaceState({parkingTiqPage:'home'},'',location.href);this.refresh();this.loadSettings();if(this.canSeeAdminAlerts)this.alertRefreshTimer=setInterval(()=>this.refresh(),60000);} ngOnDestroy(){this.sub?.unsubscribe();if(this.alertRefreshTimer)clearInterval(this.alertRefreshTimer);if(this.issueButtonRefreshTimer)clearTimeout(this.issueButtonRefreshTimer);this.scanner.disable();}
-  @HostListener('window:popstate',['$event']) onBrowserBack(event:PopStateEvent){const p=(event.state?.parkingTiqPage||'home') as Page;this.openPage(this.canAccess(p)?p:'home',false);}
-  @HostListener('window:keydown',['$event']) onNavigationShortcut(event:KeyboardEvent){
-    if(this.page==='issue'&&this.issueErrorMessage&&event.key==='Escape'){event.preventDefault();this.dismissIssueError();return;}
-    if(this.confirmDialog&&event.key==='Escape'){event.preventDefault();this.resolveConfirm(false);return;}
-    if(this.confirmDialog)return;
-    if(this.quickVisitorOpen&&event.key==='Escape'){event.preventDefault();this.closeQuickVisitor();return;}
-    if(this.page==='home')return;
-    const target=event.target as HTMLElement|null;
-    const typing=!!target&&(['INPUT','TEXTAREA','SELECT'].includes(target.tagName)||target.isContentEditable);
-    if(typing)return;
-    if((event.altKey&&event.key==='ArrowLeft')||event.key==='Escape'){
+  canAccess(p: Page) {
+    if (p === "audit") return this.role === "SUPER_USER";
+    return this.role === "SECURITY" ? this.securityPages.has(p) : true;
+  }
+  canManageEmployees() {
+    return this.role !== "SECURITY";
+  }
+  canManageVisitors() {
+    return true;
+  }
+  canManageInventory() {
+    return true;
+  }
+  canIssueTickets() {
+    return true;
+  }
+  canGenerateReports() {
+    return true;
+  }
+  canManageSettings() {
+    return this.role === "SUPER_USER" || this.role === "ADMIN";
+  }
+  canManageClosedIssues() {
+    return this.role === "SUPER_USER" || this.role === "ADMIN";
+  }
+  canManageReferenceData() {
+    return this.role === "SUPER_USER" || this.role === "ADMIN";
+  }
+  get canUseQuickBatch() {
+    return (
+      this.role === "SUPER_USER" ||
+      (this.role === "ADMIN"
+        ? this.settings.quickBatchAdminEnabled !== false
+        : this.settings.quickBatchSecurityEnabled !== false)
+    );
+  }
+  canUseInventoryEntry(mode: "PHOTO" | "SCANNER" | "MANUAL") {
+    if (this.role === "SUPER_USER") return true;
+    const suffix = this.role === "ADMIN" ? "AdminEnabled" : "SecurityEnabled";
+    const prefix =
+      mode === "PHOTO"
+        ? "inventoryPhoto"
+        : mode === "SCANNER"
+          ? "inventoryScanner"
+          : "inventoryManual";
+    return this.settings[prefix + suffix] !== false;
+  }
+  get hasInventoryEntryPermission() {
+    return (["PHOTO", "SCANNER", "MANUAL"] as const).some((m) =>
+      this.canUseInventoryEntry(m),
+    );
+  }
+  private ensureAllowedFeatureModes() {
+    if (!this.canUseQuickBatch && this.issueMode === "QUICK")
+      this.issueMode = "NORMAL";
+    if (!this.canUseInventoryEntry(this.inventoryEntryMode)) {
+      const allowed = (["PHOTO", "SCANNER", "MANUAL"] as const).find((m) =>
+        this.canUseInventoryEntry(m),
+      );
+      if (allowed) this.inventoryEntryMode = allowed;
+    }
+  }
+  isClosedIssue(i: any) {
+    return i?.status === "COMPLETED" || i?.status === "CANCELLED";
+  }
+  newEmployee() {
+    return {
+      employeeCode: "",
+      name: "",
+      vehicleNumber: "",
+      department: "",
+      team: "",
+      parkingPass: false,
+      defaultEntryTime: "08:00",
+    };
+  }
+  newVisitor() {
+    return { name: "", nic: "", vehicleNumber: "", hostDepartment: "" };
+  }
+  newTicket() {
+    return {
+      barcode: "",
+      physicalTicketNumber: "",
+      durationHours: 1,
+      ticketNumber: null,
+      stockIssueDate: "",
+      status: "AVAILABLE",
+      expiryDate: "",
+    };
+  }
+  newDepartment() {
+    return { name: "", description: "", enabled: true };
+  }
+  newTeam() {
+    return { name: "", department: "", description: "", enabled: true };
+  }
+  ngOnInit() {
+    this.sub = this.scanner.scanned$.subscribe((x) => this.route(x));
+    history.replaceState({ parkingTiqPage: "home" }, "", location.href);
+    this.refresh();
+    this.loadSettings();
+    if (this.canSeeAdminAlerts)
+      this.alertRefreshTimer = setInterval(() => this.refresh(), 60000);
+  }
+  ngOnDestroy() {
+    this.sub?.unsubscribe();
+    if (this.alertRefreshTimer) clearInterval(this.alertRefreshTimer);
+    if (this.issueButtonRefreshTimer)
+      clearTimeout(this.issueButtonRefreshTimer);
+    this.scanner.disable();
+  }
+  @HostListener("window:popstate", ["$event"]) onBrowserBack(
+    event: PopStateEvent,
+  ) {
+    const p = (event.state?.parkingTiqPage || "home") as Page;
+    this.openPage(this.canAccess(p) ? p : "home", false);
+  }
+  @HostListener("window:keydown", ["$event"]) onNavigationShortcut(
+    event: KeyboardEvent,
+  ) {
+    if (
+      this.page === "issue" &&
+      this.issueErrorMessage &&
+      event.key === "Escape"
+    ) {
+      event.preventDefault();
+      this.dismissIssueError();
+      return;
+    }
+    if (this.confirmDialog && event.key === "Escape") {
+      event.preventDefault();
+      this.resolveConfirm(false);
+      return;
+    }
+    if (this.confirmDialog) return;
+    if (this.quickVisitorOpen && event.key === "Escape") {
+      event.preventDefault();
+      this.closeQuickVisitor();
+      return;
+    }
+    if (this.page === "home") return;
+    const target = event.target as HTMLElement | null;
+    const typing =
+      !!target &&
+      (["INPUT", "TEXTAREA", "SELECT"].includes(target.tagName) ||
+        target.isContentEditable);
+    if (typing) return;
+    if ((event.altKey && event.key === "ArrowLeft") || event.key === "Escape") {
       event.preventDefault();
       this.goBack();
     }
   }
-  goBack(){if(this.page!=='home')history.back();}
-  nav(p:Page){if(!this.canAccess(p)){this.openPage('home',false);this.err='Your role does not have access to that function';return;}if(p===this.page)return;history.pushState({parkingTiqPage:p},'',location.href);this.openPage(p,false);}
-  private openPage(p:Page,pushHistory=false){if(pushHistory)history.pushState({parkingTiqPage:p},'',location.href);this.page=p;this.syncScanner();this.refresh();if(p==='settings')this.loadSettings();if(p==='audit')this.loadAudit();window.scrollTo({top:0,behavior:'smooth'});} 
-  syncScanner(){const on=this.page==='inventory'||this.page==='reconcile'||(this.page==='issue'&&this.barcodeMode==='SCAN');on?this.scanner.enable():this.scanner.disable();} setBarcodeMode(m:'SCAN'|'MANUAL'){this.barcodeMode=m;this.syncScanner();}
-  refresh(){const version=++this.refreshVersion;const active=()=>version===this.refreshVersion;this.api.dashboard().subscribe({next:x=>{if(active())this.dashboard=x},error:e=>this.loadFail('Dashboard',e)});this.api.employees().subscribe({next:x=>{if(active())this.employees=x},error:e=>this.loadFail('Employees',e)});this.api.visitors().subscribe({next:x=>{if(active())this.visitors=x},error:e=>this.loadFail('Visitors',e)});this.api.tickets().subscribe({next:x=>{if(active())this.tickets=x},error:e=>this.loadFail('Tickets',e)});this.api.issues().subscribe({next:x=>{if(!active())return;this.issues=x;if(!this.rushBatchReference){const current=x.find((i:any)=>i.issueMode==='QUICK'&&i.status==='PENDING'&&i.rushBatchReference);this.rushBatchReference=current?.rushBatchReference||this.newRushBatchReference();}},error:e=>this.loadFail('Issues',e)});this.api.remaining().subscribe({next:x=>{if(active())this.remaining=x},error:e=>this.loadFail('Remaining inventory',e)});this.api.departments().subscribe({next:x=>{if(active())this.departments=x},error:e=>this.loadFail('Departments',e)});this.api.teams().subscribe({next:x=>{if(active())this.teams=x},error:e=>this.loadFail('Teams',e)});}
-  route(b:string){if(this.page==='inventory')this.scanInventory(b);if(this.page==='issue'&&this.barcodeMode==='SCAN')this.scanIssue(b);if(this.page==='reconcile')this.scanRecon(b);}
-  saveDepartment(){if(!this.canManageReferenceData()){this.err='Only Admin and Super User can manage departments';return;}this.api.saveDepartment(this.department).subscribe({next:()=>{this.department=this.newDepartment();this.refresh();this.ok('Department saved')},error:e=>this.fail(e)});} editDepartment(d:any){if(!this.canManageReferenceData())return;this.department={...d};} cancelDepartment(){this.department=this.newDepartment();} async deleteDepartment(d:any){if(!this.canManageReferenceData())return;if(await this.askConfirm('Delete Department',`Delete department ${d.name}? Existing employee/visitor text values will not be removed.`,'Delete','danger'))this.api.deleteDepartment(d.id).subscribe({next:()=>{this.refresh();this.ok('Department deleted')},error:e=>this.fail(e)});}
-  saveTeam(){if(!this.canManageReferenceData()){this.err='Only Admin and Super User can manage teams';return;}this.api.saveTeam(this.team).subscribe({next:()=>{this.team=this.newTeam();this.refresh();this.ok('Team saved')},error:e=>this.fail(e)});} editTeam(t:any){if(!this.canManageReferenceData())return;this.team={...t};} cancelTeam(){this.team=this.newTeam();} async deleteTeam(t:any){if(!this.canManageReferenceData())return;if(await this.askConfirm('Delete Team',`Delete team ${t.name}? Existing employee text values will not be removed.`,'Delete','danger'))this.api.deleteTeam(t.id).subscribe({next:()=>{this.refresh();this.ok('Team deleted')},error:e=>this.fail(e)});}
-  saveEmployee(){if(!this.canManageEmployees()){this.err='Security users can view employee records only';return;}this.api.saveEmployee(this.employee).subscribe({next:()=>{this.employee=this.newEmployee();this.refresh();this.ok('Employee saved')},error:e=>this.fail(e)});} editEmployee(e:any){if(!this.canManageEmployees())return;this.employee={...e,defaultEntryTime:(e.defaultEntryTime||'08:00').slice(0,5)};window.scrollTo({top:0,behavior:'smooth'});} cancelEmployee(){this.employee=this.newEmployee();} async deleteEmployee(e:any){if(!this.canManageEmployees()){this.err='Security users can view employee records only';return;}if(await this.askConfirm('Delete Employee',`Delete employee ${e.name}?`,'Delete','danger'))this.api.deleteEmployee(e.id).subscribe({next:()=>{this.refresh();this.ok('Employee deleted')},error:x=>this.fail(x)});}
-  saveVisitor(){if(!this.canManageVisitors())return;this.api.saveVisitor(this.visitor).subscribe({next:()=>{this.visitor=this.newVisitor();this.refresh();this.ok('Visitor saved')},error:e=>this.fail(e)});} editVisitor(v:any){if(!this.canManageVisitors())return;this.visitor={...v};window.scrollTo({top:0,behavior:'smooth'});} cancelVisitor(){this.visitor=this.newVisitor();} async deleteVisitor(v:any){if(!this.canManageVisitors())return;if(await this.askConfirm('Delete Visitor',`Delete visitor ${v.name}?`,'Delete','danger'))this.api.deleteVisitor(v.id).subscribe({next:()=>{this.refresh();this.ok('Visitor deleted')},error:x=>this.fail(x)});}
-  saveTicket(){if(!this.canManageInventory())return;const h=Number(this.ticket.durationHours);if(!this.validateInventoryPeriod(h,this.ticket.stockIssueDate,this.ticket.expiryDate))return;const x={...this.ticket,durationHours:h,ticketNumber:this.ticket.ticketNumber===''?null:Number(this.ticket.ticketNumber),physicalTicketNumber:String(this.ticket.physicalTicketNumber||'').trim()||null,stockIssueDate:this.ticket.stockIssueDate||null,expiryDate:this.ticket.expiryDate||null};this.api.saveTicket(x).subscribe({next:()=>{this.ticket=this.newTicket();this.refresh();this.ok('Ticket saved')},error:e=>this.fail(e)});} editTicket(t:any){if(!this.canManageInventory())return;this.ticket={...t,physicalTicketNumber:t.physicalTicketNumber||'',stockIssueDate:t.stockIssueDate||'',expiryDate:t.expiryDate||''};window.scrollTo({top:0,behavior:'smooth'});} cancelTicket(){this.ticket=this.newTicket();} async deleteTicket(t:any){if(!this.canManageInventory())return;if(await this.askConfirm('Delete Parking Ticket',`Delete ticket ${this.ticketDisplayId(t)}?`,'Delete','danger'))this.api.deleteTicket(t.id).subscribe({next:()=>{this.refresh();this.ok('Ticket deleted')},error:e=>this.fail(e)});} get filteredTickets(){const q=this.ticketSearch.toLowerCase();return this.tickets.filter(t=>(!q||String(t.barcode).toLowerCase().includes(q)||String(t.physicalTicketNumber||'').toLowerCase().includes(q)||String(t.ticketNumber||'').includes(q)||this.ticketDisplayId(t).toLowerCase().includes(q))&&(!this.hourFilter||String(t.durationHours)===String(this.hourFilter))&&(!this.statusFilter||t.status===this.statusFilter));}
-  setTicketExpiryMode(mode:'NONE'|'DATE'){this.ticketExpiryMode=mode;if(mode==='NONE')this.ticket.expiryDate='';}
-  setBulkExpiryMode(mode:'NONE'|'DATE'){this.bulkExpiryMode=mode;if(mode==='NONE')this.expiry='';}
-  scanInventory(b:string){if(!this.canManageInventory())return;b=b.trim();if(!b)return;if(!this.validateInventoryPeriod(Number(this.hours),this.stockIssueDate,this.expiry))return;const number=this.bulkTicketNumber===''?null:Number(this.bulkTicketNumber);this.api.bulk(this.hours,this.stockIssueDate,this.expiry,[b],number,this.bulkPhysicalTicketNumber||null).subscribe({next:(saved:any[])=>{this.inventoryScans.push(b);if(number!==null)this.bulkTicketNumber=number+1;this.bulkPhysicalTicketNumber='';this.refresh();this.ok(`Added ${b.replace(/^OGF-/i,'')} as ${this.hours}h ticket #${saved?.[0]?.ticketNumber||'auto'}`)},error:e=>this.fail(e)});} manualInventory(i:HTMLInputElement){this.scanInventory(i.value);if(!this.err){i.value='';i.focus();}}
-  get people(){const q=this.search.toLowerCase();const s=this.ptype==='EMPLOYEE'?this.employees.map(e=>({id:e.employeeCode,name:e.name,vehicle:e.vehicleNumber||'',department:e.department||'',team:e.team||'',nic:'',parkingPass:!!e.parkingPass,meta:[e.department,e.team,e.vehicleNumber].filter(Boolean).join(' ')})):this.visitors.map(v=>({id:v.visitorCode,name:v.name,vehicle:v.vehicleNumber||'',department:v.hostDepartment||'',team:'',nic:v.nic||'',parkingPass:false,meta:[v.hostDepartment,v.nic,v.vehicleNumber].filter(Boolean).join(' ')}));return s.filter((x:any)=>!q||`${x.id} ${x.name} ${x.meta}`.toLowerCase().includes(q));}
-  get selectedPerson(){return this.people.find((p:any)=>p.id===this.person)||null;}
-  get selectedEmployeeHasPass(){return this.ptype==='EMPLOYEE'&&!!this.selectedPerson?.parkingPass;}
-  get rushEmployeeHasPass(){return !!this.employees.find(e=>String(e.employeeCode)===String(this.rushEmployee))?.parkingPass;}
-  get requestOutsidePassHours(){if(!this.selectedEmployeeHasPass)return false;if(this.durationMode==='HOURS')return true;const d=new Date(`${this.date}T00:00:00`),weekend=d.getDay()===0||d.getDay()===6;const start=weekend?this.settings.weekendStart:this.settings.weekdayStart,end=weekend?this.settings.weekendEnd:this.settings.weekdayEnd;return !!this.entry&&!!this.exit&&(this.entry<start||this.exit>end);}
-  get showIssueReason(){return this.ptype==='VISITOR'||this.requestOutsidePassHours;}
-  hourClass(h:any){const n=Number(h);return Number.isFinite(n)?'hour-'+n:'hour-other';}
-  availableTicketObjectsFor(h:number){return this.remaining.filter(t=>Number(t.durationHours)===Number(h));}
-  daysUntilExpiry(t:any){if(!t?.expiryDate)return null;const end=new Date(t.expiryDate+'T00:00:00').getTime();const today=new Date();today.setHours(0,0,0,0);return Math.ceil((end-today.getTime())/86400000);}
-  daysInSystem(t:any){if(!t?.createdAt)return 0;const created=new Date(t.createdAt).getTime();return Number.isFinite(created)?Math.max(0,Math.floor((Date.now()-created)/86400000)):0;}
-  expiryState(t:any){const d=this.daysUntilExpiry(t);return d===null?'none':d<0?'expired':d<=7?'soon':d<=30?'watch':'ok';}
-  expiryText(t:any){const d=this.daysUntilExpiry(t);if(d===null)return '';if(d<0)return `Expired ${Math.abs(d)} day${Math.abs(d)===1?'':'s'} ago`;if(d===0)return 'Expires today';return `${d} day${d===1?'':'s'} left`;}
-  get expiringAvailableTickets(){return this.remaining.filter(t=>!!t.expiryDate).sort((a:any,b:any)=>(this.daysUntilExpiry(a)??999999)-(this.daysUntilExpiry(b)??999999));}
-  openQuickVisitor(){this.quickVisitor=this.newVisitor();this.quickVisitorOpen=true;}
-  closeQuickVisitor(){this.quickVisitorOpen=false;this.quickVisitor=this.newVisitor();}
-  saveQuickVisitor(){if(!this.quickVisitor?.name?.trim()){this.err='Visitor name is required';return;}this.api.saveVisitor(this.quickVisitor).subscribe({next:(saved:any)=>{this.visitors=[...this.visitors.filter(v=>v.id!==saved.id),saved];this.ptype='VISITOR';this.person=saved.visitorCode;this.search='';this.quickVisitorOpen=false;this.quickVisitor=this.newVisitor();this.ok(`Visitor ${saved.name} added and selected`);},error:e=>this.fail(e)});}
+  goBack() {
+    if (this.page !== "home") history.back();
+  }
+  nav(p: Page) {
+    if (!this.canAccess(p)) {
+      this.openPage("home", false);
+      this.err = "Your role does not have access to that function";
+      return;
+    }
+    if (p === this.page) return;
+    history.pushState({ parkingTiqPage: p }, "", location.href);
+    this.openPage(p, false);
+  }
+  private openPage(p: Page, pushHistory = false) {
+    if (pushHistory)
+      history.pushState({ parkingTiqPage: p }, "", location.href);
+    this.page = p;
+    this.syncScanner();
+    this.refresh();
+    if (p === "settings") this.loadSettings();
+    if (p === "audit") this.loadAudit();
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  }
+  syncScanner() {
+    const on =
+      this.page === "inventory" ||
+      this.page === "reconcile" ||
+      (this.page === "issue" && this.barcodeMode === "SCAN");
+    on ? this.scanner.enable() : this.scanner.disable();
+  }
+  setBarcodeMode(m: "SCAN" | "MANUAL") {
+    this.barcodeMode = m;
+    this.syncScanner();
+  }
+  refresh() {
+    const version = ++this.refreshVersion;
+    const active = () => version === this.refreshVersion;
+    this.api.dashboard().subscribe({
+      next: (x) => {
+        if (active()) this.dashboard = x;
+      },
+      error: (e) => this.loadFail("Dashboard", e),
+    });
+    this.api.employees().subscribe({
+      next: (x) => {
+        if (active()) this.employees = x;
+      },
+      error: (e) => this.loadFail("Employees", e),
+    });
+    this.api.visitors().subscribe({
+      next: (x) => {
+        if (active()) this.visitors = x;
+      },
+      error: (e) => this.loadFail("Visitors", e),
+    });
+    this.api.tickets().subscribe({
+      next: (x) => {
+        if (active()) this.tickets = x;
+      },
+      error: (e) => this.loadFail("Tickets", e),
+    });
+    this.api.issues().subscribe({
+      next: (x) => {
+        if (!active()) return;
+        this.issues = x;
+        if (!this.rushBatchReference) {
+          const current = x.find(
+            (i: any) =>
+              i.issueMode === "QUICK" &&
+              i.status === "PENDING" &&
+              i.rushBatchReference,
+          );
+          this.rushBatchReference =
+            current?.rushBatchReference || this.newRushBatchReference();
+        }
+      },
+      error: (e) => this.loadFail("Issues", e),
+    });
+    this.api.remaining().subscribe({
+      next: (x) => {
+        if (active()) this.remaining = x;
+      },
+      error: (e) => this.loadFail("Remaining inventory", e),
+    });
+    this.api.departments().subscribe({
+      next: (x) => {
+        if (active()) this.departments = x;
+      },
+      error: (e) => this.loadFail("Departments", e),
+    });
+    this.api.teams().subscribe({
+      next: (x) => {
+        if (active()) this.teams = x;
+      },
+      error: (e) => this.loadFail("Teams", e),
+    });
+  }
+  route(b: string) {
+    if (this.page === "inventory") this.scanInventory(b);
+    if (this.page === "issue" && this.barcodeMode === "SCAN") this.scanIssue(b);
+    if (this.page === "reconcile") this.scanRecon(b);
+  }
+  saveDepartment() {
+    if (!this.canManageReferenceData()) {
+      this.err = "Only Admin and Super User can manage departments";
+      return;
+    }
+    this.api.saveDepartment(this.department).subscribe({
+      next: () => {
+        this.department = this.newDepartment();
+        this.refresh();
+        this.ok("Department saved");
+      },
+      error: (e) => this.fail(e),
+    });
+  }
+  editDepartment(d: any) {
+    if (!this.canManageReferenceData()) return;
+    this.department = { ...d };
+  }
+  cancelDepartment() {
+    this.department = this.newDepartment();
+  }
+  async deleteDepartment(d: any) {
+    if (!this.canManageReferenceData()) return;
+    if (
+      await this.askConfirm(
+        "Delete Department",
+        `Delete department ${d.name}? Existing employee/visitor text values will not be removed.`,
+        "Delete",
+        "danger",
+      )
+    )
+      this.api.deleteDepartment(d.id).subscribe({
+        next: () => {
+          this.refresh();
+          this.ok("Department deleted");
+        },
+        error: (e) => this.fail(e),
+      });
+  }
+  saveTeam() {
+    if (!this.canManageReferenceData()) {
+      this.err = "Only Admin and Super User can manage teams";
+      return;
+    }
+    this.api.saveTeam(this.team).subscribe({
+      next: () => {
+        this.team = this.newTeam();
+        this.refresh();
+        this.ok("Team saved");
+      },
+      error: (e) => this.fail(e),
+    });
+  }
+  editTeam(t: any) {
+    if (!this.canManageReferenceData()) return;
+    this.team = { ...t };
+  }
+  cancelTeam() {
+    this.team = this.newTeam();
+  }
+  async deleteTeam(t: any) {
+    if (!this.canManageReferenceData()) return;
+    if (
+      await this.askConfirm(
+        "Delete Team",
+        `Delete team ${t.name}? Existing employee text values will not be removed.`,
+        "Delete",
+        "danger",
+      )
+    )
+      this.api.deleteTeam(t.id).subscribe({
+        next: () => {
+          this.refresh();
+          this.ok("Team deleted");
+        },
+        error: (e) => this.fail(e),
+      });
+  }
+  saveEmployee() {
+    if (!this.canManageEmployees()) {
+      this.err = "Security users can view employee records only";
+      return;
+    }
+    this.api.saveEmployee(this.employee).subscribe({
+      next: () => {
+        this.employee = this.newEmployee();
+        this.refresh();
+        this.ok("Employee saved");
+      },
+      error: (e) => this.fail(e),
+    });
+  }
+  editEmployee(e: any) {
+    if (!this.canManageEmployees()) return;
+    this.employee = {
+      ...e,
+      defaultEntryTime: (e.defaultEntryTime || "08:00").slice(0, 5),
+    };
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  }
+  cancelEmployee() {
+    this.employee = this.newEmployee();
+  }
+  async deleteEmployee(e: any) {
+    if (!this.canManageEmployees()) {
+      this.err = "Security users can view employee records only";
+      return;
+    }
+    if (
+      await this.askConfirm(
+        "Delete Employee",
+        `Delete employee ${e.name}?`,
+        "Delete",
+        "danger",
+      )
+    )
+      this.api.deleteEmployee(e.id).subscribe({
+        next: () => {
+          this.refresh();
+          this.ok("Employee deleted");
+        },
+        error: (x) => this.fail(x),
+      });
+  }
+  saveVisitor() {
+    if (!this.canManageVisitors()) return;
+    this.api.saveVisitor(this.visitor).subscribe({
+      next: () => {
+        this.visitor = this.newVisitor();
+        this.refresh();
+        this.ok("Visitor saved");
+      },
+      error: (e) => this.fail(e),
+    });
+  }
+  editVisitor(v: any) {
+    if (!this.canManageVisitors()) return;
+    this.visitor = { ...v };
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  }
+  cancelVisitor() {
+    this.visitor = this.newVisitor();
+  }
+  async deleteVisitor(v: any) {
+    if (!this.canManageVisitors()) return;
+    if (
+      await this.askConfirm(
+        "Delete Visitor",
+        `Delete visitor ${v.name}?`,
+        "Delete",
+        "danger",
+      )
+    )
+      this.api.deleteVisitor(v.id).subscribe({
+        next: () => {
+          this.refresh();
+          this.ok("Visitor deleted");
+        },
+        error: (x) => this.fail(x),
+      });
+  }
+  saveTicket() {
+    if (!this.canManageInventory()) return;
+    const h = Number(this.ticket.durationHours);
+    if (
+      !this.validateInventoryPeriod(
+        h,
+        this.ticket.stockIssueDate,
+        this.ticket.expiryDate,
+      )
+    )
+      return;
+    const x = {
+      ...this.ticket,
+      durationHours: h,
+      ticketNumber:
+        this.ticket.ticketNumber === ""
+          ? null
+          : Number(this.ticket.ticketNumber),
+      physicalTicketNumber:
+        String(this.ticket.physicalTicketNumber || "").trim() || null,
+      stockIssueDate: this.ticket.stockIssueDate || null,
+      expiryDate: this.ticket.expiryDate || null,
+    };
+    this.api.saveTicket(x).subscribe({
+      next: () => {
+        this.ticket = this.newTicket();
+        this.refresh();
+        this.ok("Ticket saved");
+      },
+      error: (e) => this.fail(e),
+    });
+  }
+  editTicket(t: any) {
+    if (!this.canManageInventory()) return;
+    this.ticket = {
+      ...t,
+      physicalTicketNumber: t.physicalTicketNumber || "",
+      stockIssueDate: t.stockIssueDate || "",
+      expiryDate: t.expiryDate || "",
+    };
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  }
+  cancelTicket() {
+    this.ticket = this.newTicket();
+  }
+  async deleteTicket(t: any) {
+    if (!this.canManageInventory()) return;
+    if (
+      await this.askConfirm(
+        "Delete Parking Ticket",
+        `Delete ticket ${this.ticketDisplayId(t)}?`,
+        "Delete",
+        "danger",
+      )
+    )
+      this.api.deleteTicket(t.id).subscribe({
+        next: () => {
+          this.refresh();
+          this.ok("Ticket deleted");
+        },
+        error: (e) => this.fail(e),
+      });
+  }
+  get filteredTickets() {
+    const q = this.ticketSearch.toLowerCase();
+    return this.tickets.filter(
+      (t) =>
+        (!q ||
+          String(t.barcode).toLowerCase().includes(q) ||
+          String(t.physicalTicketNumber || "")
+            .toLowerCase()
+            .includes(q) ||
+          String(t.ticketNumber || "").includes(q) ||
+          this.ticketDisplayId(t).toLowerCase().includes(q)) &&
+        (!this.hourFilter ||
+          String(t.durationHours) === String(this.hourFilter)) &&
+        (!this.statusFilter || t.status === this.statusFilter),
+    );
+  }
+  setTicketExpiryMode(mode: "NONE" | "DATE") {
+    this.ticketExpiryMode = mode;
+    if (mode === "NONE") this.ticket.expiryDate = "";
+  }
+  setBulkExpiryMode(mode: "NONE" | "DATE") {
+    this.bulkExpiryMode = mode;
+    if (mode === "NONE") this.expiry = "";
+  }
+  scanInventory(b: string) {
+    if (!this.canManageInventory()) return;
+    b = b.trim();
+    if (!b) return;
+    if (
+      !this.validateInventoryPeriod(
+        Number(this.hours),
+        this.stockIssueDate,
+        this.expiry,
+      )
+    )
+      return;
+    const number =
+      this.bulkTicketNumber === "" ? null : Number(this.bulkTicketNumber);
+    this.api
+      .bulk(
+        this.hours,
+        this.stockIssueDate,
+        this.expiry,
+        [b],
+        number,
+        this.bulkPhysicalTicketNumber || null,
+      )
+      .subscribe({
+        next: (saved: any[]) => {
+          this.inventoryScans.push(b);
+          if (number !== null) this.bulkTicketNumber = number + 1;
+          this.bulkPhysicalTicketNumber = "";
+          this.refresh();
+          this.ok(
+            `Added ${b.replace(/^OGF-/i, "")} as ${this.hours}h ticket #${saved?.[0]?.ticketNumber || "auto"}`,
+          );
+        },
+        error: (e) => this.fail(e),
+      });
+  }
+  manualInventory(i: HTMLInputElement) {
+    this.scanInventory(i.value);
+    if (!this.err) {
+      i.value = "";
+      i.focus();
+    }
+  }
+  get people() {
+    const q = this.search.toLowerCase();
+    const s =
+      this.ptype === "EMPLOYEE"
+        ? this.employees.map((e) => ({
+            id: e.employeeCode,
+            name: e.name,
+            vehicle: e.vehicleNumber || "",
+            department: e.department || "",
+            team: e.team || "",
+            nic: "",
+            parkingPass: !!e.parkingPass,
+            meta: [e.department, e.team, e.vehicleNumber]
+              .filter(Boolean)
+              .join(" "),
+          }))
+        : this.visitors.map((v) => ({
+            id: v.visitorCode,
+            name: v.name,
+            vehicle: v.vehicleNumber || "",
+            department: v.hostDepartment || "",
+            team: "",
+            nic: v.nic || "",
+            parkingPass: false,
+            meta: [v.hostDepartment, v.nic, v.vehicleNumber]
+              .filter(Boolean)
+              .join(" "),
+          }));
+    return s.filter(
+      (x: any) => !q || `${x.id} ${x.name} ${x.meta}`.toLowerCase().includes(q),
+    );
+  }
+  get selectedPerson() {
+    return this.people.find((p: any) => p.id === this.person) || null;
+  }
+  get selectedEmployeeHasPass() {
+    return this.ptype === "EMPLOYEE" && !!this.selectedPerson?.parkingPass;
+  }
+  get rushEmployeeHasPass() {
+    return !!this.employees.find(
+      (e) => String(e.employeeCode) === String(this.rushEmployee),
+    )?.parkingPass;
+  }
+  get requestOutsidePassHours() {
+    if (!this.selectedEmployeeHasPass) return false;
+    if (this.durationMode === "HOURS") return true;
+    const d = new Date(`${this.date}T00:00:00`),
+      weekend = d.getDay() === 0 || d.getDay() === 6;
+    const start = weekend
+        ? this.settings.weekendStart
+        : this.settings.weekdayStart,
+      end = weekend ? this.settings.weekendEnd : this.settings.weekdayEnd;
+    return (
+      !!this.entry && !!this.exit && (this.entry < start || this.exit > end)
+    );
+  }
+  get showIssueReason() {
+    return this.ptype === "VISITOR" || this.requestOutsidePassHours;
+  }
+  hourClass(h: any) {
+    const n = Number(h);
+    return Number.isFinite(n) ? "hour-" + n : "hour-other";
+  }
+  availableTicketObjectsFor(h: number) {
+    return this.remaining.filter((t) => Number(t.durationHours) === Number(h));
+  }
+  daysUntilExpiry(t: any) {
+    if (!t?.expiryDate) return null;
+    const end = new Date(t.expiryDate + "T00:00:00").getTime();
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    return Math.ceil((end - today.getTime()) / 86400000);
+  }
+  daysInSystem(t: any) {
+    if (!t?.createdAt) return 0;
+    const created = new Date(t.createdAt).getTime();
+    return Number.isFinite(created)
+      ? Math.max(0, Math.floor((Date.now() - created) / 86400000))
+      : 0;
+  }
+  expiryState(t: any) {
+    const d = this.daysUntilExpiry(t);
+    return d === null
+      ? "none"
+      : d < 0
+        ? "expired"
+        : d <= 7
+          ? "soon"
+          : d <= 30
+            ? "watch"
+            : "ok";
+  }
+  expiryText(t: any) {
+    const d = this.daysUntilExpiry(t);
+    if (d === null) return "";
+    if (d < 0)
+      return `Expired ${Math.abs(d)} day${Math.abs(d) === 1 ? "" : "s"} ago`;
+    if (d === 0) return "Expires today";
+    return `${d} day${d === 1 ? "" : "s"} left`;
+  }
+  get expiringAvailableTickets() {
+    return this.remaining
+      .filter((t) => !!t.expiryDate)
+      .sort(
+        (a: any, b: any) =>
+          (this.daysUntilExpiry(a) ?? 999999) -
+          (this.daysUntilExpiry(b) ?? 999999),
+      );
+  }
+  openQuickVisitor() {
+    this.quickVisitor = this.newVisitor();
+    this.quickVisitorOpen = true;
+  }
+  closeQuickVisitor() {
+    this.quickVisitorOpen = false;
+    this.quickVisitor = this.newVisitor();
+  }
+  saveQuickVisitor() {
+    if (!this.quickVisitor?.name?.trim()) {
+      this.err = "Visitor name is required";
+      return;
+    }
+    this.api.saveVisitor(this.quickVisitor).subscribe({
+      next: (saved: any) => {
+        this.visitors = [
+          ...this.visitors.filter((v) => v.id !== saved.id),
+          saved,
+        ];
+        this.ptype = "VISITOR";
+        this.person = saved.visitorCode;
+        this.search = "";
+        this.quickVisitorOpen = false;
+        this.quickVisitor = this.newVisitor();
+        this.ok(`Visitor ${saved.name} added and selected`);
+      },
+      error: (e) => this.fail(e),
+    });
+  }
 
-  preview(){this.err='';this.requirementMessage='';this.requirementMessageType='info';this.combos=[];this.combo=[];this.required=0;if(!this.person){this.requirementMessage='Select an employee or visitor first';this.requirementMessageType='error';return;}const manualHours=this.durationMode==='HOURS'?Number(this.manualHours):null;if(this.durationMode==='HOURS'){if(manualHours===null||!Number.isFinite(manualHours)||manualHours<1){this.requirementMessage='Enter the required parking hours';this.requirementMessageType='error';return;}}const extraHours=this.durationMode==='TIME'&&(this.extra!==''&&this.extra!=null)?Number(this.extra):null;this.api.preview({personType:this.ptype,personReference:this.person,visitDate:this.date,entryTime:this.durationMode==='TIME'?this.entry:null,exitTime:this.durationMode==='TIME'?this.exit:null,extraHours,manualHours}).subscribe({next:r=>{this.required=r.requiredHours;this.combos=r.combinations||[];this.selectNormalCombination(this.combos[0]||[],true);if(!this.required){this.requirementMessage='No separate parking ticket is required for this period';this.requirementMessageType='success';}else if(this.combos.length){this.requirementMessage=`Best available tickets selected for ${this.required} hour(s). You can choose another combination or replace individual tickets.`;this.requirementMessageType='success';}else{this.requirementMessage=`No available ticket combination can cover ${this.required} hour(s) with current inventory`;this.requirementMessageType='error';}},error:e=>{const m=e?.error?.message||e?.error||`No available ticket combination can cover ${manualHours||'the required'} hour(s) with current inventory`;this.requirementMessage=String(m);this.requirementMessageType='error';}});} availableFor(h:number){return this.availableTicketObjectsFor(h).map(t=>t.barcode);}
-  selectNormalCombination(combination:number[],autoSelect=false){this.combo=combination;this.issueScans=[];if(!autoSelect||!combination.length)return;const reserved=new Set(this.pendingIssues.flatMap(i=>i.barcodes||[]).map((b:string)=>String(b).toLowerCase()));const pool=this.remaining.filter(t=>this.ticketUsableOn(t,this.date)&&!reserved.has(String(t.barcode).toLowerCase())).sort((a,b)=>String(a.expiryDate||'9999').localeCompare(String(b.expiryDate||'9999'))||Number(a.ticketNumber)-Number(b.ticketNumber));for(const h of combination){const index=pool.findIndex(t=>Number(t.durationHours)===Number(h));if(index>=0)this.issueScans.push(pool.splice(index,1)[0].barcode);} }
-  setNormalTicketChoiceMode(mode:'BEST'|'DIFFERENT'){this.normalTicketChoiceMode=mode;if(mode==='BEST')this.selectNormalCombination(this.combos[0]||[],true);else{this.combo=[];this.issueScans=[];this.manualBarcode='';this.ok(`Select any available tickets totalling exactly ${this.required} hour(s).`);}}
-  resetNormalSelection(){this.required=0;this.combos=[];this.combo=[];this.issueScans=[];this.manualBarcode='';this.normalTicketChoiceMode='BEST';this.requirementMessage='';this.requirementMessageType='info';}
-  selectNextNormalCombination(){if(this.combos.length<2)return;const index=Math.max(0,this.combos.indexOf(this.combo));this.selectNormalCombination(this.combos[(index+1)%this.combos.length],true);this.ok('Selected the next available ticket combination.');}
-  toggleTicketPreview(ticket:any){this.expandedTicket=this.expandedTicket===ticket?null:ticket;}
-  get manualAvailableTickets(){if(this.barcodeMode!=='MANUAL'||(!this.combo.length&&this.normalTicketChoiceMode==='BEST'))return[];const selectedDurations=this.issueScans.map(b=>this.tickets.find(t=>t.barcode===b)?.durationHours);return this.remaining.filter(t=>{if(!this.ticketUsableOn(t,this.date)||this.issueScans.includes(t.barcode)||this.pendingIssueForBarcode(t.barcode))return false;if(this.normalTicketChoiceMode==='DIFFERENT')return this.issueScans.reduce((n,b)=>n+Number(this.selectedIssueTicket(b)?.durationHours||0),0)+Number(t.durationHours)<=this.required;const need=this.combo.filter(h=>h===t.durationHours).length;const have=selectedDurations.filter(h=>h===t.durationHours).length;return need>have;});}
-  get normalSelectedHours(){return this.issueScans.reduce((n,b)=>n+Number(this.selectedIssueTicket(b)?.durationHours||0),0);}
-  get normalManualComplete(){return this.required>0&&this.normalSelectedHours===this.required;}
-  get scanAvailableTickets(){if(this.barcodeMode!=='SCAN'||!this.combo.length)return[];return this.remaining.filter(t=>this.ticketUsableOn(t,this.date)&&this.combo.includes(t.durationHours)&&!this.issueScans.includes(t.barcode));}
-  selectedIssueTicket(barcode:string){return this.tickets.find(t=>t.barcode===barcode);}
-  pendingIssueForBarcode(barcode:string){return this.pendingIssues.find((i:any)=>Array.isArray(i.barcodes)&&i.barcodes.some((b:string)=>String(b).toLowerCase()===String(barcode).toLowerCase()))||null;}
-  pendingTicketText(barcode:string){const i=this.pendingIssueForBarcode(barcode);return i?`Reserved in ${i.requestNumber} · ${i.personReference} · pending ${this.pendingAgeText(i)}`:'';}
+  preview() {
+    this.err = "";
+    this.requirementMessage = "";
+    this.requirementMessageType = "info";
+    this.combos = [];
+    this.combo = [];
+    this.required = 0;
+    if (!this.person) {
+      this.requirementMessage = "Select an employee or visitor first";
+      this.requirementMessageType = "error";
+      return;
+    }
+    const manualHours =
+      this.durationMode === "HOURS" ? Number(this.manualHours) : null;
+    if (this.durationMode === "HOURS") {
+      if (
+        manualHours === null ||
+        !Number.isFinite(manualHours) ||
+        manualHours < 1
+      ) {
+        this.requirementMessage = "Enter the required parking hours";
+        this.requirementMessageType = "error";
+        return;
+      }
+    }
+    const extraHours =
+      this.durationMode === "TIME" && this.extra !== "" && this.extra != null
+        ? Number(this.extra)
+        : null;
+    this.api
+      .preview({
+        personType: this.ptype,
+        personReference: this.person,
+        visitDate: this.date,
+        entryTime: this.durationMode === "TIME" ? this.entry : null,
+        exitTime: this.durationMode === "TIME" ? this.exit : null,
+        extraHours,
+        manualHours,
+      })
+      .subscribe({
+        next: (r) => {
+          this.required = r.requiredHours;
+          this.combos = r.combinations || [];
+          this.selectNormalCombination(this.combos[0] || [], true);
+          if (!this.required) {
+            this.requirementMessage =
+              "No separate parking ticket is required for this period";
+            this.requirementMessageType = "success";
+          } else if (this.combos.length) {
+            this.requirementMessage = `Best available tickets selected for ${this.required} hour(s). You can choose another combination or replace individual tickets.`;
+            this.requirementMessageType = "success";
+          } else {
+            this.requirementMessage = `No available ticket combination can cover ${this.required} hour(s) with current inventory`;
+            this.requirementMessageType = "error";
+          }
+        },
+        error: (e) => {
+          const m =
+            e?.error?.message ||
+            e?.error ||
+            `No available ticket combination can cover ${manualHours || "the required"} hour(s) with current inventory`;
+          this.requirementMessage = String(m);
+          this.requirementMessageType = "error";
+        },
+      });
+  }
+  availableFor(h: number) {
+    return this.availableTicketObjectsFor(h).map((t) => t.barcode);
+  }
+  selectNormalCombination(combination: number[], autoSelect = false) {
+    this.combo = combination;
+    this.issueScans = [];
+    if (!autoSelect || !combination.length) return;
+    const reserved = new Set(
+      this.pendingIssues
+        .flatMap((i) => i.barcodes || [])
+        .map((b: string) => String(b).toLowerCase()),
+    );
+    const pool = this.remaining
+      .filter(
+        (t) =>
+          this.ticketUsableOn(t, this.date) &&
+          !reserved.has(String(t.barcode).toLowerCase()),
+      )
+      .sort(
+        (a, b) =>
+          String(a.expiryDate || "9999").localeCompare(
+            String(b.expiryDate || "9999"),
+          ) || Number(a.ticketNumber) - Number(b.ticketNumber),
+      );
+    for (const h of combination) {
+      const index = pool.findIndex(
+        (t) => Number(t.durationHours) === Number(h),
+      );
+      if (index >= 0) this.issueScans.push(pool.splice(index, 1)[0].barcode);
+    }
+  }
+  setNormalTicketChoiceMode(mode: "BEST" | "DIFFERENT") {
+    this.normalTicketChoiceMode = mode;
+    if (mode === "BEST")
+      this.selectNormalCombination(this.combos[0] || [], true);
+    else {
+      this.combo = [];
+      this.issueScans = [];
+      this.manualBarcode = "";
+      this.ok(
+        `Select any available tickets totalling exactly ${this.required} hour(s).`,
+      );
+    }
+  }
+  resetNormalSelection() {
+    this.err = "";
+    this.required = 0;
+    this.combos = [];
+    this.combo = [];
+    this.issueScans = [];
+    this.manualBarcode = "";
+    this.normalTicketChoiceMode = "BEST";
+    this.requirementMessage = "";
+    this.requirementMessageType = "info";
+  }
+  selectNextNormalCombination() {
+    if (this.combos.length < 2) return;
+    const index = Math.max(0, this.combos.indexOf(this.combo));
+    this.selectNormalCombination(
+      this.combos[(index + 1) % this.combos.length],
+      true,
+    );
+    this.ok("Selected the next available ticket combination.");
+  }
+  toggleTicketPreview(ticket: any) {
+    this.expandedTicket = this.expandedTicket === ticket ? null : ticket;
+  }
+  get manualAvailableTickets() {
+    if (
+      this.barcodeMode !== "MANUAL" ||
+      (!this.combo.length && this.normalTicketChoiceMode === "BEST")
+    )
+      return [];
+    const selectedDurations = this.issueScans.map(
+      (b) => this.tickets.find((t) => t.barcode === b)?.durationHours,
+    );
+    return this.remaining.filter((t) => {
+      if (
+        !this.ticketUsableOn(t, this.date) ||
+        this.issueScans.includes(t.barcode) ||
+        this.pendingIssueForBarcode(t.barcode)
+      )
+        return false;
+      if (this.normalTicketChoiceMode === "DIFFERENT")
+        return (
+          this.issueScans.reduce(
+            (n, b) =>
+              n + Number(this.selectedIssueTicket(b)?.durationHours || 0),
+            0,
+          ) +
+            Number(t.durationHours) <=
+          this.required
+        );
+      const need = this.combo.filter((h) => h === t.durationHours).length;
+      const have = selectedDurations.filter(
+        (h) => h === t.durationHours,
+      ).length;
+      return need > have;
+    });
+  }
+  get normalSelectedHours() {
+    return this.issueScans.reduce(
+      (n, b) => n + Number(this.selectedIssueTicket(b)?.durationHours || 0),
+      0,
+    );
+  }
+  get normalManualComplete() {
+    return this.required > 0 && this.normalSelectedHours === this.required;
+  }
+  get scanAvailableTickets() {
+    if (this.barcodeMode !== "SCAN" || !this.combo.length) return [];
+    return this.remaining.filter(
+      (t) =>
+        this.ticketUsableOn(t, this.date) &&
+        this.combo.includes(t.durationHours) &&
+        !this.issueScans.includes(t.barcode),
+    );
+  }
+  selectedIssueTicket(barcode: string) {
+    return this.tickets.find((t) => t.barcode === barcode);
+  }
+  pendingIssueForBarcode(barcode: string) {
+    return (
+      this.pendingIssues.find(
+        (i: any) =>
+          Array.isArray(i.barcodes) &&
+          i.barcodes.some(
+            (b: string) =>
+              String(b).toLowerCase() === String(barcode).toLowerCase(),
+          ),
+      ) || null
+    );
+  }
+  pendingTicketText(barcode: string) {
+    const i = this.pendingIssueForBarcode(barcode);
+    return i
+      ? `Reserved in ${i.requestNumber} · ${i.personReference} · pending ${this.pendingAgeText(i)}`
+      : "";
+  }
 
-  scanIssue(b:string){if(!this.canIssueTickets())return;b=b.trim();if(!b)return;const t=this.tickets.find(x=>x.barcode.toLowerCase()===b.toLowerCase());if(!t){this.err=`Unknown barcode ${b}`;return}if(t.status!=='AVAILABLE'){this.err='Ticket is not available';return}if(!this.ticketUsableOn(t,this.date)){this.err=`Ticket ${t.barcode} expired on ${t.expiryDate} and cannot be issued for ${this.date}`;return}const pending=this.pendingIssueForBarcode(t.barcode);if(pending){this.err=`Ticket ${t.barcode} is already reserved in pending FIFO request ${pending.requestNumber}`;return}if(this.issueScans.some(x=>x.toLowerCase()===t.barcode.toLowerCase())){this.err='Barcode already added';return}if(this.normalTicketChoiceMode==='DIFFERENT'&&this.barcodeMode==='MANUAL'){const total=this.issueScans.reduce((n,x)=>n+Number(this.selectedIssueTicket(x)?.durationHours||0),0)+Number(t.durationHours);if(total>this.required){this.err=`This ticket would exceed the required ${this.required} hours`;return;}this.issueScans.push(t.barcode);this.combo=this.issueScans.map(x=>Number(this.selectedIssueTicket(x)?.durationHours||0));this.ok(`Selected ${total} of ${this.required} required hours`);return;}const need=this.combo.filter(h=>h===t.durationHours).length;const have=this.issueScans.map(x=>this.tickets.find(t=>t.barcode===x)?.durationHours).filter(h=>h===t.durationHours).length;if(!need||have>=need){this.err=`${t.durationHours}h ticket not required by selected combination`;return}this.issueScans.push(t.barcode);this.ok(`Validated ${t.barcode}`);} selectManualTicket(t:any){if(this.barcodeMode==='MANUAL')this.scanIssue(t.barcode);} manualIssue(i?:HTMLInputElement){const value=i?i.value:this.manualBarcode;this.scanIssue(value);if(i){i.value='';i.focus()}this.manualBarcode='';} removeIssueBarcode(b:string){this.issueScans=this.issueScans.filter(x=>x!==b);if(this.normalTicketChoiceMode==='DIFFERENT')this.combo=this.issueScans.map(x=>Number(this.selectedIssueTicket(x)?.durationHours||0));this.ok(`Removed ${b}`);}
-  createIssue(){if(!this.canIssueTickets())return;if(!this.combo.length){this.err='Calculate and select a ticket combination first';return}if(this.issueScans.length!==this.combo.length||this.normalSelectedHours!==this.required){this.err=`Select tickets totalling exactly ${this.required} hour(s) first`;return}const manualHours=this.durationMode==='HOURS'?Number(this.manualHours):null;const extraHours=this.durationMode==='TIME'&&(this.extra!==''&&this.extra!=null)?Number(this.extra):null;this.api.createIssue({personType:this.ptype,personReference:this.person,visitDate:this.date,entryTime:this.durationMode==='TIME'?this.entry:null,exitTime:this.durationMode==='TIME'?this.exit:null,extraHours,manualHours,reason:this.showIssueReason?this.reason:null,selectedCombination:this.combo,barcodes:this.issueScans}).subscribe({next:()=>{this.issueScans=[];this.combos=[];this.combo=[];this.required=0;this.person='';this.search='';this.reason='';this.extra='';this.manualHours=1;this.manualBarcode='';this.refreshAfterMutation();this.ok('Request added to FIFO queue')},error:e=>this.fail(e)});}
-  startPendingEdit(i:any){if(i?.status!=='PENDING')return;this.pendingEdit={id:i.id,requestNumber:i.requestNumber,personType:i.personType,personReference:i.personReference,visitDate:i.visitDate,entryTime:(i.entryTime||'08:00').slice(0,5),exitTime:(i.exitTime||'17:00').slice(0,5),extraHours:i.extraHours||0,reason:i.reason||'',barcodes:[...(i.barcodes||[])]};}
-  async savePendingEdit(){if(!this.pendingEdit)return;const payload={visitDate:this.pendingEdit.visitDate,entryTime:this.pendingEdit.entryTime,exitTime:this.pendingEdit.exitTime,extraHours:Number(this.pendingEdit.extraHours||0),reason:this.pendingEdit.reason||''};if(await this.askConfirm('Save Changes',`Save changes to pending request ${this.pendingEdit.requestNumber}?`,'Save Changes','success'))this.api.updateIssue(this.pendingEdit.id,payload).subscribe({next:()=>{this.pendingEdit=null;this.refresh();this.ok('Pending FIFO request updated')},error:e=>this.fail(e)});}
-  clearPendingEdit(){this.pendingEdit=null;}
-  private newRushBatchReference(){const compact=String(this.date||new Date().toISOString().slice(0,10)).replace(/-/g,'').slice(2),prefix=`BATCH-${compact}-`;const indexes=this.issues.map(i=>String(i.rushBatchReference||'')).filter(x=>x.startsWith(prefix)).map(x=>Number(x.slice(prefix.length))).filter(Number.isFinite);return `${prefix}${String((indexes.length?Math.max(...indexes):0)+1).padStart(2,'0')}`;}
-  startNewRushBatch(){if(this.currentRushBatchIssues.some(i=>i.status==='PENDING')){this.err='Complete every employee in the current batch, or cancel/delete the complete batch before starting another.';return;}this.rushReviewMode=false;this.rushBatchReference=this.newRushBatchReference();this.rushBarcodeInputs={};this.rushEmployee='';this.rushReason='';this.rushHours=Number(this.settings?.defaultRushHours)||1;this.ok('New rush batch started.');}
-  openPendingRushBatch(batch:any){this.openRushBatch(batch);}
-  openRushBatch(batch:any){this.rushReviewMode=!batch.issues.some((i:any)=>i.status==='PENDING');this.rushBatchReference=batch.reference;this.rushBarcodeInputs={};for(const i of batch.issues)if(i.barcodes?.length)this.rushBarcodeInputs[i.id]=i.barcodes.join(', ');this.registerEdit=null;this.issueMode='QUICK';this.nav('issue');this.ok(`Batch ${batch.reference} opened with all ${batch.issues.length} employee record(s).`);}
-  activatePendingQueueItem(i:any){if(i?.issueMode==='QUICK'){const batch=this.rushBatches.find((x:any)=>x.reference===i.rushBatchReference);if(batch){this.openPendingRushBatch(batch);return;}this.err='The quick employee batch could not be found';return;}if(!i?.barcodes?.length){this.err=`Assign physical tickets to ${i?.requestNumber||'this request'} before completing it`;return;}this.complete(i);}
-  async completePendingRushBatch(batch:any){this.openPendingRushBatch(batch);await this.generateRushTickets();if(!this.rushBatchReady){this.err='This batch cannot be completed yet. Review employees without a complete ticket option and select available tickets manually.';return;}await this.finalizeRushBatch();}
-  createRushIssue(){if(!this.canUseQuickBatch){this.err='Quick Employee Batch is disabled for your user level';return;}if(!this.rushEmployee){this.err='Select an employee for the rush request';return;}const h=Number(this.rushHours);if(!Number.isInteger(h)||h<1){this.err='Required hours must be a whole number greater than zero';return;}if(this.rushPendingIssues.some(i=>i.personReference===this.rushEmployee)){this.err='This employee is already listed in this rush batch';return;}if(!this.rushBatchReference)this.rushBatchReference=this.newRushBatchReference();this.api.createRushIssue({employeeReference:this.rushEmployee,visitDate:this.date,requiredHours:h,reason:this.rushEmployeeHasPass?this.rushReason:null,batchReference:this.rushBatchReference}).subscribe({next:(saved:any)=>{this.rushReviewMode=false;this.issues=[saved,...this.issues.filter(i=>i.id!==saved.id)];this.rushEmployee='';this.rushReason='';this.rushHours=Number(this.settings?.defaultRushHours)||1;this.refreshAfterMutation();this.ok('Employee added to the rush batch')},error:e=>this.fail(e)});}
-  async saveRushHours(i:any,confirm=true){const h=Number(i.requiredHours);if(!Number.isInteger(h)||h<1){this.err='Requested hours must be a whole number greater than zero';this.refresh();return;}if(confirm&&!(await this.askConfirm('Change Requested Hours',`Change ${this.employeeName(i.personReference)} to ${h} hour(s)? Any selected tickets will be cleared.`,'Change Hours','success')))return;this.api.updateRushHours(i.id,h).subscribe({next:(saved:any)=>{this.issues=this.issues.map(x=>x.id===saved.id?saved:x);delete this.rushBarcodeInputs[i.id];this.ok(`Required hours saved as ${h}. Select tickets for the new duration.`);this.refresh();},error:e=>{this.refresh();this.fail(e)}});}
-  async finalizeRushIssue(i:any){const barcodes=this.rushInputBarcodes(i);if(!this.rushSelectionValid(i)){this.err=`Select available tickets that cover exactly ${i.requiredHours} hour(s)`;return;}if(!(await this.askConfirm('Update Employee Inventory',`Issue ${barcodes.length} ticket(s) to ${this.employeeName(i.personReference)} and update inventory?`,'Update Inventory','success')))return;this.api.finalizeRushIssue(i.id,barcodes).subscribe({next:(saved:any)=>{this.issues=this.issues.map(x=>x.id===saved.id?saved:x);this.remaining=this.remaining.filter(t=>!barcodes.some(b=>b.toLowerCase()===String(t.barcode).toLowerCase()));delete this.rushBarcodeInputs[i.id];if(!this.issues.some(x=>x.rushBatchReference===this.rushBatchReference&&x.status==='PENDING'))this.startNewRushBatch();this.refreshAfterMutation();this.ok(`Inventory updated and ${i.requestNumber} completed`)},error:e=>this.fail(e)});}
-  rushInputBarcodes(i:any){return String(this.rushBarcodeInputs[i.id]||'').split(/[\s,]+/).map(x=>x.trim()).filter(Boolean);}
-  ticketUsableOn(t:any,visitDate:any=this.date){return !!t&&t.status==='AVAILABLE'&&(!t.expiryDate||String(t.expiryDate)>=String(visitDate));}
-  rushSelectedTickets(i:any){return this.rushInputBarcodes(i).map(b=>i.status==='PENDING'?this.remaining.find(t=>String(t.barcode).toLowerCase()===b.toLowerCase()&&this.ticketUsableOn(t,i.visitDate||this.date)):this.tickets.find(t=>String(t.barcode).toLowerCase()===b.toLowerCase())).filter(Boolean);}
-  ticketDisplayId(t:any){if(!t)return '—';return `${String(Number(t.durationHours)||0).padStart(2,'0')}H-${String(Number(t.ticketNumber)||0).padStart(2,'0')}`;}
-  ticketForBarcode(barcode:string){return this.tickets.find(t=>String(t.barcode).toLowerCase()===String(barcode).toLowerCase())||null;}
-  rushSelectionValid(i:any){const entered=this.rushInputBarcodes(i),selected=this.rushSelectedTickets(i);return entered.length>0&&entered.length===selected.length&&new Set(entered.map(x=>x.toLowerCase())).size===entered.length&&selected.reduce((n:number,t:any)=>n+Number(t.durationHours),0)===Number(i.requiredHours);}
-  get rushBatchReady(){if(!this.rushPendingIssues.length)return false;const all=this.rushPendingIssues.flatMap(i=>this.rushInputBarcodes(i).map(x=>x.toLowerCase()));return this.rushPendingIssues.every(i=>this.rushSelectionValid(i))&&new Set(all).size===all.length;}
-  removeRushTicket(i:any,barcode:string){this.rushBarcodeInputs[i.id]=this.rushInputBarcodes(i).filter(b=>b.toLowerCase()!==barcode.toLowerCase()).join(', ');}
-  private bestRushCombination(hours:number,counts:Map<number,number>){const types=this.ticketDurationTypes.filter(h=>(counts.get(h)||0)>0).sort((a,b)=>b-a);let best:number[]|null=null;const search=(remaining:number,start:number,current:number[])=>{if(remaining===0){if(!best||current.length<best.length)best=[...current];return;}if(remaining<0||(best&&current.length>=best.length))return;for(let p=start;p<types.length;p++){const h=types[p],used=current.filter(x=>x===h).length;if(h<=remaining&&used<(counts.get(h)||0)){current.push(h);search(remaining-h,p,current);current.pop();}}};search(hours,0,[]);return best;}
-  async generateRushTickets(){if(!this.rushPendingIssues.length){this.err='Add employees to the rush batch first';return;}if(Object.values(this.rushBarcodeInputs).some(Boolean)&&!(await this.askConfirm('Replace Ticket Selections','Replace the current manual or automatic selections with the best available combinations?','Select Best Tickets','success')))return;const reserved=new Set(this.pendingIssues.flatMap(i=>i.issueMode==='QUICK'&&i.rushBatchReference===this.rushBatchReference?[]:(i.barcodes||[])).map((b:string)=>b.toLowerCase()));const pools=new Map<number,any[]>();for(const t of this.remaining.filter(t=>this.ticketUsableOn(t,this.date)&&!reserved.has(String(t.barcode).toLowerCase())).sort((a,b)=>String(a.expiryDate||'9999').localeCompare(String(b.expiryDate||'9999'))||Number(a.ticketNumber)-Number(b.ticketNumber))){const list=pools.get(Number(t.durationHours))||[];list.push(t);pools.set(Number(t.durationHours),list);}this.rushBarcodeInputs={};let allocated=0;for(const i of [...this.rushPendingIssues].sort((a,b)=>Number(b.requiredHours)-Number(a.requiredHours)||Number(a.id)-Number(b.id))){const counts=new Map<number,number>();pools.forEach((v,k)=>counts.set(k,v.length));const combo=this.bestRushCombination(Number(i.requiredHours),counts);if(!combo)continue;const selected=(combo as number[]).map((h:number)=>pools.get(h)!.shift());this.rushBarcodeInputs[i.id]=selected.map((t:any)=>t.barcode).join(', ');allocated++;}if(allocated===this.rushPendingIssues.length)this.ok('Best ticket option selected for every employee. Requested hours were not changed.');else this.ok(`Tickets selected for ${allocated} of ${this.rushPendingIssues.length} employees. Employees without a complete option were left empty.`);}
-  async finalizeRushBatch(){if(!this.rushBatchReady){this.err='Update All is available only when every employee has a complete valid ticket option';return;}const batch=[...this.rushPendingIssues];if(!(await this.askConfirm('Update Complete Batch',`Issue tickets to all ${batch.length} employees and update inventory?`,'Update All Inventory','success')))return;const assignments:any={},used:string[]=[];for(const i of batch){assignments[i.id]=this.rushInputBarcodes(i);used.push(...assignments[i.id]);}this.api.finalizeRushBatch(assignments).subscribe({next:(saved:any[])=>{const updates=new Map(saved.map(x=>[x.id,x]));this.issues=this.issues.map(x=>updates.get(x.id)||x);this.remaining=this.remaining.filter(t=>!used.some(b=>b.toLowerCase()===String(t.barcode).toLowerCase()));this.rushBarcodeInputs={};this.rushReviewMode=false;this.rushBatchReference=this.newRushBatchReference();this.refreshAfterMutation();this.ok(`Inventory updated for all ${saved.length} employees in the batch`)},error:e=>this.fail(e)});}
-  batchCanBeRemoved(batch:any){return batch?.issues?.length>0&&batch.issues.every((i:any)=>i.status!=='COMPLETED'&&!(i.barcodes?.length));}
-  async cancelRushBatch(batch:any={reference:this.rushBatchReference,issues:this.currentRushBatchIssues}){if(!this.batchCanBeRemoved(batch)){this.err='A batch can be cancelled only when no employee has received a ticket';return;}if(!(await this.askConfirm('Cancel Quick Batch',`Cancel ${batch.reference} and all of its employee requests?`,'Cancel Batch','danger')))return;this.api.cancelRushBatch(batch.reference).subscribe({next:()=>{this.rushBarcodeInputs={};if(batch.reference===this.rushBatchReference)this.rushBatchReference=this.newRushBatchReference();this.refreshAfterMutation();this.ok('Quick employee batch cancelled')},error:e=>this.fail(e)});}
-  async deleteRushBatch(batch:any={reference:this.rushBatchReference,issues:this.currentRushBatchIssues}){if(!this.batchCanBeRemoved(batch)){this.err='A batch can be deleted only when no employee has received a ticket';return;}if(!(await this.askConfirm('Delete Quick Batch',`Permanently delete ${batch.reference} and all employee requests in it?`,'Delete Batch','danger')))return;this.api.deleteRushBatch(batch.reference).subscribe({next:()=>{this.rushBarcodeInputs={};if(batch.reference===this.rushBatchReference)this.rushBatchReference=this.newRushBatchReference();this.refreshAfterMutation();this.ok('Quick employee batch deleted')},error:e=>this.fail(e)});}
-  private refreshAfterMutation(){this.refresh();setTimeout(()=>this.refresh(),300);}
-  onIssuePageClick(event:MouseEvent){const target=event.target as HTMLElement|null;if(!target?.closest('button'))return;if(this.issueButtonRefreshTimer)clearTimeout(this.issueButtonRefreshTimer);this.issueButtonRefreshTimer=setTimeout(()=>this.refresh(),400);}
-  openRushTicketPicker(i:any){this.rushTicketPickerIssue=i;}
-  closeRushTicketPicker(){this.rushTicketPickerIssue=null;}
-  get rushPickerTickets(){if(!this.rushTicketPickerIssue)return[];const used=new Set(this.rushPendingIssues.filter(i=>i.id!==this.rushTicketPickerIssue.id).flatMap(i=>this.rushInputBarcodes(i)).map(x=>x.toLowerCase()));return this.remaining.filter(t=>this.ticketUsableOn(t,this.rushTicketPickerIssue.visitDate||this.date)&&!used.has(String(t.barcode).toLowerCase()));}
-  rushPickerSelected(t:any){return !!this.rushTicketPickerIssue&&this.rushInputBarcodes(this.rushTicketPickerIssue).some(b=>b.toLowerCase()===String(t.barcode).toLowerCase());}
-  toggleRushPickerTicket(t:any){const i=this.rushTicketPickerIssue;if(!i)return;const current=this.rushInputBarcodes(i),key=String(t.barcode);const next=current.some(b=>b.toLowerCase()===key.toLowerCase())?current.filter(b=>b.toLowerCase()!==key.toLowerCase()):[...current,key];this.rushBarcodeInputs[i.id]=next.join(', ');}
-  employeeName(reference:string){return this.employees.find(e=>String(e.employeeCode)===String(reference))?.name||reference;}
-  issueDisplayReference(i:any){return i?.issueMode==='QUICK'&&i?.rushBatchReference?i.rushBatchReference:i?.requestNumber;}
-  registerGroupClass(i:any){const groups=[...new Set(this.registerIssues.map(x=>this.issueDisplayReference(x)))];return groups.indexOf(this.issueDisplayReference(i))%2===0?'register-group-a':'register-group-b';}
-  employeeHasParkingPass(reference:any,personType:any='EMPLOYEE'){return personType==='EMPLOYEE'&&!!this.employees.find(e=>String(e.employeeCode)===String(reference))?.parkingPass;}
-  async complete(i:any){if(!this.canIssueTickets())return;if(await this.askConfirm('Complete Request',`Complete FIFO request ${i.requestNumber}?`,'Complete','success'))this.api.complete(i.id).subscribe({next:()=>{this.refreshAfterMutation();this.ok('Request completed')},error:e=>this.fail(e)});} async cancelIssue(i:any){if(!this.canIssueTickets())return;if(await this.askConfirm('Cancel Request',`Cancel FIFO request ${i.requestNumber}?`,'Cancel Request','danger'))this.api.cancelIssue(i.id).subscribe({next:(saved:any)=>{this.issues=this.issues.map(x=>x.id===saved.id?saved:x);delete this.rushBarcodeInputs[i.id];if(i.issueMode==='QUICK'&&!this.issues.some(x=>x.rushBatchReference===i.rushBatchReference&&x.status==='PENDING')){this.rushReviewMode=false;this.rushBatchReference=this.newRushBatchReference();}this.refreshAfterMutation();this.ok('Request cancelled')},error:e=>this.fail(e)});} async deleteIssue(i:any){const closed=this.isClosedIssue(i);if(closed&&!this.canManageClosedIssues()){this.err='Only Super User and Admin can delete issued register records';return}const label=closed?'issued register FIFO record':'pending FIFO request';if(await this.askConfirm('Delete FIFO Record',`Delete ${label} ${i.requestNumber}?`,'Delete','danger'))this.api.deleteIssue(i.id).subscribe({next:()=>{this.refreshAfterMutation();this.ok('FIFO record deleted')},error:e=>this.fail(e)});}
-  canEditRegisterRecord(i:any){return i?.status==='PENDING'||this.canManageClosedIssues();}
-  openQueueRecordInRegister(i:any){if(i?.status==='PENDING'){this.activatePendingQueueItem(i);return;}if(!this.canEditRegisterRecord(i)){this.err='Only Super User and Admin can edit completed or cancelled register records';return;}this.prepareRegisterEdit(i);this.nav('register');}
-  private prepareRegisterEdit(i:any){this.registerEdit={id:i.id,requestNumber:i.requestNumber,status:i.status,personType:i.personType,personReference:i.personReference,barcodes:[...(i.barcodes||[])],visitDate:i.visitDate,entryTime:(i.entryTime||'08:00').slice(0,5),exitTime:(i.exitTime||'17:00').slice(0,5),extraHours:i.extraHours||0,reason:i.reason||''};}
-  startRegisterEdit(i:any){if(!this.canEditRegisterRecord(i)){this.err='Only Super User and Admin can edit completed or cancelled register records';return;}if(i?.issueMode==='QUICK'&&i?.rushBatchReference){const batch=this.rushBatches.find((x:any)=>x.reference===i.rushBatchReference);if(batch){this.openRushBatch(batch);return;}this.err='The complete quick employee batch could not be found';return;}this.prepareRegisterEdit(i);window.scrollTo({top:0,behavior:'smooth'});}
-  async saveRegisterEdit(){if(!this.registerEdit||!this.canEditRegisterRecord(this.registerEdit))return;const payload={visitDate:this.registerEdit.visitDate,entryTime:this.registerEdit.entryTime,exitTime:this.registerEdit.exitTime,extraHours:Number(this.registerEdit.extraHours||0),reason:this.registerEdit.reason||''};if(await this.askConfirm('Save Register Changes',`Save changes to ${this.registerEdit.requestNumber}?`,'Save Changes','success'))this.api.updateIssue(this.registerEdit.id,payload).subscribe({next:()=>{this.registerEdit=null;this.refresh();this.ok('FIFO register record updated')},error:e=>this.fail(e)});} clearRegisterEdit(){this.registerEdit=null;}
-  scanRecon(b:string){b=b.trim();if(b&&!this.reconScans.some(x=>x.toLowerCase()===b.toLowerCase()))this.reconScans.push(b);} manualRecon(i:HTMLInputElement){this.scanRecon(i.value);i.value='';i.focus();} runRecon(){this.api.reconcile(this.date,this.reconScans).subscribe({next:x=>{this.recon=x;this.ok('Reconciliation saved')},error:e=>this.fail(e)});} clearRecon(){this.reconScans=[];this.recon=null;}
-  loadSettings(){this.api.settings().subscribe({next:x=>{this.settings=x;if(!this.inventoryDefaultsLoaded){this.hours=Number(x.inventoryDefaultDuration)||1;this.ticket.durationHours=this.hours;this.bulkExpiryMode=x.inventoryDefaultExpiryMode==='DATE'?'DATE':'NONE';this.ticketExpiryMode=this.bulkExpiryMode;this.inventoryEntryMode=(['PHOTO','SCANNER','MANUAL'].includes(x.inventoryDefaultEntryMode)?x.inventoryDefaultEntryMode:'PHOTO');this.issueMode=x.defaultIssueMode==='QUICK'?'QUICK':'NORMAL';this.ptype=x.defaultPersonType==='VISITOR'?'VISITOR':'EMPLOYEE';this.durationMode=x.defaultDurationMode==='TIME'?'TIME':'HOURS';this.barcodeMode=x.defaultBarcodeMode==='MANUAL'?'MANUAL':'SCAN';this.rushHours=Number(x.defaultRushHours)||1;this.inventoryDefaultsLoaded=true;}this.ensureAllowedFeatureModes();},error:e=>this.loadFail('Settings',e)});} saveSettings(){if(!this.canManageSettings()){this.err='Only Admin and Super User can change settings';return}for(const h of [1,2,4,6,8,12]){const key='warning'+h+'h';const v=Number(this.settings?.[key]);if(!Number.isFinite(v)||v<0){this.err=`Low inventory warning limit for ${h}h must be 0 or greater`;return;}this.settings[key]=Math.floor(v);}this.api.saveSettings(this.settings).subscribe({next:x=>{this.settings=x;this.ensureAllowedFeatureModes();this.ok('Settings saved and feature permissions updated')},error:e=>this.fail(e)});}
-  ticketResetMode(){return this.settings?.ticketNumberResetMode||'DAY';}
-  validityPeriodRequired(_h?:number){return this.ticketResetMode()==='VALIDITY';}
-  get photoRowsNeedValidityDates(){return this.photoRows.some(row=>this.validityPeriodRequired(row.durationHours));}
-  private validateInventoryPeriod(h:number,issueDate:any,validTill:any){if(!this.validityPeriodRequired(h))return true;if(!issueDate||!validTill){this.err=`Enter the Issue Date and Valid Till printed on the physical ${h}h ticket`;return false;}if(String(validTill)<String(issueDate)){this.err='Valid Till cannot be before Issue Date';return false;}return true;}
-  setTicketResetMode(value:string){this.settings.ticketNumberResetMode=value;}
-  async resetTicketNumbers(){if(!this.canManageSettings())return;if(!(await this.askConfirm('Reset All Ticket Numbers','Start ticket numbering at 1 for every duration? Existing inventory and history will not change.','Reset to 1','danger')))return;this.api.resetTicketNumbers().subscribe({next:()=>this.ok('Ticket numbering will restart from 1 for every duration'),error:e=>this.fail(e)});}
+  scanIssue(b: string) {
+    if (!this.canIssueTickets()) return;
+    b = b.trim();
+    if (!b) return;
+    const t = this.tickets.find(
+      (x) => x.barcode.toLowerCase() === b.toLowerCase(),
+    );
+    if (!t) {
+      this.err = `Unknown barcode ${b}`;
+      return;
+    }
+    if (t.status !== "AVAILABLE") {
+      this.err = "Ticket is not available";
+      return;
+    }
+    if (!this.ticketUsableOn(t, this.date)) {
+      this.err = `Ticket ${t.barcode} expired on ${t.expiryDate} and cannot be issued for ${this.date}`;
+      return;
+    }
+    const pending = this.pendingIssueForBarcode(t.barcode);
+    if (pending) {
+      this.err = `Ticket ${t.barcode} is already reserved in pending FIFO request ${pending.requestNumber}`;
+      return;
+    }
+    if (
+      this.issueScans.some((x) => x.toLowerCase() === t.barcode.toLowerCase())
+    ) {
+      this.err = "Barcode already added";
+      return;
+    }
+    if (
+      this.normalTicketChoiceMode === "DIFFERENT" &&
+      this.barcodeMode === "MANUAL"
+    ) {
+      const total =
+        this.issueScans.reduce(
+          (n, x) => n + Number(this.selectedIssueTicket(x)?.durationHours || 0),
+          0,
+        ) + Number(t.durationHours);
+      if (total > this.required) {
+        this.err = `This ticket would exceed the required ${this.required} hours`;
+        return;
+      }
+      this.issueScans.push(t.barcode);
+      this.combo = this.issueScans.map((x) =>
+        Number(this.selectedIssueTicket(x)?.durationHours || 0),
+      );
+      this.ok(`Selected ${total} of ${this.required} required hours`);
+      return;
+    }
+    const need = this.combo.filter((h) => h === t.durationHours).length;
+    const have = this.issueScans
+      .map((x) => this.tickets.find((t) => t.barcode === x)?.durationHours)
+      .filter((h) => h === t.durationHours).length;
+    if (!need || have >= need) {
+      this.err = `${t.durationHours}h ticket not required by selected combination`;
+      return;
+    }
+    this.issueScans.push(t.barcode);
+    this.ok(`Validated ${t.barcode}`);
+  }
+  selectManualTicket(t: any) {
+    if (this.barcodeMode === "MANUAL") this.scanIssue(t.barcode);
+  }
+  manualIssue(i?: HTMLInputElement) {
+    const value = i ? i.value : this.manualBarcode;
+    this.scanIssue(value);
+    if (i) {
+      i.value = "";
+      i.focus();
+    }
+    this.manualBarcode = "";
+  }
+  removeIssueBarcode(b: string) {
+    this.issueScans = this.issueScans.filter((x) => x !== b);
+    if (this.normalTicketChoiceMode === "DIFFERENT")
+      this.combo = this.issueScans.map((x) =>
+        Number(this.selectedIssueTicket(x)?.durationHours || 0),
+      );
+    this.ok(`Removed ${b}`);
+  }
+  createIssue() {
+    if (!this.canIssueTickets()) return;
+    if (!this.combo.length) {
+      this.err = "Calculate and select a ticket combination first";
+      return;
+    }
+    if (
+      this.issueScans.length !== this.combo.length ||
+      this.normalSelectedHours !== this.required
+    ) {
+      this.err = `Select tickets totalling exactly ${this.required} hour(s) first`;
+      return;
+    }
+    const manualHours =
+      this.durationMode === "HOURS" ? Number(this.manualHours) : null;
+    const extraHours =
+      this.durationMode === "TIME" && this.extra !== "" && this.extra != null
+        ? Number(this.extra)
+        : null;
+    this.api
+      .createIssue({
+        personType: this.ptype,
+        personReference: this.person,
+        visitDate: this.date,
+        entryTime: this.durationMode === "TIME" ? this.entry : null,
+        exitTime: this.durationMode === "TIME" ? this.exit : null,
+        extraHours,
+        manualHours,
+        reason: this.showIssueReason ? this.reason : null,
+        selectedCombination: this.combo,
+        barcodes: this.issueScans,
+      })
+      .subscribe({
+        next: () => {
+          this.issueScans = [];
+          this.combos = [];
+          this.combo = [];
+          this.required = 0;
+          this.person = "";
+          this.search = "";
+          this.reason = "";
+          this.extra = "";
+          this.manualHours = 1;
+          this.manualBarcode = "";
+          this.refreshAfterMutation();
+          this.ok("Request added to FIFO queue");
+        },
+        error: (e) => this.fail(e),
+      });
+  }
+  startPendingEdit(i: any) {
+    if (i?.status !== "PENDING") return;
+    this.pendingEdit = {
+      id: i.id,
+      requestNumber: i.requestNumber,
+      personType: i.personType,
+      personReference: i.personReference,
+      visitDate: i.visitDate,
+      entryTime: (i.entryTime || "08:00").slice(0, 5),
+      exitTime: (i.exitTime || "17:00").slice(0, 5),
+      extraHours: i.extraHours || 0,
+      reason: i.reason || "",
+      barcodes: [...(i.barcodes || [])],
+    };
+  }
+  async savePendingEdit() {
+    if (!this.pendingEdit) return;
+    const payload = {
+      visitDate: this.pendingEdit.visitDate,
+      entryTime: this.pendingEdit.entryTime,
+      exitTime: this.pendingEdit.exitTime,
+      extraHours: Number(this.pendingEdit.extraHours || 0),
+      reason: this.pendingEdit.reason || "",
+    };
+    if (
+      await this.askConfirm(
+        "Save Changes",
+        `Save changes to pending request ${this.pendingEdit.requestNumber}?`,
+        "Save Changes",
+        "success",
+      )
+    )
+      this.api.updateIssue(this.pendingEdit.id, payload).subscribe({
+        next: () => {
+          this.pendingEdit = null;
+          this.refresh();
+          this.ok("Pending FIFO request updated");
+        },
+        error: (e) => this.fail(e),
+      });
+  }
+  clearPendingEdit() {
+    this.pendingEdit = null;
+  }
+  private newRushBatchReference() {
+    const compact = String(this.date || new Date().toISOString().slice(0, 10))
+        .replace(/-/g, "")
+        .slice(2),
+      prefix = `BATCH-${compact}-`;
+    const indexes = this.issues
+      .map((i) => String(i.rushBatchReference || ""))
+      .filter((x) => x.startsWith(prefix))
+      .map((x) => Number(x.slice(prefix.length)))
+      .filter(Number.isFinite);
+    return `${prefix}${String((indexes.length ? Math.max(...indexes) : 0) + 1).padStart(2, "0")}`;
+  }
+  startNewRushBatch() {
+    if (this.currentRushBatchIssues.some((i) => i.status === "PENDING")) {
+      this.err =
+        "Complete every employee in the current batch, or cancel/delete the complete batch before starting another.";
+      return;
+    }
+    this.rushReviewMode = false;
+    this.rushBatchReference = this.newRushBatchReference();
+    this.rushBarcodeInputs = {};
+    this.rushEmployee = "";
+    this.rushReason = "";
+    this.rushHours = Number(this.settings?.defaultRushHours) || 1;
+    this.ok("New rush batch started.");
+  }
+  openPendingRushBatch(batch: any) {
+    this.openRushBatch(batch);
+  }
+  openRushBatch(batch: any) {
+    this.rushReviewMode = !batch.issues.some(
+      (i: any) => i.status === "PENDING",
+    );
+    this.rushBatchReference = batch.reference;
+    this.rushBarcodeInputs = {};
+    for (const i of batch.issues)
+      if (i.barcodes?.length)
+        this.rushBarcodeInputs[i.id] = i.barcodes.join(", ");
+    this.registerEdit = null;
+    this.issueMode = "QUICK";
+    this.nav("issue");
+    this.ok(
+      `Batch ${batch.reference} opened with all ${batch.issues.length} employee record(s).`,
+    );
+  }
+  activatePendingQueueItem(i: any) {
+    if (i?.issueMode === "QUICK") {
+      const batch = this.rushBatches.find(
+        (x: any) => x.reference === i.rushBatchReference,
+      );
+      if (batch) {
+        this.openPendingRushBatch(batch);
+        return;
+      }
+      this.err = "The quick employee batch could not be found";
+      return;
+    }
+    if (!i?.barcodes?.length) {
+      this.err = `Assign physical tickets to ${i?.requestNumber || "this request"} before completing it`;
+      return;
+    }
+    this.complete(i);
+  }
+  async completePendingRushBatch(batch: any) {
+    this.openPendingRushBatch(batch);
+    await this.generateRushTickets();
+    if (!this.rushBatchReady) {
+      this.err =
+        "This batch cannot be completed yet. Review employees without a complete ticket option and select available tickets manually.";
+      return;
+    }
+    await this.finalizeRushBatch();
+  }
+  createRushIssue() {
+    if (!this.canUseQuickBatch) {
+      this.err = "Quick Employee Batch is disabled for your user level";
+      return;
+    }
+    if (!this.rushEmployee) {
+      this.err = "Select an employee for the rush request";
+      return;
+    }
+    const h = Number(this.rushHours);
+    if (!Number.isInteger(h) || h < 1) {
+      this.err = "Required hours must be a whole number greater than zero";
+      return;
+    }
+    if (
+      this.rushPendingIssues.some(
+        (i) => i.personReference === this.rushEmployee,
+      )
+    ) {
+      this.err = "This employee is already listed in this rush batch";
+      return;
+    }
+    if (!this.rushBatchReference)
+      this.rushBatchReference = this.newRushBatchReference();
+    this.api
+      .createRushIssue({
+        employeeReference: this.rushEmployee,
+        visitDate: this.date,
+        requiredHours: h,
+        reason: this.rushEmployeeHasPass ? this.rushReason : null,
+        batchReference: this.rushBatchReference,
+      })
+      .subscribe({
+        next: (saved: any) => {
+          this.rushReviewMode = false;
+          this.issues = [
+            saved,
+            ...this.issues.filter((i) => i.id !== saved.id),
+          ];
+          this.rushEmployee = "";
+          this.rushReason = "";
+          this.rushHours = Number(this.settings?.defaultRushHours) || 1;
+          this.refreshAfterMutation();
+          this.ok("Employee added to the rush batch");
+        },
+        error: (e) => this.fail(e),
+      });
+  }
+  async saveRushHours(i: any, confirm = true) {
+    const h = Number(i.requiredHours);
+    if (!Number.isInteger(h) || h < 1) {
+      this.err = "Requested hours must be a whole number greater than zero";
+      this.refresh();
+      return;
+    }
+    if (
+      confirm &&
+      !(await this.askConfirm(
+        "Change Requested Hours",
+        `Change ${this.employeeName(i.personReference)} to ${h} hour(s)? Any selected tickets will be cleared.`,
+        "Change Hours",
+        "success",
+      ))
+    )
+      return;
+    this.api.updateRushHours(i.id, h).subscribe({
+      next: (saved: any) => {
+        this.issues = this.issues.map((x) => (x.id === saved.id ? saved : x));
+        delete this.rushBarcodeInputs[i.id];
+        this.ok(
+          `Required hours saved as ${h}. Select tickets for the new duration.`,
+        );
+        this.refresh();
+      },
+      error: (e) => {
+        this.refresh();
+        this.fail(e);
+      },
+    });
+  }
+  async finalizeRushIssue(i: any) {
+    const barcodes = this.rushInputBarcodes(i);
+    if (!this.rushSelectionValid(i)) {
+      this.err = `Select available tickets that cover exactly ${i.requiredHours} hour(s)`;
+      return;
+    }
+    if (
+      !(await this.askConfirm(
+        "Update Employee Inventory",
+        `Issue ${barcodes.length} ticket(s) to ${this.employeeName(i.personReference)} and update inventory?`,
+        "Update Inventory",
+        "success",
+      ))
+    )
+      return;
+    this.api.finalizeRushIssue(i.id, barcodes).subscribe({
+      next: (saved: any) => {
+        this.issues = this.issues.map((x) => (x.id === saved.id ? saved : x));
+        this.remaining = this.remaining.filter(
+          (t) =>
+            !barcodes.some(
+              (b) => b.toLowerCase() === String(t.barcode).toLowerCase(),
+            ),
+        );
+        delete this.rushBarcodeInputs[i.id];
+        if (
+          !this.issues.some(
+            (x) =>
+              x.rushBatchReference === this.rushBatchReference &&
+              x.status === "PENDING",
+          )
+        )
+          this.startNewRushBatch();
+        this.refreshAfterMutation();
+        this.ok(`Inventory updated and ${i.requestNumber} completed`);
+      },
+      error: (e) => this.fail(e),
+    });
+  }
+  rushInputBarcodes(i: any) {
+    return String(this.rushBarcodeInputs[i.id] || "")
+      .split(/[\s,]+/)
+      .map((x) => x.trim())
+      .filter(Boolean);
+  }
+  ticketUsableOn(t: any, visitDate: any = this.date) {
+    return (
+      !!t &&
+      t.status === "AVAILABLE" &&
+      (!t.expiryDate || String(t.expiryDate) >= String(visitDate))
+    );
+  }
+  rushSelectedTickets(i: any) {
+    return this.rushInputBarcodes(i)
+      .map((b) =>
+        i.status === "PENDING"
+          ? this.remaining.find(
+              (t) =>
+                String(t.barcode).toLowerCase() === b.toLowerCase() &&
+                this.ticketUsableOn(t, i.visitDate || this.date),
+            )
+          : this.tickets.find(
+              (t) => String(t.barcode).toLowerCase() === b.toLowerCase(),
+            ),
+      )
+      .filter(Boolean);
+  }
+  ticketDisplayId(t: any) {
+    if (!t) return "—";
+    return `${String(Number(t.durationHours) || 0).padStart(2, "0")}H-${String(Number(t.ticketNumber) || 0).padStart(2, "0")}`;
+  }
+  ticketForBarcode(barcode: string) {
+    return (
+      this.tickets.find(
+        (t) =>
+          String(t.barcode).toLowerCase() === String(barcode).toLowerCase(),
+      ) || null
+    );
+  }
+  rushSelectionValid(i: any) {
+    const entered = this.rushInputBarcodes(i),
+      selected = this.rushSelectedTickets(i);
+    return (
+      entered.length > 0 &&
+      entered.length === selected.length &&
+      new Set(entered.map((x) => x.toLowerCase())).size === entered.length &&
+      selected.reduce((n: number, t: any) => n + Number(t.durationHours), 0) ===
+        Number(i.requiredHours)
+    );
+  }
+  get rushBatchReady() {
+    if (!this.rushPendingIssues.length) return false;
+    const all = this.rushPendingIssues.flatMap((i) =>
+      this.rushInputBarcodes(i).map((x) => x.toLowerCase()),
+    );
+    return (
+      this.rushPendingIssues.every((i) => this.rushSelectionValid(i)) &&
+      new Set(all).size === all.length
+    );
+  }
+  removeRushTicket(i: any, barcode: string) {
+    this.rushBarcodeInputs[i.id] = this.rushInputBarcodes(i)
+      .filter((b) => b.toLowerCase() !== barcode.toLowerCase())
+      .join(", ");
+  }
+  private bestRushCombination(hours: number, counts: Map<number, number>) {
+    const types = this.ticketDurationTypes
+      .filter((h) => (counts.get(h) || 0) > 0)
+      .sort((a, b) => b - a);
+    let best: number[] | null = null;
+    const search = (remaining: number, start: number, current: number[]) => {
+      if (remaining === 0) {
+        if (!best || current.length < best.length) best = [...current];
+        return;
+      }
+      if (remaining < 0 || (best && current.length >= best.length)) return;
+      for (let p = start; p < types.length; p++) {
+        const h = types[p],
+          used = current.filter((x) => x === h).length;
+        if (h <= remaining && used < (counts.get(h) || 0)) {
+          current.push(h);
+          search(remaining - h, p, current);
+          current.pop();
+        }
+      }
+    };
+    search(hours, 0, []);
+    return best;
+  }
+  async generateRushTickets() {
+    if (!this.rushPendingIssues.length) {
+      this.err = "Add employees to the rush batch first";
+      return;
+    }
+    if (
+      Object.values(this.rushBarcodeInputs).some(Boolean) &&
+      !(await this.askConfirm(
+        "Replace Ticket Selections",
+        "Replace the current manual or automatic selections with the best available combinations?",
+        "Select Best Tickets",
+        "success",
+      ))
+    )
+      return;
+    const reserved = new Set(
+      this.pendingIssues
+        .flatMap((i) =>
+          i.issueMode === "QUICK" &&
+          i.rushBatchReference === this.rushBatchReference
+            ? []
+            : i.barcodes || [],
+        )
+        .map((b: string) => b.toLowerCase()),
+    );
+    const pools = new Map<number, any[]>();
+    for (const t of this.remaining
+      .filter(
+        (t) =>
+          this.ticketUsableOn(t, this.date) &&
+          !reserved.has(String(t.barcode).toLowerCase()),
+      )
+      .sort(
+        (a, b) =>
+          String(a.expiryDate || "9999").localeCompare(
+            String(b.expiryDate || "9999"),
+          ) || Number(a.ticketNumber) - Number(b.ticketNumber),
+      )) {
+      const list = pools.get(Number(t.durationHours)) || [];
+      list.push(t);
+      pools.set(Number(t.durationHours), list);
+    }
+    this.rushBarcodeInputs = {};
+    let allocated = 0;
+    for (const i of [...this.rushPendingIssues].sort(
+      (a, b) =>
+        Number(b.requiredHours) - Number(a.requiredHours) ||
+        Number(a.id) - Number(b.id),
+    )) {
+      const counts = new Map<number, number>();
+      pools.forEach((v, k) => counts.set(k, v.length));
+      const combo = this.bestRushCombination(Number(i.requiredHours), counts);
+      if (!combo) continue;
+      const selected = (combo as number[]).map((h: number) =>
+        pools.get(h)!.shift(),
+      );
+      this.rushBarcodeInputs[i.id] = selected
+        .map((t: any) => t.barcode)
+        .join(", ");
+      allocated++;
+    }
+    if (allocated === this.rushPendingIssues.length)
+      this.ok(
+        "Best ticket option selected for every employee. Requested hours were not changed.",
+      );
+    else
+      this.ok(
+        `Tickets selected for ${allocated} of ${this.rushPendingIssues.length} employees. Employees without a complete option were left empty.`,
+      );
+  }
+  async finalizeRushBatch() {
+    if (!this.rushBatchReady) {
+      this.err =
+        "Update All is available only when every employee has a complete valid ticket option";
+      return;
+    }
+    const batch = [...this.rushPendingIssues];
+    if (
+      !(await this.askConfirm(
+        "Update Complete Batch",
+        `Issue tickets to all ${batch.length} employees and update inventory?`,
+        "Update All Inventory",
+        "success",
+      ))
+    )
+      return;
+    const assignments: any = {},
+      used: string[] = [];
+    for (const i of batch) {
+      assignments[i.id] = this.rushInputBarcodes(i);
+      used.push(...assignments[i.id]);
+    }
+    this.api.finalizeRushBatch(assignments).subscribe({
+      next: (saved: any[]) => {
+        const updates = new Map(saved.map((x) => [x.id, x]));
+        this.issues = this.issues.map((x) => updates.get(x.id) || x);
+        this.remaining = this.remaining.filter(
+          (t) =>
+            !used.some(
+              (b) => b.toLowerCase() === String(t.barcode).toLowerCase(),
+            ),
+        );
+        this.rushBarcodeInputs = {};
+        this.rushReviewMode = false;
+        this.rushBatchReference = this.newRushBatchReference();
+        this.refreshAfterMutation();
+        this.ok(
+          `Inventory updated for all ${saved.length} employees in the batch`,
+        );
+      },
+      error: (e) => this.fail(e),
+    });
+  }
+  batchCanBeRemoved(batch: any) {
+    return (
+      batch?.issues?.length > 0 &&
+      batch.issues.every(
+        (i: any) => i.status !== "COMPLETED" && !i.barcodes?.length,
+      )
+    );
+  }
+  async cancelRushBatch(
+    batch: any = {
+      reference: this.rushBatchReference,
+      issues: this.currentRushBatchIssues,
+    },
+  ) {
+    if (!this.batchCanBeRemoved(batch)) {
+      this.err =
+        "A batch can be cancelled only when no employee has received a ticket";
+      return;
+    }
+    if (
+      !(await this.askConfirm(
+        "Cancel Quick Batch",
+        `Cancel ${batch.reference} and all of its employee requests?`,
+        "Cancel Batch",
+        "danger",
+      ))
+    )
+      return;
+    this.api.cancelRushBatch(batch.reference).subscribe({
+      next: () => {
+        this.rushBarcodeInputs = {};
+        if (batch.reference === this.rushBatchReference)
+          this.rushBatchReference = this.newRushBatchReference();
+        this.refreshAfterMutation();
+        this.ok("Quick employee batch cancelled");
+      },
+      error: (e) => this.fail(e),
+    });
+  }
+  async deleteRushBatch(
+    batch: any = {
+      reference: this.rushBatchReference,
+      issues: this.currentRushBatchIssues,
+    },
+  ) {
+    if (!this.batchCanBeRemoved(batch)) {
+      this.err =
+        "A batch can be deleted only when no employee has received a ticket";
+      return;
+    }
+    if (
+      !(await this.askConfirm(
+        "Delete Quick Batch",
+        `Permanently delete ${batch.reference} and all employee requests in it?`,
+        "Delete Batch",
+        "danger",
+      ))
+    )
+      return;
+    this.api.deleteRushBatch(batch.reference).subscribe({
+      next: () => {
+        this.rushBarcodeInputs = {};
+        if (batch.reference === this.rushBatchReference)
+          this.rushBatchReference = this.newRushBatchReference();
+        this.refreshAfterMutation();
+        this.ok("Quick employee batch deleted");
+      },
+      error: (e) => this.fail(e),
+    });
+  }
+  private refreshAfterMutation() {
+    this.refresh();
+    setTimeout(() => this.refresh(), 300);
+  }
+  onIssuePageClick(event: MouseEvent) {
+    const target = event.target as HTMLElement | null;
+    if (!target?.closest("button")) return;
+    if (this.issueButtonRefreshTimer)
+      clearTimeout(this.issueButtonRefreshTimer);
+    this.issueButtonRefreshTimer = setTimeout(() => this.refresh(), 400);
+  }
+  openRushTicketPicker(i: any) {
+    this.rushTicketPickerIssue = i;
+  }
+  closeRushTicketPicker() {
+    this.rushTicketPickerIssue = null;
+  }
+  get rushPickerTickets() {
+    if (!this.rushTicketPickerIssue) return [];
+    const used = new Set(
+      this.rushPendingIssues
+        .filter((i) => i.id !== this.rushTicketPickerIssue.id)
+        .flatMap((i) => this.rushInputBarcodes(i))
+        .map((x) => x.toLowerCase()),
+    );
+    return this.remaining.filter(
+      (t) =>
+        this.ticketUsableOn(
+          t,
+          this.rushTicketPickerIssue.visitDate || this.date,
+        ) && !used.has(String(t.barcode).toLowerCase()),
+    );
+  }
+  rushPickerSelected(t: any) {
+    return (
+      !!this.rushTicketPickerIssue &&
+      this.rushInputBarcodes(this.rushTicketPickerIssue).some(
+        (b) => b.toLowerCase() === String(t.barcode).toLowerCase(),
+      )
+    );
+  }
+  toggleRushPickerTicket(t: any) {
+    const i = this.rushTicketPickerIssue;
+    if (!i) return;
+    const current = this.rushInputBarcodes(i),
+      key = String(t.barcode);
+    const next = current.some((b) => b.toLowerCase() === key.toLowerCase())
+      ? current.filter((b) => b.toLowerCase() !== key.toLowerCase())
+      : [...current, key];
+    this.rushBarcodeInputs[i.id] = next.join(", ");
+  }
+  employeeName(reference: string) {
+    return (
+      this.employees.find((e) => String(e.employeeCode) === String(reference))
+        ?.name || reference
+    );
+  }
+  issueDisplayReference(i: any) {
+    return i?.issueMode === "QUICK" && i?.rushBatchReference
+      ? i.rushBatchReference
+      : i?.requestNumber;
+  }
+  registerGroupClass(i: any) {
+    const groups = [
+      ...new Set(this.registerIssues.map((x) => this.issueDisplayReference(x))),
+    ];
+    return groups.indexOf(this.issueDisplayReference(i)) % 2 === 0
+      ? "register-group-a"
+      : "register-group-b";
+  }
+  employeeHasParkingPass(reference: any, personType: any = "EMPLOYEE") {
+    return (
+      personType === "EMPLOYEE" &&
+      !!this.employees.find((e) => String(e.employeeCode) === String(reference))
+        ?.parkingPass
+    );
+  }
+  async complete(i: any) {
+    if (!this.canIssueTickets()) return;
+    if (
+      await this.askConfirm(
+        "Complete Request",
+        `Complete FIFO request ${i.requestNumber}?`,
+        "Complete",
+        "success",
+      )
+    )
+      this.api.complete(i.id).subscribe({
+        next: () => {
+          this.refreshAfterMutation();
+          this.ok("Request completed");
+        },
+        error: (e) => this.fail(e),
+      });
+  }
+  async cancelIssue(i: any) {
+    if (!this.canIssueTickets()) return;
+    if (
+      await this.askConfirm(
+        "Cancel Request",
+        `Cancel FIFO request ${i.requestNumber}?`,
+        "Cancel Request",
+        "danger",
+      )
+    )
+      this.api.cancelIssue(i.id).subscribe({
+        next: (saved: any) => {
+          this.issues = this.issues.map((x) => (x.id === saved.id ? saved : x));
+          delete this.rushBarcodeInputs[i.id];
+          if (
+            i.issueMode === "QUICK" &&
+            !this.issues.some(
+              (x) =>
+                x.rushBatchReference === i.rushBatchReference &&
+                x.status === "PENDING",
+            )
+          ) {
+            this.rushReviewMode = false;
+            this.rushBatchReference = this.newRushBatchReference();
+          }
+          this.refreshAfterMutation();
+          this.ok("Request cancelled");
+        },
+        error: (e) => this.fail(e),
+      });
+  }
+  async deleteIssue(i: any) {
+    const closed = this.isClosedIssue(i);
+    if (closed && !this.canManageClosedIssues()) {
+      this.err = "Only Super User and Admin can delete issued register records";
+      return;
+    }
+    const label = closed
+      ? "issued register FIFO record"
+      : "pending FIFO request";
+    if (
+      await this.askConfirm(
+        "Delete FIFO Record",
+        `Delete ${label} ${i.requestNumber}?`,
+        "Delete",
+        "danger",
+      )
+    )
+      this.api.deleteIssue(i.id).subscribe({
+        next: () => {
+          this.refreshAfterMutation();
+          this.ok("FIFO record deleted");
+        },
+        error: (e) => this.fail(e),
+      });
+  }
+  canEditRegisterRecord(i: any) {
+    return i?.status === "PENDING" || this.canManageClosedIssues();
+  }
+  openQueueRecordInRegister(i: any) {
+    if (i?.status === "PENDING") {
+      this.activatePendingQueueItem(i);
+      return;
+    }
+    if (!this.canEditRegisterRecord(i)) {
+      this.err =
+        "Only Super User and Admin can edit completed or cancelled register records";
+      return;
+    }
+    this.prepareRegisterEdit(i);
+    this.nav("register");
+  }
+  private prepareRegisterEdit(i: any) {
+    this.registerEdit = {
+      id: i.id,
+      requestNumber: i.requestNumber,
+      status: i.status,
+      personType: i.personType,
+      personReference: i.personReference,
+      barcodes: [...(i.barcodes || [])],
+      visitDate: i.visitDate,
+      entryTime: (i.entryTime || "08:00").slice(0, 5),
+      exitTime: (i.exitTime || "17:00").slice(0, 5),
+      extraHours: i.extraHours || 0,
+      reason: i.reason || "",
+    };
+  }
+  startRegisterEdit(i: any) {
+    if (!this.canEditRegisterRecord(i)) {
+      this.err =
+        "Only Super User and Admin can edit completed or cancelled register records";
+      return;
+    }
+    if (i?.issueMode === "QUICK" && i?.rushBatchReference) {
+      const batch = this.rushBatches.find(
+        (x: any) => x.reference === i.rushBatchReference,
+      );
+      if (batch) {
+        this.openRushBatch(batch);
+        return;
+      }
+      this.err = "The complete quick employee batch could not be found";
+      return;
+    }
+    this.prepareRegisterEdit(i);
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  }
+  async saveRegisterEdit() {
+    if (!this.registerEdit || !this.canEditRegisterRecord(this.registerEdit))
+      return;
+    const payload = {
+      visitDate: this.registerEdit.visitDate,
+      entryTime: this.registerEdit.entryTime,
+      exitTime: this.registerEdit.exitTime,
+      extraHours: Number(this.registerEdit.extraHours || 0),
+      reason: this.registerEdit.reason || "",
+    };
+    if (
+      await this.askConfirm(
+        "Save Register Changes",
+        `Save changes to ${this.registerEdit.requestNumber}?`,
+        "Save Changes",
+        "success",
+      )
+    )
+      this.api.updateIssue(this.registerEdit.id, payload).subscribe({
+        next: () => {
+          this.registerEdit = null;
+          this.refresh();
+          this.ok("FIFO register record updated");
+        },
+        error: (e) => this.fail(e),
+      });
+  }
+  clearRegisterEdit() {
+    this.registerEdit = null;
+  }
+  scanRecon(b: string) {
+    b = b.trim();
+    if (b && !this.reconScans.some((x) => x.toLowerCase() === b.toLowerCase()))
+      this.reconScans.push(b);
+  }
+  manualRecon(i: HTMLInputElement) {
+    this.scanRecon(i.value);
+    i.value = "";
+    i.focus();
+  }
+  runRecon() {
+    this.api.reconcile(this.date, this.reconScans).subscribe({
+      next: (x) => {
+        this.recon = x;
+        this.ok("Reconciliation saved");
+      },
+      error: (e) => this.fail(e),
+    });
+  }
+  clearRecon() {
+    this.reconScans = [];
+    this.recon = null;
+  }
+  loadSettings() {
+    this.api.settings().subscribe({
+      next: (x) => {
+        this.settings = x;
+        if (!this.inventoryDefaultsLoaded) {
+          this.hours = Number(x.inventoryDefaultDuration) || 1;
+          this.ticket.durationHours = this.hours;
+          this.bulkExpiryMode =
+            x.inventoryDefaultExpiryMode === "DATE" ? "DATE" : "NONE";
+          this.ticketExpiryMode = this.bulkExpiryMode;
+          this.inventoryEntryMode = ["PHOTO", "SCANNER", "MANUAL"].includes(
+            x.inventoryDefaultEntryMode,
+          )
+            ? x.inventoryDefaultEntryMode
+            : "PHOTO";
+          this.issueMode = x.defaultIssueMode === "QUICK" ? "QUICK" : "NORMAL";
+          this.ptype =
+            x.defaultPersonType === "VISITOR" ? "VISITOR" : "EMPLOYEE";
+          this.durationMode =
+            x.defaultDurationMode === "TIME" ? "TIME" : "HOURS";
+          this.barcodeMode =
+            x.defaultBarcodeMode === "MANUAL" ? "MANUAL" : "SCAN";
+          this.rushHours = Number(x.defaultRushHours) || 1;
+          this.inventoryDefaultsLoaded = true;
+        }
+        this.ensureAllowedFeatureModes();
+      },
+      error: (e) => this.loadFail("Settings", e),
+    });
+  }
+  saveSettings() {
+    if (!this.canManageSettings()) {
+      this.err = "Only Admin and Super User can change settings";
+      return;
+    }
+    for (const h of [1, 2, 4, 6, 8, 12]) {
+      const key = "warning" + h + "h";
+      const v = Number(this.settings?.[key]);
+      if (!Number.isFinite(v) || v < 0) {
+        this.err = `Low inventory warning limit for ${h}h must be 0 or greater`;
+        return;
+      }
+      this.settings[key] = Math.floor(v);
+    }
+    this.api.saveSettings(this.settings).subscribe({
+      next: (x) => {
+        this.settings = x;
+        this.ensureAllowedFeatureModes();
+        this.ok("Settings saved and feature permissions updated");
+      },
+      error: (e) => this.fail(e),
+    });
+  }
+  ticketResetMode() {
+    return this.settings?.ticketNumberResetMode || "DAY";
+  }
+  validityPeriodRequired(_h?: number) {
+    return this.ticketResetMode() === "VALIDITY";
+  }
+  get photoRowsNeedValidityDates() {
+    return this.photoRows.some((row) =>
+      this.validityPeriodRequired(row.durationHours),
+    );
+  }
+  private validateInventoryPeriod(h: number, issueDate: any, validTill: any) {
+    if (!this.validityPeriodRequired(h)) return true;
+    if (!issueDate || !validTill) {
+      this.err = `Enter the Issue Date and Valid Till printed on the physical ${h}h ticket`;
+      return false;
+    }
+    if (String(validTill) < String(issueDate)) {
+      this.err = "Valid Till cannot be before Issue Date";
+      return false;
+    }
+    return true;
+  }
+  setTicketResetMode(value: string) {
+    this.settings.ticketNumberResetMode = value;
+  }
+  async resetTicketNumbers() {
+    if (!this.canManageSettings()) return;
+    if (
+      !(await this.askConfirm(
+        "Reset All Ticket Numbers",
+        "Start ticket numbering at 1 for every duration? Existing inventory and history will not change.",
+        "Reset to 1",
+        "danger",
+      ))
+    )
+      return;
+    this.api
+      .resetTicketNumbers()
+      .subscribe({
+        next: () =>
+          this.ok("Ticket numbering will restart from 1 for every duration"),
+        error: (e) => this.fail(e),
+      });
+  }
 
-  addPhotoRow(values:any={}){this.photoRows.push({barcode:'',physicalTicketNumber:'',durationHours:Number(this.hours),ticketNumber:null,stockIssueDate:this.stockIssueDate,expiryDate:this.expiry||null,...values});}
-  removePhotoRow(index:number){this.photoRows.splice(index,1);}
-  selectTicketPhoto(input:HTMLInputElement){const file=input.files?.[0];if(!file)return;this.clearTicketPhoto(false);this.photoFile=file;this.photoPreview=URL.createObjectURL(file);input.value='';this.ok('Photo selected. Click Start Image Recognition when ready.');}
-  clearTicketPhoto(showMessage=true){if(this.photoPreview)URL.revokeObjectURL(this.photoPreview);this.photoPreview='';this.photoFile=null;this.photoRows=[];this.photoReading=false;if(showMessage)this.ok('Selected ticket photo removed.');}
-  private warnPhotoDuplicates(){const barcodes=this.photoRows.map(r=>String(r.barcode||'').trim().toLowerCase()).filter(Boolean),duplicates=[...new Set(barcodes.filter((b,i)=>barcodes.indexOf(b)!==i||this.tickets.some(t=>String(t.barcode).toLowerCase()===b)))];if(duplicates.length)this.err=`Warning: ${duplicates.join(', ')} already exists in this photo or inventory. Correct or remove duplicate rows before saving.`;}
-  private detectedHour(value:string){const m=String(value).toUpperCase().match(/(?:^|[-\s])(01|02|04|06|08|12)H(?:[-\s]|$)/);return m?Number(m[1]):Number(this.hours);}
-  async recognizeTicketPhoto(){
-    const file=this.photoFile;if(!file){this.err='Choose or take a ticket photo first';return;}this.photoReading=true;this.photoRows=[];
-    try{
-      let localFallbackMessage='';
-      try{
-        this.msg='Detecting tickets locally with OpenCV, ZXing and Tesseract…';
-        const local=await firstValueFrom(this.api.recognizeTicketPhoto(file));
-        if(local?.succeeded&&Array.isArray(local.tickets)&&local.tickets.length){
-          for(const row of local.tickets)this.addPhotoRow({barcode:row.barcode||'',physicalTicketNumber:row.physicalTicketNumber||'',durationHours:Number(row.durationHours)||Number(this.hours),ticketNumber:row.ticketNumber??null,stockIssueDate:row.stockIssueDate||this.stockIssueDate,expiryDate:row.expiryDate||this.expiry||null,recognitionConfidence:row.confidence});
-          this.msg=local.message;this.warnPhotoDuplicates();
+  addPhotoRow(values: any = {}) {
+    this.photoRows.push({
+      barcode: "",
+      physicalTicketNumber: "",
+      durationHours: Number(this.hours),
+      ticketNumber: null,
+      stockIssueDate: this.stockIssueDate,
+      expiryDate: this.expiry || null,
+      ...values,
+    });
+  }
+  removePhotoRow(index: number) {
+    this.photoRows.splice(index, 1);
+  }
+  selectTicketPhoto(input: HTMLInputElement) {
+    const file = input.files?.[0];
+    if (!file) return;
+    this.clearTicketPhoto(false);
+    this.photoFile = file;
+    this.photoPreview = URL.createObjectURL(file);
+    input.value = "";
+    this.ok("Photo selected. Click Start Image Recognition when ready.");
+  }
+  clearTicketPhoto(showMessage = true) {
+    if (this.photoPreview) URL.revokeObjectURL(this.photoPreview);
+    this.photoPreview = "";
+    this.photoFile = null;
+    this.photoRows = [];
+    this.photoReading = false;
+    if (showMessage) this.ok("Selected ticket photo removed.");
+  }
+  private warnPhotoDuplicates() {
+    const barcodes = this.photoRows
+        .map((r) =>
+          String(r.barcode || "")
+            .trim()
+            .toLowerCase(),
+        )
+        .filter(Boolean),
+      duplicates = [
+        ...new Set(
+          barcodes.filter(
+            (b, i) =>
+              barcodes.indexOf(b) !== i ||
+              this.tickets.some((t) => String(t.barcode).toLowerCase() === b),
+          ),
+        ),
+      ];
+    if (duplicates.length)
+      this.err = `Warning: ${duplicates.join(", ")} already exists in this photo or inventory. Correct or remove duplicate rows before saving.`;
+  }
+  private detectedHour(value: string) {
+    const m = String(value)
+      .toUpperCase()
+      .match(/(?:^|[-\s])(01|02|04|06|08|12)H(?:[-\s]|$)/);
+    return m ? Number(m[1]) : Number(this.hours);
+  }
+  async recognizeTicketPhoto() {
+    const file = this.photoFile;
+    if (!file) {
+      this.err = "Choose or take a ticket photo first";
+      return;
+    }
+    this.photoReading = true;
+    this.photoRows = [];
+    try {
+      let localFallbackMessage = "";
+      try {
+        this.msg =
+          "Detecting tickets locally with OpenCV, ZXing and Tesseract…";
+        const local = await firstValueFrom(this.api.recognizeTicketPhoto(file));
+        if (
+          local?.succeeded &&
+          Array.isArray(local.tickets) &&
+          local.tickets.length
+        ) {
+          for (const row of local.tickets)
+            this.addPhotoRow({
+              barcode: row.barcode || "",
+              physicalTicketNumber: row.physicalTicketNumber || "",
+              durationHours: Number(row.durationHours) || Number(this.hours),
+              ticketNumber: row.ticketNumber ?? null,
+              stockIssueDate: row.stockIssueDate || this.stockIssueDate,
+              expiryDate: row.expiryDate || this.expiry || null,
+              recognitionConfidence: row.confidence,
+            });
+          this.msg = local.message;
+          this.warnPhotoDuplicates();
           return;
         }
-        localFallbackMessage=local?.message||'Server OCR did not return ticket records; browser OCR was used.';
-      }catch{localFallbackMessage='Server OCR was unavailable; browser OCR was used.';}
-      const bitmap=await createImageBitmap(file),BarcodeDetectorCtor=(window as any).BarcodeDetector,TextDetectorCtor=(window as any).TextDetector;
-      let codes:any[]=[],texts:any[]=[];
-      if(BarcodeDetectorCtor)try{codes=await new BarcodeDetectorCtor({formats:['code_128','code_39','ean_13','ean_8','itf','codabar','upc_a','upc_e']}).detect(bitmap);}catch{codes=[];}
-      if(TextDetectorCtor)try{texts=await new TextDetectorCtor().detect(bitmap);}catch{texts=[];}
-      const wide=bitmap.width/bitmap.height>1.25,columns=wide?3:1;let count=codes.length;
-      if(wide)count=Math.max(6,Math.ceil(Math.max(1,count)/3)*3);else count=Math.max(1,count);
-      const rows=Math.ceil(count/columns),cellWidth=bitmap.width/columns,cellHeight=bitmap.height/rows;
-      const ocrHints=Array.from({length:count},()=>({physical:'',circled:''}));
-      this.msg=`Running OCR on ${count} ticket section${count===1?'':'s'}…`;
-      const {createWorker}=await import('tesseract.js'),worker=await createWorker('eng');
-      try{
-        for(let index=0;index<count;index++){
-          const col=index%columns,row=Math.floor(index/columns);
-          const crop=(x:number,y:number,w:number,h:number,scale=2)=>{const canvas=document.createElement('canvas'),context=canvas.getContext('2d',{willReadFrequently:true})!;canvas.width=Math.round(cellWidth*w*scale);canvas.height=Math.round(cellHeight*h*scale);context.filter='grayscale(1) contrast(1.65)';context.drawImage(bitmap,(col+x)*cellWidth,(row+y)*cellHeight,w*cellWidth,h*cellHeight,0,0,canvas.width,canvas.height);return canvas;};
-          await worker.setParameters({preserve_interword_spaces:'1',tessedit_pageseg_mode:'6',tessedit_char_whitelist:''} as any);
-          const canvas=crop(0,0,1,1,2);
-          const result=await worker.recognize(canvas);texts.push({rawValue:result.data.text,boundingBox:{x:col*cellWidth,y:row*cellHeight,width:cellWidth,height:cellHeight},ocrBlock:true});this.msg=`Reading ticket ${index+1} of ${count}…`;
-          await worker.setParameters({tessedit_pageseg_mode:'7',tessedit_char_whitelist:'0123456789'} as any);
-          ocrHints[index].physical=(await worker.recognize(crop(.42,0,.58,.22,3))).data.text;
-          await worker.setParameters({tessedit_pageseg_mode:'10',tessedit_char_whitelist:'0123456789'} as any);
-          ocrHints[index].circled=(await worker.recognize(crop(.55,.16,.45,.42,4))).data.text;
-        }
-      }finally{await worker.terminate();}
-      const region=(box:any)=>{const x=(box?.x||0)+(box?.width||0)/2,y=(box?.y||0)+(box?.height||0)/2;return Math.min(count-1,Math.floor(y/cellHeight)*columns+Math.min(columns-1,Math.floor(x/cellWidth)));};
-      const regionTexts=Array.from({length:count},()=>[] as any[]),regionCodes=Array(count).fill('');
-      for(const t of texts)regionTexts[region(t.boundingBox)].push(t);
-      for(const c of codes)regionCodes[region(c.boundingBox)]=String(c.rawValue||'').replace(/^OGF-/i,'');
-      const detectedNumericCodes=regionCodes.filter((x:string)=>/^\d{7}$/.test(x));
-      if(wide&&count===6&&detectedNumericCodes.length===1){const knownIndex=regionCodes.findIndex((x:string)=>/^\d{7}$/.test(x)),first=Number(detectedNumericCodes[0])-knownIndex;for(let n=0;n<count;n++)if(!regionCodes[n])regionCodes[n]=String(first+n);}
-      const normalizedDigits=(value:string)=>value.replace(/[|Il]/g,'1').replace(/(?<=\d)\s+(?=\d)/g,'');
-      const allText=normalizedDigits(texts.map(t=>String(t.rawValue||'')).join(' ')),sharedPhysical=(allText.match(/\b\d{6}\b/g)||[]).find(x=>!/^375/.test(x))||'';
-      for(let index=0;index<count;index++){
-        const items=regionTexts[index],originalRaw=items.map(x=>String(x.rawValue||'')).join('\n'),raw=normalizedDigits(originalRaw),numericRaw=raw.replace(/[Oo]/g,'0'),numbers=numericRaw.match(/\b\d{1,8}\b/g)||[];
-        const barcode=regionCodes[index]||(numbers.find(v=>/^\d{7}$/.test(v))||'');
-        const physicalHint=(ocrHints[index].physical.match(/\d/g)||[]).join('').match(/\d{6}/)?.[0]||'';
-        const physical=physicalHint||numbers.find(v=>/^\d{6}$/.test(v)&&v!==barcode)||sharedPhysical;
-        const dates=(numericRaw.match(/20\d{2}\s*[-/.]\s*\d{2}\s*[-/.]\s*\d{2}/g)||[]).map(x=>x.replace(/\s/g,'').replace(/[/.]/g,'-'));
-        const duration=Number((raw.match(/Valid\s*For\s*(\d{1,2})/i)||[])[1])||this.detectedHour(barcode);
-        const col=index%columns,row=Math.floor(index/columns),left=col*cellWidth,top=row*cellHeight;
-        const handwrittenItem=items.filter(x=>/^\s*\d{1,3}\s*$/.test(String(x.rawValue||''))).filter(x=>{const b=x.boundingBox,cx=(b?.x||0)+(b?.width||0)/2,cy=(b?.y||0)+(b?.height||0)/2;return cx>left+cellWidth*.58&&cy>top+cellHeight*.12&&cy<top+cellHeight*.58;}).sort((a,b)=>(b.boundingBox?.x||0)-(a.boundingBox?.x||0))[0];
-        const standalone=[...originalRaw.matchAll(/^\s*([1-9]\d{0,2})\s*$/gm)].map(m=>Number(m[1])).filter(n=>n!==duration);
-        const circledHint=originalRaw.match(/(?:circled|ticket\s*(?:no|number))\D{0,8}([1-9]\d{0,2})/i);
-        const circledDigits=(ocrHints[index].circled.match(/\d/g)||[]).join(''),modelCircled=/^[1-9]\d{0,2}$/.test(circledDigits)?Number(circledDigits):null;
-        const handwritten=modelCircled??(handwrittenItem?Number(String(handwrittenItem.rawValue).trim()):circledHint?Number(circledHint[1]):standalone.at(-1)??(wide&&count===6?index+1:null));
-        this.addPhotoRow({barcode,physicalTicketNumber:physical,durationHours:duration,ticketNumber:handwritten,stockIssueDate:dates[0]||this.stockIssueDate,expiryDate:dates[1]||this.expiry||null});
+        localFallbackMessage =
+          local?.message ||
+          "Server OCR did not return ticket records; browser OCR was used.";
+      } catch {
+        localFallbackMessage =
+          "Server OCR was unavailable; browser OCR was used.";
       }
-      const identified=this.photoRows.filter(r=>r.barcode||r.physicalTicketNumber||r.ticketNumber).length;
-      this.msg=`${localFallbackMessage} Created ${this.photoRows.length} ticket review rows; ${identified} contain automatically identified values. Correct any uncertain or blank fields before saving.`;this.warnPhotoDuplicates();
-    }catch(e){this.addPhotoRow();this.err='The photo could not be read automatically. An editable row was created so you can enter the identifiable details.';}
-    finally{this.photoReading=false;}
+      const bitmap = await createImageBitmap(file),
+        BarcodeDetectorCtor = (window as any).BarcodeDetector,
+        TextDetectorCtor = (window as any).TextDetector;
+      let codes: any[] = [],
+        texts: any[] = [];
+      if (BarcodeDetectorCtor)
+        try {
+          codes = await new BarcodeDetectorCtor({
+            formats: [
+              "code_128",
+              "code_39",
+              "ean_13",
+              "ean_8",
+              "itf",
+              "codabar",
+              "upc_a",
+              "upc_e",
+            ],
+          }).detect(bitmap);
+        } catch {
+          codes = [];
+        }
+      if (TextDetectorCtor)
+        try {
+          texts = await new TextDetectorCtor().detect(bitmap);
+        } catch {
+          texts = [];
+        }
+      const wide = bitmap.width / bitmap.height > 1.25,
+        columns = wide ? 3 : 1;
+      let count = codes.length;
+      if (wide) count = Math.max(6, Math.ceil(Math.max(1, count) / 3) * 3);
+      else count = Math.max(1, count);
+      const rows = Math.ceil(count / columns),
+        cellWidth = bitmap.width / columns,
+        cellHeight = bitmap.height / rows;
+      const ocrHints = Array.from({ length: count }, () => ({
+        physical: "",
+        circled: "",
+      }));
+      this.msg = `Running OCR on ${count} ticket section${count === 1 ? "" : "s"}…`;
+      const { createWorker } = await import("tesseract.js"),
+        worker = await createWorker("eng");
+      try {
+        for (let index = 0; index < count; index++) {
+          const col = index % columns,
+            row = Math.floor(index / columns);
+          const crop = (
+            x: number,
+            y: number,
+            w: number,
+            h: number,
+            scale = 2,
+          ) => {
+            const canvas = document.createElement("canvas"),
+              context = canvas.getContext("2d", { willReadFrequently: true })!;
+            canvas.width = Math.round(cellWidth * w * scale);
+            canvas.height = Math.round(cellHeight * h * scale);
+            context.filter = "grayscale(1) contrast(1.65)";
+            context.drawImage(
+              bitmap,
+              (col + x) * cellWidth,
+              (row + y) * cellHeight,
+              w * cellWidth,
+              h * cellHeight,
+              0,
+              0,
+              canvas.width,
+              canvas.height,
+            );
+            return canvas;
+          };
+          await worker.setParameters({
+            preserve_interword_spaces: "1",
+            tessedit_pageseg_mode: "6",
+            tessedit_char_whitelist: "",
+          } as any);
+          const canvas = crop(0, 0, 1, 1, 2);
+          const result = await worker.recognize(canvas);
+          texts.push({
+            rawValue: result.data.text,
+            boundingBox: {
+              x: col * cellWidth,
+              y: row * cellHeight,
+              width: cellWidth,
+              height: cellHeight,
+            },
+            ocrBlock: true,
+          });
+          this.msg = `Reading ticket ${index + 1} of ${count}…`;
+          await worker.setParameters({
+            tessedit_pageseg_mode: "7",
+            tessedit_char_whitelist: "0123456789",
+          } as any);
+          ocrHints[index].physical = (
+            await worker.recognize(crop(0.42, 0, 0.58, 0.22, 3))
+          ).data.text;
+          await worker.setParameters({
+            tessedit_pageseg_mode: "10",
+            tessedit_char_whitelist: "0123456789",
+          } as any);
+          ocrHints[index].circled = (
+            await worker.recognize(crop(0.55, 0.16, 0.45, 0.42, 4))
+          ).data.text;
+        }
+      } finally {
+        await worker.terminate();
+      }
+      const region = (box: any) => {
+        const x = (box?.x || 0) + (box?.width || 0) / 2,
+          y = (box?.y || 0) + (box?.height || 0) / 2;
+        return Math.min(
+          count - 1,
+          Math.floor(y / cellHeight) * columns +
+            Math.min(columns - 1, Math.floor(x / cellWidth)),
+        );
+      };
+      const regionTexts = Array.from({ length: count }, () => [] as any[]),
+        regionCodes = Array(count).fill("");
+      for (const t of texts) regionTexts[region(t.boundingBox)].push(t);
+      for (const c of codes)
+        regionCodes[region(c.boundingBox)] = String(c.rawValue || "").replace(
+          /^OGF-/i,
+          "",
+        );
+      const detectedNumericCodes = regionCodes.filter((x: string) =>
+        /^\d{7}$/.test(x),
+      );
+      if (wide && count === 6 && detectedNumericCodes.length === 1) {
+        const knownIndex = regionCodes.findIndex((x: string) =>
+            /^\d{7}$/.test(x),
+          ),
+          first = Number(detectedNumericCodes[0]) - knownIndex;
+        for (let n = 0; n < count; n++)
+          if (!regionCodes[n]) regionCodes[n] = String(first + n);
+      }
+      const normalizedDigits = (value: string) =>
+        value.replace(/[|Il]/g, "1").replace(/(?<=\d)\s+(?=\d)/g, "");
+      const allText = normalizedDigits(
+          texts.map((t) => String(t.rawValue || "")).join(" "),
+        ),
+        sharedPhysical =
+          (allText.match(/\b\d{6}\b/g) || []).find((x) => !/^375/.test(x)) ||
+          "";
+      for (let index = 0; index < count; index++) {
+        const items = regionTexts[index],
+          originalRaw = items.map((x) => String(x.rawValue || "")).join("\n"),
+          raw = normalizedDigits(originalRaw),
+          numericRaw = raw.replace(/[Oo]/g, "0"),
+          numbers = numericRaw.match(/\b\d{1,8}\b/g) || [];
+        const barcode =
+          regionCodes[index] || numbers.find((v) => /^\d{7}$/.test(v)) || "";
+        const physicalHint =
+          (ocrHints[index].physical.match(/\d/g) || [])
+            .join("")
+            .match(/\d{6}/)?.[0] || "";
+        const physical =
+          physicalHint ||
+          numbers.find((v) => /^\d{6}$/.test(v) && v !== barcode) ||
+          sharedPhysical;
+        const dates = (
+          numericRaw.match(/20\d{2}\s*[-/.]\s*\d{2}\s*[-/.]\s*\d{2}/g) || []
+        ).map((x) => x.replace(/\s/g, "").replace(/[/.]/g, "-"));
+        const duration =
+          Number((raw.match(/Valid\s*For\s*(\d{1,2})/i) || [])[1]) ||
+          this.detectedHour(barcode);
+        const col = index % columns,
+          row = Math.floor(index / columns),
+          left = col * cellWidth,
+          top = row * cellHeight;
+        const handwrittenItem = items
+          .filter((x) => /^\s*\d{1,3}\s*$/.test(String(x.rawValue || "")))
+          .filter((x) => {
+            const b = x.boundingBox,
+              cx = (b?.x || 0) + (b?.width || 0) / 2,
+              cy = (b?.y || 0) + (b?.height || 0) / 2;
+            return (
+              cx > left + cellWidth * 0.58 &&
+              cy > top + cellHeight * 0.12 &&
+              cy < top + cellHeight * 0.58
+            );
+          })
+          .sort((a, b) => (b.boundingBox?.x || 0) - (a.boundingBox?.x || 0))[0];
+        const standalone = [...originalRaw.matchAll(/^\s*([1-9]\d{0,2})\s*$/gm)]
+          .map((m) => Number(m[1]))
+          .filter((n) => n !== duration);
+        const circledHint = originalRaw.match(
+          /(?:circled|ticket\s*(?:no|number))\D{0,8}([1-9]\d{0,2})/i,
+        );
+        const circledDigits = (ocrHints[index].circled.match(/\d/g) || []).join(
+            "",
+          ),
+          modelCircled = /^[1-9]\d{0,2}$/.test(circledDigits)
+            ? Number(circledDigits)
+            : null;
+        const handwritten =
+          modelCircled ??
+          (handwrittenItem
+            ? Number(String(handwrittenItem.rawValue).trim())
+            : circledHint
+              ? Number(circledHint[1])
+              : (standalone.at(-1) ??
+                (wide && count === 6 ? index + 1 : null)));
+        this.addPhotoRow({
+          barcode,
+          physicalTicketNumber: physical,
+          durationHours: duration,
+          ticketNumber: handwritten,
+          stockIssueDate: dates[0] || this.stockIssueDate,
+          expiryDate: dates[1] || this.expiry || null,
+        });
+      }
+      const identified = this.photoRows.filter(
+        (r) => r.barcode || r.physicalTicketNumber || r.ticketNumber,
+      ).length;
+      this.msg = `${localFallbackMessage} Created ${this.photoRows.length} ticket review rows; ${identified} contain automatically identified values. Correct any uncertain or blank fields before saving.`;
+      this.warnPhotoDuplicates();
+    } catch (e) {
+      this.addPhotoRow();
+      this.err =
+        "The photo could not be read automatically. An editable row was created so you can enter the identifiable details.";
+    } finally {
+      this.photoReading = false;
+    }
   }
-  savePhotoTickets(){if(!this.photoRows.length){this.err='Upload a photo or add ticket rows first';return;}const rows=this.photoRows.map(r=>({...r,barcode:String(r.barcode||'').replace(/^OGF-/i,''),physicalTicketNumber:String(r.physicalTicketNumber||'').trim()||null,durationHours:Number(r.durationHours),ticketNumber:r.ticketNumber===''||r.ticketNumber==null?null:Number(r.ticketNumber),stockIssueDate:r.stockIssueDate||null,expiryDate:r.expiryDate||null}));if(rows.some(r=>!r.barcode||!r.durationHours)){this.err='Enter a barcode and duration for every detected ticket. Printed and circled ticket numbers are optional.';return;}const normalized=rows.map(r=>String(r.barcode).toLowerCase()),duplicates=[...new Set(normalized.filter((b,i)=>normalized.indexOf(b)!==i||this.tickets.some(t=>String(t.barcode).toLowerCase()===b)))];if(duplicates.length){this.err=`Duplicate ticket barcode${duplicates.length===1?'':'s'} detected: ${duplicates.join(', ')}. Remove or correct the duplicate before saving.`;return;}for(const row of rows)if(!this.validateInventoryPeriod(row.durationHours,row.stockIssueDate,row.expiryDate))return;this.api.bulkTickets(rows).subscribe({next:saved=>{this.clearTicketPhoto(false);this.refreshAfterMutation();this.ok(`${saved.length} separate physical ticket records added to inventory`)},error:e=>this.fail(e)});}
-  loadAudit(){if(this.role!=='SUPER_USER')return;this.api.audit(this.auditUser,this.auditAction,this.auditEntity,this.auditFrom,this.auditTo).subscribe({next:x=>this.auditLogs=x,error:e=>this.fail(e)});}
-  clearAuditFilters(){this.auditUser='';this.auditAction='';this.auditEntity='';this.auditFrom='';this.auditTo='';this.auditExpandedId=null;this.loadAudit();}
-  toggleAuditDetails(a:any){this.auditExpandedId=this.auditExpandedId===a.id?null:a.id;}
-  auditDetails(a:any){try{return JSON.stringify(JSON.parse(a?.details||'{}'),null,2);}catch{return a?.details||'—';}}
-  auditActionClass(a:any){return 'audit-'+String(a?.action||'').toLowerCase().replace(/_/g,'-');}
+  savePhotoTickets() {
+    if (!this.photoRows.length) {
+      this.err = "Upload a photo or add ticket rows first";
+      return;
+    }
+    const rows = this.photoRows.map((r) => ({
+      ...r,
+      barcode: String(r.barcode || "").replace(/^OGF-/i, ""),
+      physicalTicketNumber: String(r.physicalTicketNumber || "").trim() || null,
+      durationHours: Number(r.durationHours),
+      ticketNumber:
+        r.ticketNumber === "" || r.ticketNumber == null
+          ? null
+          : Number(r.ticketNumber),
+      stockIssueDate: r.stockIssueDate || null,
+      expiryDate: r.expiryDate || null,
+    }));
+    if (rows.some((r) => !r.barcode || !r.durationHours)) {
+      this.err =
+        "Enter a barcode and duration for every detected ticket. Printed and circled ticket numbers are optional.";
+      return;
+    }
+    const normalized = rows.map((r) => String(r.barcode).toLowerCase()),
+      duplicates = [
+        ...new Set(
+          normalized.filter(
+            (b, i) =>
+              normalized.indexOf(b) !== i ||
+              this.tickets.some((t) => String(t.barcode).toLowerCase() === b),
+          ),
+        ),
+      ];
+    if (duplicates.length) {
+      this.err = `Duplicate ticket barcode${duplicates.length === 1 ? "" : "s"} detected: ${duplicates.join(", ")}. Remove or correct the duplicate before saving.`;
+      return;
+    }
+    for (const row of rows)
+      if (
+        !this.validateInventoryPeriod(
+          row.durationHours,
+          row.stockIssueDate,
+          row.expiryDate,
+        )
+      )
+        return;
+    this.api.bulkTickets(rows).subscribe({
+      next: (saved) => {
+        this.clearTicketPhoto(false);
+        this.refreshAfterMutation();
+        this.ok(
+          `${saved.length} separate physical ticket records added to inventory`,
+        );
+      },
+      error: (e) => this.fail(e),
+    });
+  }
+  loadAudit() {
+    if (this.role !== "SUPER_USER") return;
+    this.api
+      .audit(
+        this.auditUser,
+        this.auditAction,
+        this.auditEntity,
+        this.auditFrom,
+        this.auditTo,
+      )
+      .subscribe({
+        next: (x) => (this.auditLogs = x),
+        error: (e) => this.fail(e),
+      });
+  }
+  clearAuditFilters() {
+    this.auditUser = "";
+    this.auditAction = "";
+    this.auditEntity = "";
+    this.auditFrom = "";
+    this.auditTo = "";
+    this.auditExpandedId = null;
+    this.loadAudit();
+  }
+  toggleAuditDetails(a: any) {
+    this.auditExpandedId = this.auditExpandedId === a.id ? null : a.id;
+  }
+  auditDetails(a: any) {
+    try {
+      return JSON.stringify(JSON.parse(a?.details || "{}"), null, 2);
+    } catch {
+      return a?.details || "—";
+    }
+  }
+  auditActionClass(a: any) {
+    return (
+      "audit-" +
+      String(a?.action || "")
+        .toLowerCase()
+        .replace(/_/g, "-")
+    );
+  }
 
-  openReportPreview(kind:string){if(!this.canGenerateReports()){this.err='Reports are not available for your role';return;}this.reportPreviewKind=kind;this.reportStatus='';this.reportDuration='';this.reportPersonType='';this.reportPerson='';if(kind==='daily'||kind==='person'){this.reportFrom=this.date;this.reportTo=this.date;}else{this.reportFrom='';this.reportTo='';}this.msg='';this.err='';}
-  closeReportPreview(){this.reportPreviewKind='';}
-  private inReportRange(value:any){if(!value)return !this.reportFrom&&!this.reportTo;const d=String(value).slice(0,10);return (!this.reportFrom||d>=this.reportFrom)&&(!this.reportTo||d<=this.reportTo);}
-  get reportPreviewTitle(){return this.reportPreviewKind==='daily'?'Issued Tickets':this.reportPreviewKind==='inventory'?'Inventory Summary':this.reportPreviewKind==='person'?'Person Ticket History':this.reportPreviewKind==='remaining'?'Remaining Inventory':this.reportPreviewKind==='barcode'?'Barcode Register':'Report Preview';}
-  get reportPreviewHeaders(){if(this.reportPreviewKind==='daily')return['Request','Person Type','Person','Date','Hours','Reason','Barcodes'];if(this.reportPreviewKind==='inventory')return['Barcode','Ticket No.','Hours','Status','Expiry','Issued To'];if(this.reportPreviewKind==='person')return['Request','Type','Person','Date','Hours','Status','Reason','Barcodes'];if(this.reportPreviewKind==='remaining')return['Barcode','Ticket No.','Hours','Expiry'];return['Barcode','Ticket No.','Hours','Status','Expiry','Issued At','Issued To'];}
-  get reportPreviewRows():any[][]{const kind=this.reportPreviewKind;if(!kind)return[];if(kind==='daily')return this.issues.filter(i=>i.status==='COMPLETED'&&this.inReportRange(i.visitDate)&&(!this.reportPerson||i.personReference===this.reportPerson)&&(!this.reportPersonType||i.personType===this.reportPersonType)).map(i=>[i.requestNumber,i.personType,i.personReference,i.visitDate,i.requiredHours,i.reason||'',i.barcodes.join(' | ')]);if(kind==='inventory')return this.tickets.filter(t=>(!this.reportStatus||t.status===this.reportStatus)&&(!this.reportDuration||String(t.durationHours)===String(this.reportDuration))&&this.inReportRange(t.expiryDate)).map(t=>[t.barcode,t.ticketNumber,t.durationHours,t.status,t.expiryDate||'',t.issuedToReference||'']);if(kind==='person')return this.issues.filter(i=>(!this.reportPerson||i.personReference===this.reportPerson)&&(!this.reportPersonType||i.personType===this.reportPersonType)&&(!this.reportStatus||i.status===this.reportStatus)&&this.inReportRange(i.visitDate)).map(i=>[i.requestNumber,i.personType,i.personReference,i.visitDate,i.requiredHours,i.status,i.reason||'',i.barcodes.join(' | ')]);if(kind==='remaining')return this.remaining.filter(t=>(!this.reportDuration||String(t.durationHours)===String(this.reportDuration))&&this.inReportRange(t.expiryDate)).map(t=>[t.barcode,t.ticketNumber,t.durationHours,t.expiryDate||'']);return this.tickets.filter(t=>(!this.reportStatus||t.status===this.reportStatus)&&(!this.reportDuration||String(t.durationHours)===String(this.reportDuration))&&(!this.reportPerson||t.issuedToReference===this.reportPerson)&&this.inReportRange(t.issuedAt)).map(t=>[t.barcode,t.ticketNumber,t.durationHours,t.status,t.expiryDate||'',t.issuedAt||'',t.issuedToReference||'']);}
-  async exportPreviewCsv(){if(!this.reportPreviewKind)return;const rows=[this.reportPreviewHeaders,...this.reportPreviewRows];if(rows.length<=1){this.err='No report rows match the selected filters';return;}if(!(await this.askConfirm('Save Report',`Save ${this.reportPreviewTitle} with ${this.reportPreviewRows.length} row(s) using the current filters?`,'Save CSV','success')))return;const names:any={daily:'issued-tickets',inventory:'inventory-summary',person:'person-history',remaining:'remaining-inventory',barcode:'barcode-register'};const csv=rows.map(r=>r.map(v=>'"'+String(v??'').replace(/"/g,'""')+'"').join(',')).join('\r\n');const a=document.createElement('a');a.href=URL.createObjectURL(new Blob(['\ufeff'+csv],{type:'text/csv;charset=utf-8'}));const suffix=this.reportFrom&&this.reportTo?`${this.reportFrom}-to-${this.reportTo}`:this.date;a.download=`${names[this.reportPreviewKind]||'parkingtiq-report'}-${suffix}.csv`;a.click();URL.revokeObjectURL(a.href);this.ok('Excel-compatible report saved');}
-  askConfirm(title:string,message:string,confirmLabel='Confirm',tone:'default'|'danger'|'success'='default'){this.confirmDialog={title,message,confirmLabel,tone};return new Promise<boolean>(resolve=>this.confirmResolver=resolve);}
-  resolveConfirm(value:boolean){const r=this.confirmResolver;this.confirmDialog=null;this.confirmResolver=null;r?.(value);}
-  bar(v:any):number{const value=Number(v)||0;const values=Object.values(this.dashboard.availableByType||{}).map(x=>Number(x)||0);const max=Math.max(1,...values);return value?Math.max(8,value/max*100):3;} ok(m:string){this.msg=m;this.err='';} loadFail(area:string,e:any){if(!this.err)this.err=`${area}: ${e?.error?.message||e?.message||'Unable to load'}`;} fail(e:any){this.err=e?.error?.message||e?.message||'Unexpected error';this.msg='';}
+  openReportPreview(kind: string) {
+    if (!this.canGenerateReports()) {
+      this.err = "Reports are not available for your role";
+      return;
+    }
+    this.reportPreviewKind = kind;
+    this.reportStatus = "";
+    this.reportDuration = "";
+    this.reportPersonType = "";
+    this.reportPerson = "";
+    if (kind === "daily" || kind === "person") {
+      this.reportFrom = this.date;
+      this.reportTo = this.date;
+    } else {
+      this.reportFrom = "";
+      this.reportTo = "";
+    }
+    this.msg = "";
+    this.err = "";
+  }
+  closeReportPreview() {
+    this.reportPreviewKind = "";
+  }
+  private inReportRange(value: any) {
+    if (!value) return !this.reportFrom && !this.reportTo;
+    const d = String(value).slice(0, 10);
+    return (
+      (!this.reportFrom || d >= this.reportFrom) &&
+      (!this.reportTo || d <= this.reportTo)
+    );
+  }
+  get reportPreviewTitle() {
+    return this.reportPreviewKind === "daily"
+      ? "Issued Tickets"
+      : this.reportPreviewKind === "inventory"
+        ? "Inventory Summary"
+        : this.reportPreviewKind === "person"
+          ? "Person Ticket History"
+          : this.reportPreviewKind === "remaining"
+            ? "Remaining Inventory"
+            : this.reportPreviewKind === "barcode"
+              ? "Barcode Register"
+              : "Report Preview";
+  }
+  get reportPreviewHeaders() {
+    if (this.reportPreviewKind === "daily")
+      return [
+        "Request",
+        "Person Type",
+        "Person",
+        "Date",
+        "Hours",
+        "Reason",
+        "Barcodes",
+      ];
+    if (this.reportPreviewKind === "inventory")
+      return [
+        "Barcode",
+        "Ticket No.",
+        "Hours",
+        "Status",
+        "Expiry",
+        "Issued To",
+      ];
+    if (this.reportPreviewKind === "person")
+      return [
+        "Request",
+        "Type",
+        "Person",
+        "Date",
+        "Hours",
+        "Status",
+        "Reason",
+        "Barcodes",
+      ];
+    if (this.reportPreviewKind === "remaining")
+      return ["Barcode", "Ticket No.", "Hours", "Expiry"];
+    return [
+      "Barcode",
+      "Ticket No.",
+      "Hours",
+      "Status",
+      "Expiry",
+      "Issued At",
+      "Issued To",
+    ];
+  }
+  get reportPreviewRows(): any[][] {
+    const kind = this.reportPreviewKind;
+    if (!kind) return [];
+    if (kind === "daily")
+      return this.issues
+        .filter(
+          (i) =>
+            i.status === "COMPLETED" &&
+            this.inReportRange(i.visitDate) &&
+            (!this.reportPerson || i.personReference === this.reportPerson) &&
+            (!this.reportPersonType || i.personType === this.reportPersonType),
+        )
+        .map((i) => [
+          i.requestNumber,
+          i.personType,
+          i.personReference,
+          i.visitDate,
+          i.requiredHours,
+          i.reason || "",
+          i.barcodes.join(" | "),
+        ]);
+    if (kind === "inventory")
+      return this.tickets
+        .filter(
+          (t) =>
+            (!this.reportStatus || t.status === this.reportStatus) &&
+            (!this.reportDuration ||
+              String(t.durationHours) === String(this.reportDuration)) &&
+            this.inReportRange(t.expiryDate),
+        )
+        .map((t) => [
+          t.barcode,
+          t.ticketNumber,
+          t.durationHours,
+          t.status,
+          t.expiryDate || "",
+          t.issuedToReference || "",
+        ]);
+    if (kind === "person")
+      return this.issues
+        .filter(
+          (i) =>
+            (!this.reportPerson || i.personReference === this.reportPerson) &&
+            (!this.reportPersonType ||
+              i.personType === this.reportPersonType) &&
+            (!this.reportStatus || i.status === this.reportStatus) &&
+            this.inReportRange(i.visitDate),
+        )
+        .map((i) => [
+          i.requestNumber,
+          i.personType,
+          i.personReference,
+          i.visitDate,
+          i.requiredHours,
+          i.status,
+          i.reason || "",
+          i.barcodes.join(" | "),
+        ]);
+    if (kind === "remaining")
+      return this.remaining
+        .filter(
+          (t) =>
+            (!this.reportDuration ||
+              String(t.durationHours) === String(this.reportDuration)) &&
+            this.inReportRange(t.expiryDate),
+        )
+        .map((t) => [
+          t.barcode,
+          t.ticketNumber,
+          t.durationHours,
+          t.expiryDate || "",
+        ]);
+    return this.tickets
+      .filter(
+        (t) =>
+          (!this.reportStatus || t.status === this.reportStatus) &&
+          (!this.reportDuration ||
+            String(t.durationHours) === String(this.reportDuration)) &&
+          (!this.reportPerson || t.issuedToReference === this.reportPerson) &&
+          this.inReportRange(t.issuedAt),
+      )
+      .map((t) => [
+        t.barcode,
+        t.ticketNumber,
+        t.durationHours,
+        t.status,
+        t.expiryDate || "",
+        t.issuedAt || "",
+        t.issuedToReference || "",
+      ]);
+  }
+  async exportPreviewCsv() {
+    if (!this.reportPreviewKind) return;
+    const rows = [this.reportPreviewHeaders, ...this.reportPreviewRows];
+    if (rows.length <= 1) {
+      this.err = "No report rows match the selected filters";
+      return;
+    }
+    if (
+      !(await this.askConfirm(
+        "Save Report",
+        `Save ${this.reportPreviewTitle} with ${this.reportPreviewRows.length} row(s) using the current filters?`,
+        "Save CSV",
+        "success",
+      ))
+    )
+      return;
+    const names: any = {
+      daily: "issued-tickets",
+      inventory: "inventory-summary",
+      person: "person-history",
+      remaining: "remaining-inventory",
+      barcode: "barcode-register",
+    };
+    const csv = rows
+      .map((r) =>
+        r.map((v) => '"' + String(v ?? "").replace(/"/g, '""') + '"').join(","),
+      )
+      .join("\r\n");
+    const a = document.createElement("a");
+    a.href = URL.createObjectURL(
+      new Blob(["\ufeff" + csv], { type: "text/csv;charset=utf-8" }),
+    );
+    const suffix =
+      this.reportFrom && this.reportTo
+        ? `${this.reportFrom}-to-${this.reportTo}`
+        : this.date;
+    a.download = `${names[this.reportPreviewKind] || "parkingtiq-report"}-${suffix}.csv`;
+    a.click();
+    URL.revokeObjectURL(a.href);
+    this.ok("Excel-compatible report saved");
+  }
+  askConfirm(
+    title: string,
+    message: string,
+    confirmLabel = "Confirm",
+    tone: "default" | "danger" | "success" = "default",
+  ) {
+    this.confirmDialog = { title, message, confirmLabel, tone };
+    return new Promise<boolean>((resolve) => (this.confirmResolver = resolve));
+  }
+  resolveConfirm(value: boolean) {
+    const r = this.confirmResolver;
+    this.confirmDialog = null;
+    this.confirmResolver = null;
+    r?.(value);
+  }
+  bar(v: any): number {
+    const value = Number(v) || 0;
+    const values = Object.values(this.dashboard.availableByType || {}).map(
+      (x) => Number(x) || 0,
+    );
+    const max = Math.max(1, ...values);
+    return value ? Math.max(8, (value / max) * 100) : 3;
+  }
+  ok(m: string) {
+    this.msg = m;
+    this.err = "";
+  }
+  loadFail(area: string, e: any) {
+    if (!this.err)
+      this.err = `${area}: ${e?.error?.message || e?.message || "Unable to load"}`;
+  }
+  fail(e: any) {
+    this.err = e?.error?.message || e?.message || "Unexpected error";
+    this.msg = "";
+  }
 }
