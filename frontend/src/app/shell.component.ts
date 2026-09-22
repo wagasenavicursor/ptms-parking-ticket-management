@@ -4,8 +4,9 @@ import { FormsModule } from '@angular/forms';
 import { HttpClient } from '@angular/common/http';
 import { finalize } from 'rxjs/operators';
 import { AppComponent } from './app.component';
+import { SortableTableDirective } from './core/sortable-table.directive';
 
-@Component({selector:'ptms-shell',standalone:true,imports:[CommonModule,FormsModule,AppComponent],templateUrl:'./shell.component.html',styleUrls:['./shell.component.css']})
+@Component({selector:'ptms-shell',standalone:true,imports:[CommonModule,FormsModule,AppComponent,SortableTableDirective],templateUrl:'./shell.component.html',styleUrls:['./shell.component.css']})
 export class ShellComponent {
   user:any=null; username=''; password=''; rememberMe=false; email=''; loginError=''; message=''; userError=''; userMessage=''; forgot=false; users:any[]=[]; userRoleFilter='ALL'; manage=false; editing:any=this.blank(); loading=false; loadingText='Loading ParkingTiq...'; confirmDialog:any=null; private confirmResolver:((value:boolean)=>void)|null=null;
   constructor(private h:HttpClient){

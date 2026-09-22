@@ -33,5 +33,6 @@ public record SettingsDto(
   boolean inventoryScannerSecurityEnabled,
   boolean inventoryScannerAdminEnabled,
   boolean inventoryManualSecurityEnabled,
-  boolean inventoryManualAdminEnabled
+  boolean inventoryManualAdminEnabled,
+  @NotBlank String uiTheme
 ){}

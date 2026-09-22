@@ -93,7 +93,7 @@ public class TicketIssueService {
     return dto(ir.save(i));
   }
 
-  public IssueResponse createRush(RushIssueRequest q) {
+  public synchronized IssueResponse createRush(RushIssueRequest q) {
     hasParkingPass(PersonType.EMPLOYEE, q.employeeReference());
     if (cs.combinationsFor(q.requiredHours()).isEmpty()) throw new BusinessRuleException("Required hours cannot be covered by configured ticket types");
     if (ir.existsByIssueModeAndPersonReferenceAndVisitDateAndStatusNot("QUICK", q.employeeReference(), q.visitDate(), IssueStatus.CANCELLED)) throw new BusinessRuleException("This employee is already included in a quick ticket batch for " + q.visitDate());

@@ -14,6 +14,7 @@ import {
   SearchSelectComponent,
   SearchSelectOption,
 } from "./core/search-select.component";
+import { SortableTableDirective } from "./core/sortable-table.directive";
 
 type Page =
   | "home"
@@ -36,7 +37,7 @@ type NavItem = { p: Page; t: string; icon: string; tone: string };
 @Component({
   selector: "app-root",
   standalone: true,
-  imports: [CommonModule, FormsModule, SearchSelectComponent],
+  imports: [CommonModule, FormsModule, SearchSelectComponent, SortableTableDirective],
   templateUrl: "./app.component.html",
 })
 export class AppComponent implements OnInit, OnDestroy {
@@ -102,6 +103,7 @@ export class AppComponent implements OnInit, OnDestroy {
   rushBatchReference = "";
   rushTicketPickerIssue: any = null;
   rushReviewMode = false;
+  rushAdding = false;
   registerEdit: any = null;
   registerEmployee = "";
   registerDate = "";
@@ -153,6 +155,7 @@ export class AppComponent implements OnInit, OnDestroy {
     inventoryScannerAdminEnabled: true,
     inventoryManualSecurityEnabled: true,
     inventoryManualAdminEnabled: true,
+    uiTheme: "COLOR",
   };
   private inventoryDefaultsLoaded = false;
   private refreshVersion = 0;
@@ -1854,6 +1857,7 @@ export class AppComponent implements OnInit, OnDestroy {
     await this.finalizeRushBatch();
   }
   createRushIssue() {
+    if (this.rushAdding) return;
     if (!this.canUseQuickBatch) {
       this.err = "Quick Employee Batch is disabled for your user level";
       return;
@@ -1867,16 +1871,13 @@ export class AppComponent implements OnInit, OnDestroy {
       this.err = "Required hours must be a whole number greater than zero";
       return;
     }
-    if (
-      this.rushPendingIssues.some(
-        (i) => i.personReference === this.rushEmployee,
-      )
-    ) {
+    if (this.currentRushBatchIssues.some((i) => i.status !== "CANCELLED" && i.personReference === this.rushEmployee)) {
       this.err = "This employee is already listed in this rush batch";
       return;
     }
     if (!this.rushBatchReference)
       this.rushBatchReference = this.newRushBatchReference();
+    this.rushAdding = true;
     this.api
       .createRushIssue({
         employeeReference: this.rushEmployee,
@@ -1897,8 +1898,9 @@ export class AppComponent implements OnInit, OnDestroy {
           this.rushHours = Number(this.settings?.defaultRushHours) || 1;
           this.refreshAfterMutation();
           this.ok("Employee added to the rush batch");
+          this.rushAdding = false;
         },
-        error: (e) => this.fail(e),
+        error: (e) => { this.rushAdding = false; this.fail(e); },
       });
   }
   async saveRushHours(i: any, confirm = true) {
@@ -2504,6 +2506,7 @@ export class AppComponent implements OnInit, OnDestroy {
     this.api.settings().subscribe({
       next: (x) => {
         this.settings = x;
+        this.applyTheme(x.uiTheme || "COLOR");
         if (!this.inventoryDefaultsLoaded) {
           this.hours = Number(x.inventoryDefaultDuration) || 1;
           this.ticket.durationHours = this.hours;
@@ -2547,11 +2550,17 @@ export class AppComponent implements OnInit, OnDestroy {
     this.api.saveSettings(this.settings).subscribe({
       next: (x) => {
         this.settings = x;
+        this.applyTheme(x.uiTheme || "COLOR");
         this.ensureAllowedFeatureModes();
         this.ok("Settings saved and feature permissions updated");
       },
       error: (e) => this.fail(e),
     });
+  }
+  applyTheme(theme: string) {
+    const value = ["COLOR", "LIGHT", "DARK"].includes(theme) ? theme : "COLOR";
+    this.settings.uiTheme = value;
+    document.documentElement.setAttribute("data-theme", value.toLowerCase());
   }
   ticketResetMode() {
     return this.settings?.ticketNumberResetMode || "DAY";

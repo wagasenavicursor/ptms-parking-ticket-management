@@ -31,8 +31,8 @@
         ><kbd>Alt</kbd> + <kbd>←</kbd> <em>or</em> <kbd>Esc</kbd></span
       >
     </div>
-    <div *ngIf="msg" class="msg">{{ msg }}</div>
-    <div *ngIf="err && page !== 'issue'" class="msg err">{{ err }}</div>
+    <div *ngIf="msg && page !== 'inventory'" class="msg">{{ msg }}</div>
+    <div *ngIf="err && page !== 'issue' && page !== 'inventory'" class="msg err">{{ err }}</div>
     <ng-container [ngSwitch]="page">
       <section *ngSwitchCase="'home'" class="home-page">
         <div class="home-card-grid home-card-grid-rich">
@@ -1060,6 +1060,8 @@
             </div>
           </div>
         </div>
+        <div *ngIf="msg" class="msg page-status-message">{{ msg }}</div>
+        <div *ngIf="err" class="msg err page-status-message">{{ err }}</div>
         <div class="inventory-mode-tabs">
           <button
             *ngIf="canUseInventoryEntry('PHOTO')"
@@ -1615,8 +1617,8 @@
                 placeholder="Why are tickets required outside pass hours?"
               />
             </div>
-            <button type="button" class="btn" (click)="createRushIssue()">
-              Add Employee
+            <button type="button" class="btn" [disabled]="rushAdding" (click)="createRushIssue()">
+              {{ rushAdding ? "Adding…" : "Add Employee" }}
             </button>
           </div>
           <div class="rush-batch-actions" *ngIf="currentRushBatchIssues.length">
@@ -3580,6 +3582,15 @@
               System configuration, reference data and administrative tools
             </div>
           </div>
+        </div>
+        <div class="card theme-settings-card">
+          <div class="settings-section-head"><h3>Display Theme</h3><p>Choose a comfortable application appearance. Color is the current ParkingTiq theme; Light and Dark use restrained professional palettes.</p></div>
+          <div class="theme-choice-grid">
+            <label [class.selected]="settings.uiTheme === 'COLOR'"><input type="radio" name="uiTheme" value="COLOR" [(ngModel)]="settings.uiTheme" (change)="applyTheme('COLOR')"><span class="theme-preview color-preview"></span><b>Color</b><small>Current branded theme</small></label>
+            <label [class.selected]="settings.uiTheme === 'LIGHT'"><input type="radio" name="uiTheme" value="LIGHT" [(ngModel)]="settings.uiTheme" (change)="applyTheme('LIGHT')"><span class="theme-preview light-preview"></span><b>Light</b><small>Clean neutral workspace</small></label>
+            <label [class.selected]="settings.uiTheme === 'DARK'"><input type="radio" name="uiTheme" value="DARK" [(ngModel)]="settings.uiTheme" (change)="applyTheme('DARK')"><span class="theme-preview dark-preview"></span><b>Dark</b><small>Low-light comfort</small></label>
+          </div>
+          <button class="btn save-action" (click)="saveSettings()">Save Theme</button>
         </div>
         <div class="card current-rules-card">
           <div class="current-rules-head">
