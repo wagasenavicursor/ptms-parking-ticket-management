@@ -40,12 +40,12 @@
               <div class="home-fifo-table" *ngIf="pendingIssues.length; else emptyHomeQueue">
                 <table>
                   <tr><th>Request</th><th>Person</th><th>Hours</th><th>Barcodes</th><th>Status</th></tr>
-                  <tr *ngFor="let i of pendingIssues">
+                  <tr *ngFor="let i of pendingIssues" class="clickrow" tabindex="0" role="button" (dblclick)="activatePendingQueueItem(i)" (keydown.enter)="activatePendingQueueItem(i)" [attr.aria-label]="i.issueMode==='QUICK' ? 'Open quick batch '+i.rushBatchReference : 'Complete pending request '+i.requestNumber">
                     <td><b>{{i.requestNumber}}</b></td>
                     <td><span class="pass-p" *ngIf="employeeHasParkingPass(i.personReference,i.personType)" title="Parking Pass">P</span>{{i.personReference}}</td>
                     <td><span class="hour-chip hour-chip-inline" [ngClass]="hourClass(i.requiredHours)">{{i.requiredHours}}h</span></td>
                     <td>{{i.barcodes.join(', ') || '—'}}</td>
-                    <td><span class="badge">{{i.status}}</span></td>
+                    <td><button type="button" class="btn sm" [class.success]="i.issueMode!=='QUICK' && i.barcodes?.length" [class.secondary]="i.issueMode==='QUICK' || !i.barcodes?.length" (click)="$event.stopPropagation();activatePendingQueueItem(i)">{{i.issueMode==='QUICK' ? 'Open Batch' : (i.barcodes?.length ? 'Complete' : 'Tickets Required')}}</button></td>
                   </tr>
                 </table>
               </div>
