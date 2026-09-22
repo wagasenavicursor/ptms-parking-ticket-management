@@ -33,6 +33,7 @@ export class ApiService {
     return this.h.post<any[]>(`${this.a}/tickets/bulk-scan`, { durationHours: hours, stockIssueDate: issueDate || null, expiryDate: expiry || null, startingTicketNumber: startingTicketNumber || null, physicalTicketNumber: physicalTicketNumber || null, barcodes });
   }
   bulkTickets(rows: any[]) { return this.h.post<any[]>(`${this.a}/tickets/bulk`, rows); }
+  recognizeTicketPhoto(file: File) { const form = new FormData(); form.append('image', file); return this.h.post<any>(`${this.a}/tickets/recognize-photo`, form); }
 
   preview(x: any) { return this.h.post<any>(`${this.a}/issues/preview`, x); }
   createIssue(x: any) { return this.h.post<any>(`${this.a}/issues`, x); }

@@ -36,6 +36,19 @@ The deployable file is `backend/target/ptms.war`.
 ## Barcode scanner
 Use a USB HID keyboard scanner with no prefix and Enter/Carriage Return suffix. Scanner support is available in inventory, issue-ticket workflow, and reconciliation.
 
+## Azure ticket-photo recognition
+Bulk ticket photos use Azure AI Document Intelligence first and automatically fall back to in-browser OCR when Azure is not configured or unavailable. Create an Azure AI Document Intelligence resource, then set these backend environment variables before starting PTMS:
+
+```bash
+export AZURE_DOCUMENT_INTELLIGENCE_ENDPOINT="https://YOUR-RESOURCE.cognitiveservices.azure.com"
+export AZURE_DOCUMENT_INTELLIGENCE_KEY="YOUR-RESOURCE-KEY"
+mvn -f backend/pom.xml spring-boot:run
+```
+
+The default model is `prebuilt-layout` with API version `2024-11-30`. Optional overrides are `AZURE_DOCUMENT_INTELLIGENCE_MODEL_ID`, `AZURE_DOCUMENT_INTELLIGENCE_API_VERSION`, `AZURE_DOCUMENT_INTELLIGENCE_POLL_INTERVAL_MS`, and `AZURE_DOCUMENT_INTELLIGENCE_TIMEOUT_SECONDS`. Keep the key only in the backend environment; never put it in Angular configuration or commit it to Git.
+
+Recognition is assistive: the inventory screen creates one editable row per detected physical ticket, and the user must compare barcode, printed physical number, circled number, duration, issue date, and valid-till date with the hard copy before saving.
+
 ## Git workflow
 - `main`: stable
 - `developer`: integration branch
