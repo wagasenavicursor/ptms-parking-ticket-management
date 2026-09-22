@@ -1081,9 +1081,13 @@ input,select,textarea{max-width:100%}
 .dashboard-batch-history{margin:22px 0 0}
 .dashboard-more-tickets{display:inline-flex;align-items:center;margin-top:9px;padding:3px 0;border:0;background:transparent;color:#174a96;font-size:9px;font-weight:850;cursor:pointer}
 .dashboard-more-tickets:hover{text-decoration:underline}
-.barcode-ticket{min-width:94px;gap:3px;padding:7px 10px 7px 13px}
+.barcode-ticket{min-width:84px;gap:3px;padding:7px 9px 7px 12px}
 .barcode-ticket:before{left:6px;top:6px;bottom:6px}
 .barcode-ticket b{font-size:9.5px}.barcode-ticket b:after{width:66px;height:10px;margin-top:3px}.barcode-ticket small{font-size:7.5px}.barcode-ticket .ogf-token-label{font-size:5.8px}.barcode-ticket .ticket-number-stamp{top:5px;right:5px;width:21px;height:21px;font-size:10px}
 .ticket-photo-selected{display:grid;gap:10px}.photo-actions{display:flex;justify-content:flex-end;gap:8px;flex-wrap:wrap}
+.clickable-ticket{cursor:zoom-in;transition:transform .12s ease,box-shadow .12s ease}.clickable-ticket:hover,.clickable-ticket:focus-visible{transform:translateY(-2px);box-shadow:0 6px 14px rgba(17,49,83,.14);outline:2px solid rgba(23,74,150,.18);outline-offset:2px}
+.ticket-preview-backdrop{position:fixed;inset:0;z-index:3000;display:grid;place-items:center;padding:24px;background:rgba(12,27,40,.66);backdrop-filter:blur(3px)}
+.ticket-preview-card{position:relative;width:min(390px,94vw);display:flex;flex-direction:column;align-items:center;gap:10px;padding:42px 34px 30px;border:2px solid #d9dee3;border-radius:15px;background:#fff;color:#24313c;text-align:center;box-shadow:0 30px 90px rgba(0,0,0,.38)}
+.ticket-preview-card h3{margin:0;font-size:25px}.ticket-preview-card>.ogf-token-label{max-width:none;font-size:12px;letter-spacing:.8px}.ticket-preview-card>.ticket-number-stamp{position:absolute;right:42px;top:90px;width:54px;height:54px;font-size:25px}.ticket-preview-card>b{font-size:25px}.ticket-preview-card>strong{font-size:17px}.ticket-preview-card>small{font-size:12px}.ticket-preview-physical{font-size:19px}.ticket-preview-barcode{width:82%;height:58px;margin:7px 0;background:repeating-linear-gradient(90deg,#111 0 3px,transparent 3px 6px,#111 6px 8px,transparent 8px 12px,#111 12px 17px,transparent 17px 20px)}.ticket-preview-close{position:absolute;right:12px;top:12px}.ticket-preview-card>.btn{margin-top:8px;min-width:130px}
 @media(max-width:1180px){.home-card-grid-rich .home-card-second-row{grid-column:span 6!important}}
 @media(max-width:760px){.home-card-grid-rich .home-card-second-row{grid-column:1/-1!important}.photo-actions .btn{width:100%}}
