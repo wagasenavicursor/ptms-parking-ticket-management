@@ -252,9 +252,10 @@ public class TicketIssueService {
   }
 
   private IssueResponse dto(TicketIssue i) {
+    String displayReference = "QUICK".equals(i.getIssueMode()) && i.getRushBatchReference() != null ? i.getRushBatchReference() : i.getRequestNumber();
     return new IssueResponse(
       i.getId(),
-      i.getRequestNumber(),
+      displayReference,
       i.getIssueMode(),
       i.getRushBatchReference(),
       i.getPersonType(),
