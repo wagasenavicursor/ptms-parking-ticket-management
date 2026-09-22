@@ -35,4 +35,27 @@ public record SettingsDto(
   boolean inventoryManualSecurityEnabled,
   boolean inventoryManualAdminEnabled,
   @NotBlank String uiTheme
-){}
+){
+  public SettingsDto(
+    String weekdayStart,String weekdayEnd,String weekendStart,String weekendEnd,
+    int bufferMinutes,String ticketTypes,
+    int warning1h,int warning2h,int warning4h,int warning6h,int warning8h,int warning12h,
+    String ticketNumberResetMode,int ticketNumberResetPeriodDays,String ticketNumberResetStartDate,String ticketNumberResetEndDate,
+    int inventoryDefaultDuration,String inventoryDefaultExpiryMode,String inventoryDefaultEntryMode,
+    String defaultIssueMode,String defaultPersonType,String defaultDurationMode,String defaultBarcodeMode,int defaultRushHours,
+    boolean quickBatchSecurityEnabled,boolean quickBatchAdminEnabled,
+    boolean inventoryPhotoSecurityEnabled,boolean inventoryPhotoAdminEnabled,
+    boolean inventoryScannerSecurityEnabled,boolean inventoryScannerAdminEnabled,
+    boolean inventoryManualSecurityEnabled,boolean inventoryManualAdminEnabled
+  ){
+    this(weekdayStart,weekdayEnd,weekendStart,weekendEnd,bufferMinutes,ticketTypes,
+      warning1h,warning2h,warning4h,warning6h,warning8h,warning12h,
+      ticketNumberResetMode,ticketNumberResetPeriodDays,ticketNumberResetStartDate,ticketNumberResetEndDate,
+      inventoryDefaultDuration,inventoryDefaultExpiryMode,inventoryDefaultEntryMode,
+      defaultIssueMode,defaultPersonType,defaultDurationMode,defaultBarcodeMode,defaultRushHours,
+      quickBatchSecurityEnabled,quickBatchAdminEnabled,
+      inventoryPhotoSecurityEnabled,inventoryPhotoAdminEnabled,
+      inventoryScannerSecurityEnabled,inventoryScannerAdminEnabled,
+      inventoryManualSecurityEnabled,inventoryManualAdminEnabled,"COLOR");
+  }
+}
