@@ -121,7 +121,8 @@ public class LocalTicketPhotoRecognitionService {
       BufferedImage clean = buffered(prepared);
       String text = normalize(ocr(clean, ITessAPI.TessPageSegMode.PSM_SINGLE_BLOCK, null));
       if (barcode == null) barcode = first(BARCODE_TEXT, text);
-      String physical = all(PHYSICAL_NUMBER, text).stream().filter(v -> !v.equals(barcode)).findFirst().orElse(null);
+      String recognizedBarcode = barcode;
+      String physical = all(PHYSICAL_NUMBER, text).stream().filter(v -> !v.equals(recognizedBarcode)).findFirst().orElse(null);
       Integer duration = integer(DURATION, text);
       List<LocalDate> dates = dates(text);
 
