@@ -689,6 +689,7 @@ section > h1::after{
 
 /* Report usage analysis */
 .usage-analysis{margin-bottom:20px;padding:22px;border-radius:14px}
+.dashboard-usage-analysis{margin-top:24px;margin-bottom:0}
 .usage-analysis-head{display:flex;align-items:flex-end;justify-content:space-between;gap:20px;padding-bottom:18px;border-bottom:1px solid #e5eaee}
 .usage-analysis-head h2{margin:3px 0 5px;color:#1d3448;font-size:20px}.usage-analysis-head p{margin:0;color:#73818d;font-size:11px}
 .usage-kicker{color:#174a96;font-size:8.5px;font-weight:900;letter-spacing:1px}

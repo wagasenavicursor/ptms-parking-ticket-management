@@ -126,6 +126,10 @@ export class AppComponent implements OnInit, OnDestroy {
   reportDuration = "";
   reportPersonType = "";
   reportPreviewKind = "";
+  reportPreviewRows: any[][] = [];
+  reportPreviewDisplayRows: any[][] = [];
+  reportPreviewHeaders: string[] = [];
+  private reportRefreshQueued = false;
   usageFrom = `${this.date.slice(0, 7)}-01`;
   usageTo = this.date;
   settings: any = {
@@ -3151,9 +3155,14 @@ export class AppComponent implements OnInit, OnDestroy {
     }
     this.msg = "";
     this.err = "";
+    this.refreshReportPreview();
+    setTimeout(() => document.querySelector(".report-preview")?.scrollIntoView({ behavior: "smooth", block: "start" }));
   }
   closeReportPreview() {
     this.reportPreviewKind = "";
+    this.reportPreviewRows = [];
+    this.reportPreviewDisplayRows = [];
+    this.reportPreviewHeaders = [];
   }
   private inReportRange(value: any) {
     if (!value) return !this.reportFrom && !this.reportTo;
@@ -3176,7 +3185,7 @@ export class AppComponent implements OnInit, OnDestroy {
               ? "Barcode Register"
               : "Report Preview";
   }
-  get reportPreviewHeaders() {
+  private buildReportPreviewHeaders() {
     if (this.reportPreviewKind === "daily")
       return [
         "Request",
@@ -3219,7 +3228,7 @@ export class AppComponent implements OnInit, OnDestroy {
       "Issued To",
     ];
   }
-  get reportPreviewRows(): any[][] {
+  private buildReportPreviewRows(): any[][] {
     const kind = this.reportPreviewKind;
     if (!kind) return [];
     if (kind === "daily")
@@ -3238,7 +3247,7 @@ export class AppComponent implements OnInit, OnDestroy {
           i.visitDate,
           i.requiredHours,
           i.reason || "",
-          i.barcodes.join(" | "),
+          (i.barcodes || []).join(" | "),
         ]);
     if (kind === "inventory")
       return this.tickets
@@ -3275,7 +3284,7 @@ export class AppComponent implements OnInit, OnDestroy {
           i.requiredHours,
           i.status,
           i.reason || "",
-          i.barcodes.join(" | "),
+          (i.barcodes || []).join(" | "),
         ]);
     if (kind === "remaining")
       return this.remaining
@@ -3310,8 +3319,23 @@ export class AppComponent implements OnInit, OnDestroy {
         t.issuedToReference || "",
       ]);
   }
+  refreshReportPreview() {
+    if (!this.reportPreviewKind) return;
+    this.reportPreviewHeaders = this.buildReportPreviewHeaders();
+    this.reportPreviewRows = this.buildReportPreviewRows();
+    this.reportPreviewDisplayRows = this.reportPreviewRows.slice(0, 500);
+  }
+  scheduleReportPreviewRefresh() {
+    if (this.reportRefreshQueued) return;
+    this.reportRefreshQueued = true;
+    queueMicrotask(() => {
+      this.reportRefreshQueued = false;
+      this.refreshReportPreview();
+    });
+  }
   async exportPreviewCsv() {
     if (!this.reportPreviewKind) return;
+    this.refreshReportPreview();
     const rows = [this.reportPreviewHeaders, ...this.reportPreviewRows];
     if (rows.length <= 1) {
       this.err = "No report rows match the selected filters";
@@ -3339,16 +3363,20 @@ export class AppComponent implements OnInit, OnDestroy {
       )
       .join("\r\n");
     const a = document.createElement("a");
-    a.href = URL.createObjectURL(
+    const downloadUrl = URL.createObjectURL(
       new Blob(["\ufeff" + csv], { type: "text/csv;charset=utf-8" }),
     );
+    a.href = downloadUrl;
     const suffix =
       this.reportFrom && this.reportTo
         ? `${this.reportFrom}-to-${this.reportTo}`
         : this.date;
     a.download = `${names[this.reportPreviewKind] || "parkingtiq-report"}-${suffix}.csv`;
+    a.style.display = "none";
+    document.body.appendChild(a);
     a.click();
-    URL.revokeObjectURL(a.href);
+    a.remove();
+    setTimeout(() => URL.revokeObjectURL(downloadUrl), 1000);
     this.ok("Excel-compatible report saved");
   }
   askConfirm(
