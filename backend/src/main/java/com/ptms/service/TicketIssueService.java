@@ -100,7 +100,7 @@ public class TicketIssueService {
     TicketIssue i = new TicketIssue();
     i.setRequestNumber("RUSH-" + UUID.randomUUID().toString().substring(0, 8).toUpperCase());
     i.setIssueMode("QUICK");
-    i.setRushBatchReference(q.batchReference() == null || q.batchReference().isBlank() ? "BATCH-" + LocalDate.now() + "-" + UUID.randomUUID().toString().substring(0, 6).toUpperCase() : q.batchReference().trim());
+    i.setRushBatchReference(q.batchReference() == null || q.batchReference().isBlank() ? nextRushBatchReference(q.visitDate()) : q.batchReference().trim());
     i.setPersonType(PersonType.EMPLOYEE);
     i.setPersonReference(q.employeeReference());
     i.setVisitDate(q.visitDate());
@@ -110,6 +110,14 @@ public class TicketIssueService {
     i.setRequiredHours(q.requiredHours());
     i.setReason(allowedReason(PersonType.EMPLOYEE, q.employeeReference(), q.reason()));
     return dto(ir.save(i));
+  }
+
+  private String nextRushBatchReference(LocalDate date) {
+    String day = date.format(java.time.format.DateTimeFormatter.ofPattern("yyMMdd"));
+    String prefix = "BATCH-" + day + "-";
+    int next = ir.findAll().stream().map(TicketIssue::getRushBatchReference).filter(Objects::nonNull).filter(x -> x.startsWith(prefix))
+      .map(x -> x.substring(prefix.length())).filter(x -> x.matches("\\d+")).mapToInt(Integer::parseInt).max().orElse(0) + 1;
+    return prefix + String.format("%02d", next);
   }
 
   public IssueResponse finalizeRush(Long id, FinalizeRushIssueRequest q) {

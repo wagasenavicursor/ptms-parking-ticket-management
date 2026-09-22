@@ -1025,6 +1025,10 @@ input,select,textarea{max-width:100%}
 .issued-register-table tr:nth-child(odd):not(:first-child) td{background:#fbfcfd}
 .issued-register-table tr.clickrow:hover td{background:#f3f8fc}
 .issued-register-table tr.closed-row td{background:#fafafa;color:#697783}
+.issued-register-table tr.register-group-a td{background:#f1f7ff!important}
+.issued-register-table tr.register-group-b td{background:#fff8e8!important}
+.issued-register-table tr.register-group-a.clickrow:hover td{background:#e4f0ff!important}
+.issued-register-table tr.register-group-b.clickrow:hover td{background:#fff0cf!important}
 .register-request-no{color:#174a96;font-size:10.5px}
 .register-person-type{display:inline-flex;padding:3px 7px;border:1px solid #d9e1e8;border-radius:999px;background:#f7f9fb;color:#596a78;font-size:8.5px;font-weight:850;letter-spacing:.35px}
 .register-reason{max-width:240px;color:#5f6e79}

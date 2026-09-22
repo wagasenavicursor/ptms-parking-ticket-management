@@ -344,6 +344,7 @@
         </tr>
         <tr *ngFor="let i of registerIssues"
             [class.closed-row]="i.status==='CANCELLED'"
+            [ngClass]="registerGroupClass(i)"
             [class.clickrow]="canManageClosedIssues()"
             [attr.tabindex]="canManageClosedIssues() ? 0 : null"
             [attr.role]="canManageClosedIssues() ? 'button' : null"
