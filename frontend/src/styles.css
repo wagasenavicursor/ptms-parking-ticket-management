@@ -145,7 +145,7 @@ th.sortable-column{cursor:pointer;user-select:none;padding-right:24px;transition
 .shortcut-card b{display:block;font-size:13px}
 .shortcut-card small{display:block;color:var(--muted);margin-top:3px;font-size:11px;line-height:1.25}
 .shortcut-card>i{font-style:normal;color:var(--tiq-blue);font-size:18px}
-.dashboard-columns{display:grid;grid-template-columns:1.25fr .75fr;gap:16px}
+.dashboard-columns{display:grid;grid-template-columns:minmax(220px,.8fr) minmax(420px,1.5fr) minmax(220px,.8fr);gap:16px;align-items:start}
 .dashboard-panel{min-width:0}
 .panel-head{display:flex;align-items:flex-start;justify-content:space-between;gap:12px;margin-bottom:14px}
 .panel-head h3{margin:0 0 3px}
@@ -689,7 +689,7 @@ section > h1::after{
 
 /* Report usage analysis */
 .usage-analysis{margin-bottom:20px;padding:22px;border-radius:14px}
-.dashboard-usage-analysis{margin-top:24px;margin-bottom:0}
+.dashboard-usage-analysis{margin:0;min-width:0}.dashboard-columns .dashboard-usage-analysis .usage-analysis-head{align-items:flex-start;flex-direction:column}.dashboard-columns .dashboard-usage-analysis .usage-date-filter{width:100%}.dashboard-columns .dashboard-usage-analysis .usage-date-filter>div{flex:1}.dashboard-columns .dashboard-usage-analysis .usage-highlights{grid-template-columns:repeat(2,minmax(0,1fr))}.dashboard-columns .dashboard-usage-analysis .usage-rankings{grid-template-columns:1fr}
 .usage-analysis-head{display:flex;align-items:flex-end;justify-content:space-between;gap:20px;padding-bottom:18px;border-bottom:1px solid #e5eaee}
 .usage-analysis-head h2{margin:3px 0 5px;color:#1d3448;font-size:20px}.usage-analysis-head p{margin:0;color:#73818d;font-size:11px}
 .usage-kicker{color:#174a96;font-size:8.5px;font-weight:900;letter-spacing:1px}
@@ -697,6 +697,7 @@ section > h1::after{
 .usage-highlights{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px;margin:18px 0}
 .usage-highlight{padding:14px;border:1px solid #dde5eb;border-radius:9px;background:#f8fafb}.usage-highlight>span{display:block;color:#74828e;font-size:8.5px;font-weight:850;letter-spacing:.35px;text-transform:uppercase}.usage-highlight>b{display:block;margin:7px 0 4px;color:#20374b;font-size:15px}.usage-highlight>small{display:block;color:#6f7d88;font-size:9.5px}
 .usage-rankings{display:grid;grid-template-columns:1fr 1fr;gap:16px}.usage-rankings h3{margin:0 0 9px;color:#2b4052;font-size:12px}.usage-ranking-list{overflow:hidden;border:1px solid #e0e6eb;border-radius:9px}.usage-ranking-list>div{display:grid;grid-template-columns:30px 1fr auto;align-items:center;gap:9px;padding:10px 12px;border-bottom:1px solid #edf0f2;background:#fff}.usage-ranking-list>div:last-child{border-bottom:0}.usage-rank{width:24px;height:24px;display:grid;place-items:center;border-radius:50%;background:#eef2f5;color:#516575;font-size:9px;font-weight:900}.usage-ranking-list b,.usage-ranking-list small{display:block}.usage-ranking-list b{color:#263b4d;font-size:10.5px}.usage-ranking-list small{margin-top:2px;color:#7a8791;font-size:8.5px}.usage-ranking-list strong{text-align:right;color:#174a96;font-size:15px}.usage-ranking-list strong small{font-size:7.5px;font-weight:750;text-transform:uppercase}.usage-empty{margin-top:18px;padding:18px;border:1px dashed #ccd7df;border-radius:9px;background:#fafbfc;color:#74818c;text-align:center;font-size:11px}
+.register-view-selector{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px;margin:0 0 16px}.register-view-selector label{position:relative;display:grid;grid-template-columns:auto 1fr;column-gap:10px;align-items:center;padding:14px 16px;border:1px solid var(--border,#d6e0e9);border-radius:10px;background:var(--card,#fff);cursor:pointer}.register-view-selector label.active{border-color:#1e5aa8;box-shadow:0 0 0 2px rgba(30,90,168,.12);background:#f3f8ff}.register-view-selector input{grid-row:1 / span 2;margin:0}.register-view-selector span{font-weight:800;color:#17324d}.register-view-selector small{color:#6d7d8c}.issued-register-page .dashboard-batch-history{margin-top:0}
 @media(max-width:900px){.usage-analysis-head{align-items:stretch;flex-direction:column}.usage-date-filter{width:100%}.usage-date-filter>div{flex:1}.usage-highlights{grid-template-columns:repeat(2,minmax(0,1fr))}.usage-rankings{grid-template-columns:1fr}}
 @media(max-width:560px){.usage-date-filter{align-items:stretch;flex-direction:column}.usage-date-filter>span{display:none}.usage-highlights{grid-template-columns:1fr}}
 

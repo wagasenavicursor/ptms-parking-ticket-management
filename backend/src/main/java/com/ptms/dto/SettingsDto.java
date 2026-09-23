@@ -34,7 +34,8 @@ public record SettingsDto(
   boolean inventoryScannerAdminEnabled,
   boolean inventoryManualSecurityEnabled,
   boolean inventoryManualAdminEnabled,
-  @NotBlank String uiTheme
+  @NotBlank String uiTheme,
+  @NotBlank String defaultRegisterView
 ){
   public SettingsDto(
     String weekdayStart,String weekdayEnd,String weekendStart,String weekendEnd,
@@ -56,6 +57,6 @@ public record SettingsDto(
       quickBatchSecurityEnabled,quickBatchAdminEnabled,
       inventoryPhotoSecurityEnabled,inventoryPhotoAdminEnabled,
       inventoryScannerSecurityEnabled,inventoryScannerAdminEnabled,
-      inventoryManualSecurityEnabled,inventoryManualAdminEnabled,"COLOR");
+      inventoryManualSecurityEnabled,inventoryManualAdminEnabled,"COLOR","ISSUED");
   }
 }

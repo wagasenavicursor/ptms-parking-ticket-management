@@ -41,6 +41,119 @@
         </div>
       </div>
     </ng-template>
+    <ng-template #rootQuickBatchAudit>
+        <div class="card rush-batch-history dashboard-batch-history" *ngIf="rushBatches.length">
+          <div class="panel-head">
+            <div>
+              <span class="register-kicker">QUICK ISSUE AUDIT</span>
+              <h3>Quick Employee Ticket Batches</h3>
+              <span class="muted"
+                >Employees and physical tickets grouped by the quick batch used
+                to issue them.</span
+              >
+            </div>
+            <span class="register-table-count"
+              >{{ rushBatches.length }} batches</span
+            >
+          </div>
+          <div class="rush-batch-history-list">
+            <details *ngFor="let batch of rushBatches">
+              <summary>
+                <b>{{ batch.reference }}</b
+                ><span
+                  >{{ batch.issues.length }} employee{{
+                    batch.issues.length === 1 ? "" : "s"
+                  }}</span
+                ><span
+                  class="register-status-badge"
+                  [class.completed]="batch.status === 'COMPLETED'"
+                  >{{ batch.status }}</span
+                >
+              </summary>
+              <div
+                class="rush-audit-actions"
+                *ngIf="batch.status === 'PENDING' || batchCanBeRemoved(batch)"
+              >
+                <div>
+                  <b>{{
+                    batch.status === "PENDING"
+                      ? "Pending batch"
+                      : "Unissued batch"
+                  }}</b
+                  ><small>{{
+                    batch.status === "PENDING"
+                      ? "Update employees, hours or ticket selections, or allocate the best available tickets and complete the batch now."
+                      : "No tickets were issued, so this batch can be deleted."
+                  }}</small>
+                </div>
+                <button
+                  type="button"
+                  class="btn sm secondary"
+                  *ngIf="batch.status === 'PENDING'"
+                  (click)="openPendingRushBatch(batch)"
+                >
+                  Update Batch</button
+                ><button
+                  type="button"
+                  class="btn sm success"
+                  *ngIf="batch.status === 'PENDING'"
+                  (click)="completePendingRushBatch(batch)"
+                >
+                  Complete Batch</button
+                ><button
+                  type="button"
+                  class="btn sm danger"
+                  *ngIf="batchCanBeRemoved(batch)"
+                  (click)="deleteRushBatch(batch)"
+                >
+                  Delete Batch
+                </button>
+              </div>
+              <div class="table">
+                <table>
+                  <tr>
+                    <th>Employee</th>
+                    <th>Required</th>
+                    <th>Physical Tickets</th>
+                    <th>Status</th>
+                  </tr>
+                  <tr *ngFor="let i of batch.issues">
+                    <td>
+                      <span
+                        class="pass-p"
+                        *ngIf="
+                          employeeHasParkingPass(
+                            i.personReference,
+                            i.personType
+                          )
+                        "
+                        >P</span
+                      ><b>{{ employeeName(i.personReference) }}</b
+                      ><small>{{ i.personReference }}</small>
+                    </td>
+                    <td>{{ i.requiredHours }}h</td>
+                    <td>
+                      <div class="register-barcode-list">
+                        <span
+                          class="register-barcode-chip"
+                          *ngFor="let b of i.barcodes"
+                          ><b>{{ ticketDisplayId(ticketForBarcode(b)) }}</b
+                          ><span class="ticket-number-inline">{{
+                            ticketForBarcode(b)?.ticketNumber
+                          }}</span></span
+                        ><span *ngIf="!i.barcodes.length"
+                          >Awaiting allocation</span
+                        >
+                      </div>
+                    </td>
+                    <td>{{ i.status }}</td>
+                  </tr>
+                </table>
+              </div>
+            </details>
+          </div>
+        </div>
+        </ng-template>
     <ng-container [ngSwitch]="page">
       <section *ngSwitchCase="'home'" class="home-page">
         <ng-container *ngTemplateOutlet="pageMessages"></ng-container>
@@ -497,6 +610,8 @@
             </div>
           </div>
 
+          <ng-container *ngTemplateOutlet="dashboardUsage"></ng-container>
+
           <div class="card dashboard-panel">
             <div class="panel-head">
               <div>
@@ -524,10 +639,8 @@
           </div>
         </div>
 
-        <div
-          class="card rush-batch-history dashboard-batch-history"
-          *ngIf="role === 'SUPER_USER' && rushBatches.length"
-        >
+        <ng-template #quickBatchAudit>
+        <div class="card rush-batch-history dashboard-batch-history" *ngIf="rushBatches.length">
           <div class="panel-head">
             <div>
               <span class="register-kicker">QUICK ISSUE AUDIT</span>
@@ -638,6 +751,7 @@
             </details>
           </div>
         </div>
+        </ng-template>
 
         <div class="dashboard-remaining-section">
           <div class="dashboard-remaining-head">
@@ -705,6 +819,7 @@
           </div>
         </div>
 
+        <ng-template #dashboardUsage>
         <div class="card usage-analysis dashboard-usage-analysis">
           <div class="usage-analysis-head">
             <div><span class="usage-kicker">TICKET USAGE</span><h2>Department & Employee Usage</h2><p>Compare completed physical ticket usage for any date range.</p></div>
@@ -717,11 +832,11 @@
             <div class="usage-highlight"><span>Lowest-usage employee</span><b>{{ leastActiveEmployee?.name || "—" }}</b><small>{{ leastActiveEmployee?.tickets || 0 }} tickets · {{ leastActiveEmployee?.department || "—" }}</small></div>
           </div>
           <ng-template #noDashboardUsageData><div class="usage-empty">No completed employee ticket usage was found in this date range.</div></ng-template>
-          <div class="usage-rankings" *ngIf="departmentUsageStats.length || employeeUsageStats.length">
+          <div class="usage-rankings" *ngIf="departmentUsageStats.length">
             <div><h3>Department ranking</h3><div class="usage-ranking-list"><div *ngFor="let d of departmentUsageStats; let rank = index"><span class="usage-rank">{{ rank + 1 }}</span><span><b>{{ d.name }}</b><small>{{ d.employees }} employee{{ d.employees === 1 ? "" : "s" }} · {{ d.requests }} request{{ d.requests === 1 ? "" : "s" }}</small></span><strong>{{ d.tickets }}<small>tickets</small></strong></div></div></div>
-            <div><h3>Employee ranking</h3><div class="usage-ranking-list"><div *ngFor="let e of employeeUsageStats; let rank = index"><span class="usage-rank">{{ rank + 1 }}</span><span><b>{{ e.name }}</b><small>{{ e.department }} · {{ e.requests }} request{{ e.requests === 1 ? "" : "s" }}</small></span><strong>{{ e.tickets }}<small>tickets</small></strong></div></div></div>
           </div>
         </div>
+        </ng-template>
       </section>
 
       <section *ngSwitchCase="'employees'">
@@ -2533,6 +2648,13 @@
 
         <ng-container *ngTemplateOutlet="pageMessages"></ng-container>
 
+        <div class="register-view-selector" role="radiogroup" aria-label="Register view">
+          <label [class.active]="registerView === 'ISSUED'"><input type="radio" name="registerView" value="ISSUED" [(ngModel)]="registerView" /><span>Issued Tickets Register</span><small>Completed and cancelled ticket records</small></label>
+          <label [class.active]="registerView === 'BATCHES'"><input type="radio" name="registerView" value="BATCHES" [(ngModel)]="registerView" /><span>Quick Employee Ticket Batches</span><small>Employees and tickets grouped by batch</small></label>
+        </div>
+
+        <ng-container *ngIf="registerView === 'ISSUED'">
+
         <div class="register-summary-grid">
           <div class="card register-summary-card">
             <span class="register-summary-icon all">▧</span>
@@ -2809,6 +2931,8 @@
             </table>
           </div>
         </div>
+        </ng-container>
+        <ng-container *ngIf="registerView === 'BATCHES'" [ngTemplateOutlet]="rootQuickBatchAudit"></ng-container>
       </section>
 
       <section *ngSwitchCase="'remaining'" class="remaining-page">
@@ -3983,6 +4107,13 @@
                 min="1"
                 [(ngModel)]="settings.defaultRushHours"
               />
+            </div>
+            <div>
+              <label>Default Issued Register View</label>
+              <select [(ngModel)]="settings.defaultRegisterView">
+                <option value="ISSUED">Issued Tickets Register</option>
+                <option value="BATCHES">Quick Employee Ticket Batches</option>
+              </select>
             </div>
           </div>
           <button class="btn save-action" (click)="saveSettings()">

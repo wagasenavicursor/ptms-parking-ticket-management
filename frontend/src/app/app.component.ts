@@ -115,6 +115,7 @@ export class AppComponent implements OnInit, OnDestroy {
   registerDate = "";
   registerStatus = "";
   registerHours: any = "";
+  registerView: "ISSUED" | "BATCHES" = "ISSUED";
   pendingEdit: any = null;
   reconScans: string[] = [];
   recon: any;
@@ -166,6 +167,7 @@ export class AppComponent implements OnInit, OnDestroy {
     inventoryManualSecurityEnabled: true,
     inventoryManualAdminEnabled: true,
     uiTheme: "COLOR",
+    defaultRegisterView: "ISSUED",
   };
   private inventoryDefaultsLoaded = false;
   private refreshVersion = 0;
@@ -1874,11 +1876,10 @@ export class AppComponent implements OnInit, OnDestroy {
       this.err = "The quick employee batch could not be found";
       return;
     }
-    if (!i?.barcodes?.length) {
-      this.err = `Assign physical tickets to ${i?.requestNumber || "this request"} before completing it`;
-      return;
-    }
-    this.complete(i);
+    this.startPendingEdit(i);
+    this.issueMode = "NORMAL";
+    this.nav("issue");
+    this.ok(`Request ${i?.requestNumber || ""} opened in editing mode.`);
   }
   async completePendingRushBatch(batch: any) {
     this.openPendingRushBatch(batch);
@@ -2338,6 +2339,15 @@ export class AppComponent implements OnInit, OnDestroy {
         ?.name || reference
     );
   }
+  reportPersonDetails(reference: string, type?: string) {
+    const e = this.employees.find((x) => String(x.employeeCode) === String(reference));
+    if (type !== "VISITOR" && e)
+      return { name: e.name, reference: reference || "—", department: e.department || "—", team: e.team || "—" };
+    const v = this.visitors.find((x) => String(x.visitorCode) === String(reference));
+    if (v)
+      return { name: v.name, reference: reference || "—", department: v.hostDepartment || "—", team: "—" };
+    return { name: reference || "—", reference: reference || "—", department: "—", team: "—" };
+  }
   issueDisplayReference(i: any) {
     return i?.issueMode === "QUICK" && i?.rushBatchReference
       ? i.rushBatchReference
@@ -2560,6 +2570,7 @@ export class AppComponent implements OnInit, OnDestroy {
           this.barcodeMode =
             x.defaultBarcodeMode === "MANUAL" ? "MANUAL" : "SCAN";
           this.rushHours = Number(x.defaultRushHours) || 1;
+          this.registerView = x.defaultRegisterView === "BATCHES" ? "BATCHES" : "ISSUED";
           this.inventoryDefaultsLoaded = true;
         }
         this.ensureAllowedFeatureModes();
@@ -3190,7 +3201,10 @@ export class AppComponent implements OnInit, OnDestroy {
       return [
         "Request",
         "Person Type",
-        "Person",
+        "Name",
+        "Reference",
+        "Department",
+        "Team",
         "Date",
         "Hours",
         "Reason",
@@ -3203,13 +3217,19 @@ export class AppComponent implements OnInit, OnDestroy {
         "Hours",
         "Status",
         "Expiry",
-        "Issued To",
+        "Issued To Name",
+        "Issued To Reference",
+        "Department",
+        "Team",
       ];
     if (this.reportPreviewKind === "person")
       return [
         "Request",
         "Type",
-        "Person",
+        "Name",
+        "Reference",
+        "Department",
+        "Team",
         "Date",
         "Hours",
         "Status",
@@ -3225,7 +3245,10 @@ export class AppComponent implements OnInit, OnDestroy {
       "Status",
       "Expiry",
       "Issued At",
-      "Issued To",
+      "Issued To Name",
+      "Issued To Reference",
+      "Department",
+      "Team",
     ];
   }
   private buildReportPreviewRows(): any[][] {
@@ -3240,15 +3263,10 @@ export class AppComponent implements OnInit, OnDestroy {
             (!this.reportPerson || i.personReference === this.reportPerson) &&
             (!this.reportPersonType || i.personType === this.reportPersonType),
         )
-        .map((i) => [
-          i.requestNumber,
-          i.personType,
-          i.personReference,
-          i.visitDate,
-          i.requiredHours,
-          i.reason || "",
-          (i.barcodes || []).join(" | "),
-        ]);
+        .map((i) => {
+          const person = this.reportPersonDetails(i.personReference, i.personType);
+          return [i.requestNumber, i.personType, person.name, person.reference, person.department, person.team, i.visitDate, i.requiredHours, i.reason || "", (i.barcodes || []).join(" | ")];
+        });
     if (kind === "inventory")
       return this.tickets
         .filter(
@@ -3258,14 +3276,10 @@ export class AppComponent implements OnInit, OnDestroy {
               String(t.durationHours) === String(this.reportDuration)) &&
             this.inReportRange(t.expiryDate),
         )
-        .map((t) => [
-          t.barcode,
-          t.ticketNumber,
-          t.durationHours,
-          t.status,
-          t.expiryDate || "",
-          t.issuedToReference || "",
-        ]);
+        .map((t) => {
+          const person = this.reportPersonDetails(t.issuedToReference || "");
+          return [t.barcode, t.ticketNumber, t.durationHours, t.status, t.expiryDate || "", person.name, person.reference, person.department, person.team];
+        });
     if (kind === "person")
       return this.issues
         .filter(
@@ -3276,16 +3290,10 @@ export class AppComponent implements OnInit, OnDestroy {
             (!this.reportStatus || i.status === this.reportStatus) &&
             this.inReportRange(i.visitDate),
         )
-        .map((i) => [
-          i.requestNumber,
-          i.personType,
-          i.personReference,
-          i.visitDate,
-          i.requiredHours,
-          i.status,
-          i.reason || "",
-          (i.barcodes || []).join(" | "),
-        ]);
+        .map((i) => {
+          const person = this.reportPersonDetails(i.personReference, i.personType);
+          return [i.requestNumber, i.personType, person.name, person.reference, person.department, person.team, i.visitDate, i.requiredHours, i.status, i.reason || "", (i.barcodes || []).join(" | ")];
+        });
     if (kind === "remaining")
       return this.remaining
         .filter(
@@ -3309,15 +3317,10 @@ export class AppComponent implements OnInit, OnDestroy {
           (!this.reportPerson || t.issuedToReference === this.reportPerson) &&
           this.inReportRange(t.issuedAt),
       )
-      .map((t) => [
-        t.barcode,
-        t.ticketNumber,
-        t.durationHours,
-        t.status,
-        t.expiryDate || "",
-        t.issuedAt || "",
-        t.issuedToReference || "",
-      ]);
+      .map((t) => {
+        const person = this.reportPersonDetails(t.issuedToReference || "");
+        return [t.barcode, t.ticketNumber, t.durationHours, t.status, t.expiryDate || "", t.issuedAt || "", person.name, person.reference, person.department, person.team];
+      });
   }
   refreshReportPreview() {
     if (!this.reportPreviewKind) return;
